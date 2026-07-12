@@ -1,0 +1,28 @@
+// Configuração central da landing — URLs vêm de variáveis de ambiente públicas
+// (ver .env.example). Enquanto o instalador não existir, o botão abre #baixar
+// com status "em breve" em vez de um link morto.
+
+export const BRAND = "diffAI"
+export const BRAND_DOMAIN = "diffai.app"
+
+export const LICENSE_API =
+  process.env.NEXT_PUBLIC_LICENSE_API ?? "http://127.0.0.1:8390"
+
+/** URL do .dmg / .zip macOS. Vazio ou "#" = ainda não publicado. */
+export const DOWNLOAD_URL_MAC = (
+  process.env.NEXT_PUBLIC_DOWNLOAD_URL_MAC ??
+  process.env.NEXT_PUBLIC_DOWNLOAD_URL ??
+  ""
+).trim()
+
+/** URL do instalador Windows (.exe / .msi). Vazio = ainda não publicado. */
+export const DOWNLOAD_URL_WINDOWS = (
+  process.env.NEXT_PUBLIC_DOWNLOAD_URL_WINDOWS ?? ""
+).trim()
+
+export const SALES_EMAIL =
+  process.env.NEXT_PUBLIC_SALES_EMAIL ?? `vendas@${BRAND_DOMAIN}`
+
+export function isDownloadReady(url: string) {
+  return Boolean(url) && !url.startsWith("#")
+}

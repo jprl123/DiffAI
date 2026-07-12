@@ -1,0 +1,41 @@
+.venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+output/
+tests/samples/
+tests/out/
+logs/*.log
+!.gitignore
+
+# Segredos — NUNCA versionar (exceção: par de DEV, público de propósito)
+.env
+.env*.local
+*.pem
+!licensing_server/dev_signing_key.pem
+
+# Build / distribuição (PyInstaller)
+build/
+dist/
+*.spec
+
+# Landing Next.js
+node_modules/
+.next/
+**/node_modules/
+**/.next/
+
+# Cursor / deploys temporários
+.claude/
+.cursor/
+.cursor-deploy*
+.deploy-*
+.mcp-*
+.invoke-deploy.json
+.last-deploy*
+.last-mcp*
+.mcp-deploy-started
+
+# Artefatos locais
+*.pdf
+!docs/**/*.pdf

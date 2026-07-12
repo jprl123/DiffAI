@@ -1,4 +1,4 @@
-# Compare Docs
+# DiffAI
 
 Ferramenta local para **comparar documentos** (DOCX, PDF e Excel) e gerar **PDFs redline**
 com marcação de inserções, exclusões, movimentações e formatação — além de relatório

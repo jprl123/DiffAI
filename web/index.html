@@ -1,0 +1,4540 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compare Docs</title>
+<style>
+/* ============================================================
+   Tokens de tema — claro / escuro
+   ============================================================ */
+:root {
+  --bg: #f7f7f8;
+  --surface: #ffffff;
+  --surface-2: #f4f4f5;
+  --surface-3: #ececee;
+  --text: #18181b;
+  --muted: #71717a;
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: rgba(37, 99, 235, 0.08);
+  --ring: rgba(37, 99, 235, 0.3);
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.07);
+  --ok: #16a34a;
+  --ok-soft: rgba(22, 163, 74, 0.1);
+  --warn: #b45309;
+  --warn-soft: rgba(217, 119, 6, 0.09);
+  --noise: #a1a1aa;
+  --dot-content: #2563eb;
+  --dot-formatting: #d97706;
+  --shadow-hover: 0 2px 8px rgba(24, 24, 27, 0.07);
+  --shadow-modal: 0 16px 48px rgba(24, 24, 27, 0.18), 0 2px 8px rgba(24, 24, 27, 0.08);
+  --radius: 12px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px; --space-6: 32px;
+  --mark-ins-fg: #1d4ed8; --mark-ins-bg: rgba(37, 99, 235, 0.12);
+  --mark-del-fg: #b91c1c; --mark-del-bg: rgba(220, 38, 38, 0.1);
+  --mark-move-fg: #15803d; --mark-fmt-fg: #b45309; --mark-fmt-bg: rgba(217, 119, 6, 0.2);
+  --doc-paper: #ffffff; --doc-shadow: 0 1px 3px rgba(24, 24, 27, 0.06), 0 8px 24px rgba(24, 24, 27, 0.08);
+}
+[data-theme="dark"] {
+  --bg: #0e1013;
+  --surface: #16181c;
+  --surface-2: #1c1f24;
+  --surface-3: #23262c;
+  --text: #e7e9ec;
+  --muted: #9ba1ab;
+  --border: #26272b;
+  --border-strong: #34363c;
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --accent-soft: rgba(59, 130, 246, 0.13);
+  --ring: rgba(59, 130, 246, 0.35);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.1);
+  --ok: #4ade80;
+  --ok-soft: rgba(74, 222, 128, 0.12);
+  --warn: #fbbf24;
+  --warn-soft: rgba(251, 191, 36, 0.1);
+  --noise: #6b7280;
+  --dot-content: #3b82f6;
+  --dot-formatting: #f59e0b;
+  --shadow-hover: 0 2px 10px rgba(0, 0, 0, 0.35);
+  --shadow-modal: 0 20px 56px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --mark-ins-fg: #93c5fd; --mark-ins-bg: rgba(59, 130, 246, 0.18);
+  --mark-del-fg: #fca5a5; --mark-del-bg: rgba(248, 113, 113, 0.14);
+  --mark-move-fg: #86efac; --mark-fmt-fg: #fbbf24; --mark-fmt-bg: rgba(251, 191, 36, 0.18);
+  --doc-paper: #1c1f24; --doc-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 13.5px;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.55;
+  height: 100vh;
+  overflow: hidden;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+button { font: inherit; cursor: pointer; color: inherit; background: none; border: none; }
+input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; border-radius: 6px; }
+[hidden] { display: none !important; }
+svg { display: block; flex-shrink: 0; }
+h1, h2, h3 { letter-spacing: -0.01em; }
+
+/* ============================================================
+   App shell
+   ============================================================ */
+.app { display: flex; height: 100vh; }
+
+.sidebar {
+  width: 230px; flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-right: 1px solid rgba(228, 228, 231, 0.85);
+  display: flex; flex-direction: column;
+  padding: 16px 10px 12px;
+  transition: width 0.16s ease, background 0.16s ease;
+}
+[data-theme="dark"] .sidebar {
+  background: rgba(22, 24, 28, 0.78);
+  border-right-color: rgba(38, 39, 43, 0.9);
+}
+.brand { display: flex; align-items: center; gap: 10px; padding: 2px 8px 18px; }
+.brand-logo {
+  width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+  background: linear-gradient(135deg, #3b82f6, #1e40af);
+  color: #fff; display: flex; align-items: center; justify-content: center;
+}
+.brand-name { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; }
+
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 10px; border-radius: 8px; position: relative;
+  color: var(--muted); font-size: 13.5px; font-weight: 500;
+  text-align: left; width: 100%;
+  transition: background 0.13s ease, color 0.13s ease;
+}
+.nav-item:hover { background: var(--surface-2); color: var(--text); }
+.nav-item.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.nav-item.active::before {
+  content: ""; position: absolute; left: -10px; top: 7px; bottom: 7px;
+  width: 3px; border-radius: 0 3px 3px 0; background: var(--accent);
+}
+.nav-label { white-space: nowrap; overflow: hidden; }
+
+.side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 2px; padding-top: 12px; border-top: 1px solid var(--border); }
+.side-version { color: var(--muted); font-size: 11.5px; padding: 8px 10px 2px; font-variant-numeric: tabular-nums; }
+
+/* Rail (< 860px): só ícones + tooltip */
+@media (max-width: 860px) {
+  .sidebar { width: 64px; padding: 16px 8px 12px; align-items: stretch; }
+  .brand { justify-content: center; padding: 2px 0 18px; }
+  .brand-name, .nav-label, .side-version { display: none; }
+  .nav-item { justify-content: center; padding: 9px 0; }
+  .nav-item.active::before { left: -8px; }
+  .nav-item[data-tip]:hover::after, .nav-item[data-tip]:focus-visible::after {
+    content: attr(data-tip);
+    position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%);
+    background: var(--text); color: var(--bg);
+    font-size: 12px; font-weight: 500; white-space: nowrap;
+    padding: 4px 9px; border-radius: 6px; z-index: 80; pointer-events: none;
+  }
+}
+
+.content { flex: 1; overflow-y: auto; min-width: 0; }
+.container { max-width: 960px; margin: 0 auto; padding: 32px 32px 72px; }
+
+.page-head { margin-bottom: 24px; }
+.page-head h1 { font-size: 20px; font-weight: 600; line-height: 1.3; }
+.page-head p { color: var(--muted); font-size: 13.5px; margin-top: 3px; }
+
+.view { animation: view-in 0.2s cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes view-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .view, #compare-flow, .changes-panel, .ai-panel, .hist-detail { animation: none; }
+}
+#compare-flow { animation: view-in 0.16s ease; }
+
+/* ============================================================
+   Cards
+   ============================================================ */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px; margin-bottom: 16px;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+.card h2 { font-size: 14.5px; font-weight: 600; margin-bottom: 16px; }
+.card h2 .sub { font-weight: 400; color: var(--muted); font-size: 12.5px; margin-left: 8px; }
+
+/* ============================================================
+   Botões
+   ============================================================ */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: transparent; padding: 6px 13px;
+  font-size: 13px; font-weight: 500; color: var(--text);
+  transition: background 0.13s ease, border-color 0.13s ease, color 0.13s ease;
+}
+.btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
+.btn:active { background: var(--surface-3); }
+.btn.btn-accent { color: var(--accent); border-color: transparent; background: var(--accent-soft); }
+.btn.btn-accent:hover { background: var(--accent); color: #fff; }
+.btn.btn-danger { color: var(--danger); }
+.btn.btn-danger:hover { background: var(--danger-soft); border-color: var(--danger); }
+.btn-primary {
+  border: none; border-radius: 8px; padding: 9px 24px;
+  background: var(--accent); color: #fff; font-size: 13.5px; font-weight: 600;
+  transition: background 0.13s ease, opacity 0.13s ease;
+}
+.btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+.icon-btn {
+  width: 28px; height: 28px; border-radius: 7px;
+  border: 1px solid var(--border); background: transparent;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--muted);
+  transition: background 0.13s ease, color 0.13s ease, border-color 0.13s ease;
+}
+.icon-btn:hover { background: var(--surface-2); color: var(--text); border-color: var(--border-strong); }
+.icon-btn.btn-danger:hover { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
+
+/* ============================================================
+   Dropzones
+   ============================================================ */
+.dz-row { display: grid; grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr); align-items: stretch; gap: 8px; }
+.dz-col { display: flex; flex-direction: column; min-width: 0; }
+.dz-title { font-size: 12.5px; font-weight: 600; margin-bottom: 8px; }
+.dz-title .hint { font-weight: 400; color: var(--muted); }
+.dropzone {
+  flex: 1; border: 1.5px dashed var(--border-strong); border-radius: 10px;
+  background: var(--surface); min-height: 148px; min-width: 0; width: 100%;
+  overflow: hidden; display: flex; align-items: center; justify-content: center;
+  text-align: center; padding: 18px; cursor: pointer; position: relative;
+  transition: border-color 0.14s ease, background 0.14s ease;
+}
+.dropzone:hover { border-color: var(--accent); background: var(--accent-soft); }
+.dropzone.dragover { border-color: var(--accent); background: var(--accent-soft); }
+.dropzone.filled {
+  border-style: solid; border-width: 1px; border-color: var(--border);
+  background: var(--surface-2); cursor: default;
+  align-items: stretch; justify-content: flex-start; text-align: left;
+}
+.dropzone.has-error { border-color: var(--danger); background: var(--danger-soft); }
+.dz-body { width: 100%; min-width: 0; overflow: hidden; }
+.dz-empty .dz-ico { display: flex; justify-content: center; color: var(--muted); opacity: 0.6; margin-bottom: 10px; }
+.dz-empty p { font-size: 13.5px; font-weight: 600; }
+.dz-empty small { color: var(--muted); font-size: 12px; display: block; margin-top: 2px; }
+.dz-error-msg { color: var(--danger); font-size: 12.5px; font-weight: 600; margin-top: 6px; }
+.dz-file { display: flex; align-items: center; gap: 12px; width: 100%; min-width: 0; text-align: left; }
+.file-ico {
+  width: 36px; height: 42px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; color: #fff;
+}
+.file-ico.pdf { background: #dc2626; }
+.file-ico.docx { background: #2563eb; }
+.file-ico.xlsx { background: #16a34a; }
+.file-ico.folder { background: #d97706; }
+.file-ico.generic { background: var(--noise); }
+.dz-file-meta { min-width: 0; flex: 1; }
+.dz-file-meta .name {
+  display: block; font-weight: 600; font-size: 13px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dz-file-meta .size { color: var(--muted); font-size: 12px; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dz-remove {
+  width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--border);
+  color: var(--muted); flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background 0.13s ease, color 0.13s ease, border-color 0.13s ease;
+}
+.dz-remove:hover { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
+
+.swap-wrap { display: flex; align-items: center; justify-content: center; }
+.swap-btn {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.14s ease, border-color 0.14s ease, transform 0.14s ease;
+}
+.swap-btn:hover { background: var(--accent-soft); border-color: var(--accent); }
+.swap-btn.spinning { animation: swap-spin 0.35s ease; }
+@keyframes swap-spin { from { transform: rotate(0deg); } to { transform: rotate(180deg); } }
+/* ============================================================
+   Opções + campos
+   ============================================================ */
+.options-card { padding: 20px 24px; }
+.options-card h2 { margin-bottom: 4px; }
+.options-card .options-lead { color: var(--muted); font-size: 12.5px; margin-bottom: 16px; }
+
+.options-list {
+  display: flex; flex-direction: column;
+  border: 1px solid var(--border); border-radius: 10px;
+  background: var(--surface); overflow: hidden;
+}
+.option-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 11px 14px; min-height: 46px;
+  border-bottom: 1px solid var(--border);
+}
+.option-row:last-child { border-bottom: none; }
+.option-row.nested {
+  background: var(--surface-2); padding-left: 20px;
+  animation: view-in 0.14s ease;
+}
+.option-copy { min-width: 0; flex: 1; }
+.option-copy .option-title { font-size: 13px; font-weight: 500; line-height: 1.35; }
+.option-copy .option-desc { font-size: 12px; color: var(--muted); margin-top: 1px; line-height: 1.35; }
+
+.option-toggle {
+  position: relative; width: 40px; height: 22px; flex-shrink: 0;
+}
+.option-toggle input {
+  position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; margin: 0;
+}
+.option-toggle .track {
+  display: block; width: 100%; height: 100%; border-radius: 999px;
+  background: var(--surface-3); border: 1px solid var(--border-strong);
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+.option-toggle .thumb {
+  position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
+  border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+  transition: transform 0.14s ease;
+}
+.option-toggle input:checked + .track { background: var(--accent); border-color: var(--accent); }
+.option-toggle input:checked + .track + .thumb { transform: translateX(18px); }
+.option-toggle input:focus-visible + .track { box-shadow: 0 0 0 2px var(--ring); }
+
+.format-chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.format-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--surface);
+  font-size: 12px; font-weight: 500; color: var(--muted); cursor: pointer; user-select: none;
+  transition: background 0.13s ease, border-color 0.13s ease, color 0.13s ease;
+}
+.format-chip input { width: 0; height: 0; opacity: 0; position: absolute; }
+.format-chip:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+.options-advanced { margin-top: 12px; }
+.options-advanced > summary {
+  list-style: none; cursor: pointer; color: var(--muted); font-size: 12.5px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 0;
+  transition: color 0.13s ease;
+}
+.options-advanced > summary::-webkit-details-marker { display: none; }
+.options-advanced > summary:hover { color: var(--text); }
+.options-advanced[open] > summary { color: var(--text); margin-bottom: 10px; }
+.options-advanced-body { padding-top: 2px; }
+
+.field label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 7px; }
+.field input[type="text"] {
+  width: 100%; padding: 8px 12px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  font-size: 13px; transition: border-color 0.13s ease, box-shadow 0.13s ease;
+}
+.field input[type="text"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--ring); }
+.outdir-row { display: flex; gap: 8px; align-items: stretch; }
+.outdir-row input[type="text"] { flex: 1; min-width: 0; }
+.outdir-row .btn { flex-shrink: 0; }
+
+.compare-actions {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  margin: 4px 0 28px; text-align: center;
+}
+.compare-actions .note { color: var(--muted); font-size: 12.5px; max-width: 420px; line-height: 1.45; }
+.btn-primary.compare-cta {
+  min-width: 200px; padding: 11px 36px; font-size: 14px; font-weight: 600;
+  border-radius: 10px; letter-spacing: 0.01em;
+}
+
+/* ============================================================
+   Fases do job: running → done
+   ============================================================ */
+.job-stage { animation: view-in 0.22s cubic-bezier(0.22, 1, 0.36, 1); }
+
+.job-running {
+  display: flex; align-items: center; justify-content: center;
+  min-height: min(68vh, 520px); padding: var(--space-6) var(--space-4);
+}
+.job-running-inner { text-align: center; max-width: 420px; width: 100%; }
+.job-spinner {
+  width: 44px; height: 44px; margin: 0 auto 22px; border-radius: 50%;
+  border: 2.5px solid var(--border); border-top-color: var(--accent);
+  animation: job-spin 0.75s linear infinite;
+}
+@keyframes job-spin { to { transform: rotate(360deg); } }
+.job-running-inner h2 { font-size: 18px; font-weight: 600; margin-bottom: 6px; letter-spacing: -0.02em; }
+.job-running-sub { color: var(--muted); font-size: 13px; margin-bottom: 22px; min-height: 1.4em; }
+.job-running-track {
+  height: 4px; border-radius: 2px; background: var(--surface-3); overflow: hidden;
+  margin-bottom: 8px;
+}
+.job-running-fill {
+  height: 100%; width: 8%; border-radius: 2px; background: var(--accent);
+  transition: width 0.35s ease;
+}
+.job-running-fill.indeterminate { width: 35% !important; animation: job-bar-slide 1.2s ease-in-out infinite; }
+@keyframes job-bar-slide {
+  0% { transform: translateX(-120%); } 50% { transform: translateX(180%); } 100% { transform: translateX(380%); }
+}
+.job-running-count { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.job-done-head {
+  display: flex; flex-direction: column; gap: 12px;
+  margin-bottom: var(--space-4);
+}
+.result-toolbar {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+}
+.result-toolbar-start {
+  display: flex; align-items: flex-start; gap: 12px; flex: 1; min-width: 0;
+}
+.result-toolbar-start .done-title { flex: 1; min-width: 0; }
+.result-toolbar-start h2 {
+  font-size: 16px; font-weight: 600; letter-spacing: -0.02em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.result-toolbar-start p { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.result-toolbar-end {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0;
+}
+.result-toolbar-stats {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.result-toolbar-stats .stat {
+  display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+}
+.result-toolbar-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.job-done-hero { margin-top: 2px; }
+.job-done-panel .detail-tabs {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  flex-wrap: wrap; margin-bottom: 0; padding: 10px 12px;
+  border-bottom: 1px solid var(--border); background: var(--surface);
+}
+.job-done-panel .detail-tab-body { padding: 0; }
+.job-done-panel .doc-preview-wrap { border: none; border-radius: 0; background: transparent; }
+.job-done-panel .doc-preview-head { display: none; }
+.job-done-panel .doc-preview-scroll {
+  max-height: min(68vh, 640px); padding: 20px 16px 28px; background: var(--surface-2);
+}
+.job-done-head .done-title { flex: 1; min-width: 0; }
+.job-done-head h2 { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.job-done-head p { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.job-done-stats { display: none; }
+.job-done-actions { display: none; }
+
+.job-batch-layout { display: grid; grid-template-columns: 240px 1fr; gap: 14px; align-items: start; }
+.job-batch-list {
+  border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+  max-height: min(70vh, 560px); overflow: auto; padding: 6px;
+}
+.job-batch-item {
+  display: block; width: 100%; text-align: left; border: none; background: transparent;
+  padding: 9px 10px; border-radius: 8px; cursor: pointer;
+  transition: background 0.13s ease;
+}
+.job-batch-item:hover { background: var(--surface-2); }
+.job-batch-item.active { background: var(--accent-soft); }
+.job-batch-item .name { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.job-batch-item .meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.job-batch-summary {
+  margin-top: 14px; padding: 12px 16px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--surface);
+  font-size: 13px; display: flex; gap: 10px; flex-wrap: wrap; font-variant-numeric: tabular-nums;
+}
+.job-batch-summary .s-ok { color: var(--ok); font-weight: 600; }
+.job-batch-summary .s-fail { color: var(--danger); font-weight: 600; }
+.job-batch-summary .s-time { color: var(--muted); }
+.job-batch-summary .sep { color: var(--border-strong); }
+
+.job-done-hero .doc-preview-wrap { min-height: min(58vh, 520px); }
+.job-stat-pill {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 500;
+  padding: 5px 11px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+.job-done-panel { margin-top: 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--surface); }
+.job-done-panel .result-detail-panel { margin-top: 0; border-top: none; padding-top: 0; }
+.detail-tab-legend {
+  display: flex; gap: 8px; flex-wrap: wrap; font-size: 10.5px; color: var(--muted); margin-left: auto;
+}
+.detail-tab-legend span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+
+@media (max-width: 860px) {
+  .job-batch-layout { grid-template-columns: 1fr; }
+  .job-batch-list { max-height: 200px; }
+}
+
+/* ============================================================
+   Progresso
+   ============================================================ */
+.progress-card { padding: 20px 24px; }
+.progress-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.progress-head .title { font-weight: 600; font-size: 13.5px; }
+.progress-head .count { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.progress-track { height: 4px; border-radius: 2px; background: var(--surface-3); overflow: hidden; }
+.progress-fill { height: 100%; width: 0%; border-radius: 2px; background: var(--accent); transition: width 0.35s ease; }
+.progress-fill.indeterminate { animation: bar-pulse 1.2s ease-in-out infinite; }
+.progress-skeleton {
+  margin-top: 10px; height: 14px; width: 55%; border-radius: 6px;
+  background: linear-gradient(90deg, var(--surface-3) 25%, var(--surface-2) 50%, var(--surface-3) 75%);
+  background-size: 200% 100%; animation: skeleton-shimmer 1.1s ease-in-out infinite;
+}
+@keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@keyframes bar-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+.progress-file { margin-top: 9px; font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.progress-file b { color: var(--text); font-weight: 600; }
+
+/* ============================================================
+   Resultados
+   ============================================================ */
+.results-title { font-size: 15px; font-weight: 600; margin: 24px 0 12px; }
+.result-card { padding: 18px 20px; }
+.result-card.failed { border-color: var(--danger); }
+.result-head { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.result-name { font-weight: 600; font-size: 13.5px; flex: 1; min-width: 0; overflow: hidden; }
+.result-name > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.result-name small { display: block; color: var(--muted); font-weight: 400; font-size: 11.5px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 2px 9px; border-radius: 999px; flex-shrink: 0;
+}
+.badge.ok { background: var(--ok-soft); color: var(--ok); }
+.badge.err { background: var(--danger-soft); color: var(--danger); }
+.mini-stats { display: flex; gap: 16px; flex-wrap: wrap; margin: 10px 0 2px; font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.mini-stats > span { display: inline-flex; align-items: center; gap: 6px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot.content { background: var(--dot-content); }
+.dot.noise { background: var(--noise); }
+.dot.formatting { background: var(--dot-formatting); }
+.result-error-msg { color: var(--danger); font-size: 13px; margin-top: 8px; font-weight: 500; word-break: break-word; }
+.result-warning-msg {
+  display: flex; gap: 8px; align-items: flex-start;
+  color: var(--warn); background: var(--warn-soft); border: 1px solid var(--warn);
+  border-radius: 8px; padding: 8px 12px; font-size: 12.5px; margin-top: 8px; word-break: break-word;
+}
+.result-warning-msg svg { margin-top: 2px; }
+.result-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+
+.batch-summary {
+  margin-top: 4px; padding: 14px 20px; border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--border);
+  font-size: 13px; font-weight: 500; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  font-variant-numeric: tabular-nums;
+}
+.batch-summary .s-ok { color: var(--ok); font-weight: 600; }
+.batch-summary .s-fail { color: var(--danger); font-weight: 600; }
+.batch-summary .s-time { color: var(--muted); }
+.batch-summary .sep { color: var(--border-strong); }
+
+/* ============================================================
+   Painel de mudanças
+   ============================================================ */
+.changes-panel { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px; animation: view-in 0.16s ease; }
+.changes-toolbar { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip-row .lbl { font-size: 12px; font-weight: 600; color: var(--muted); margin-right: 4px; min-width: 70px; }
+.chip {
+  border: 1px solid var(--border); background: transparent; color: var(--muted);
+  border-radius: 999px; padding: 3px 12px; font-size: 12.5px; font-weight: 500;
+  transition: background 0.13s ease, color 0.13s ease, border-color 0.13s ease;
+}
+.chip .cnt { opacity: 0.7; font-weight: 400; margin-left: 3px; font-variant-numeric: tabular-nums; }
+.chip.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); font-weight: 600; }
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+.search-box { position: relative; max-width: 340px; }
+.search-box input {
+  width: 100%; padding: 7px 12px 7px 32px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 13px;
+}
+.search-box input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--ring); }
+.search-box .sicon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; display: flex; }
+
+.change-item { border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); padding: 12px 14px; margin-bottom: 8px; }
+.change-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.tbadge { font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 8px; border-radius: 5px; color: #fff; }
+.tbadge.insert { background: #2563eb; }
+.tbadge.delete { background: #dc2626; }
+.tbadge.modify { background: #d97706; }
+.tbadge.move, .tbadge.move_modify { background: #16a34a; }
+.cat-tag { font-size: 11.5px; font-weight: 500; padding: 2px 8px; border-radius: 5px; background: var(--surface-3); color: var(--muted); border: 1px solid var(--border); }
+.crumb { color: var(--muted); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; }
+.page-tag { color: var(--muted); font-size: 11.5px; margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.change-summary { font-size: 12.5px; color: var(--muted); margin-bottom: 8px; font-style: italic; }
+.diff-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.diff-col { border-radius: 8px; border: 1px solid var(--border); background: var(--surface); overflow: hidden; }
+.diff-col .dhead { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 11px; border-bottom: 1px solid var(--border); color: var(--muted); }
+.diff-col.old .dhead { background: var(--danger-soft); color: var(--danger); }
+.diff-col.new .dhead { background: var(--accent-soft); color: var(--accent); }
+.diff-col .dbody { padding: 9px 11px; font-size: 12.5px; white-space: pre-wrap; word-break: break-word; max-height: 200px; overflow-y: auto; }
+.diff-col .dbody.empty { color: var(--muted); }
+.changes-empty { color: var(--muted); font-size: 13px; padding: 12px 4px; }
+.changes-truncated { color: var(--muted); font-size: 12px; padding: 8px 4px; font-style: italic; }
+
+/* ============================================================
+   Análise IA
+   ============================================================ */
+.ai-panel { margin-top: 14px; padding: 16px 18px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); animation: view-in 0.16s ease; }
+.ai-panel-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.ai-panel-head h3 { font-size: 13.5px; font-weight: 600; margin: 0; }
+.ai-spark { color: var(--accent); display: flex; }
+.ai-mode { font-size: 11px; font-weight: 600; color: var(--accent); background: var(--accent-soft); padding: 2px 8px; border-radius: 6px; margin-left: auto; }
+.ai-exec { font-size: 13px; line-height: 1.6; margin-bottom: 10px; }
+.ai-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 12px 0 4px; }
+.ai-list { list-style: none; padding: 0; margin: 0; }
+.ai-list li { font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid var(--border); line-height: 1.5; }
+.ai-list li:last-child { border-bottom: none; }
+.ai-risk { color: var(--danger); font-weight: 600; }
+.ai-privacy { font-size: 11.5px; color: var(--muted); margin-top: 10px; }
+
+/* ============================================================
+   Histórico
+   ============================================================ */
+.hist-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.hist-toolbar .search-box { width: 240px; }
+.hist-clear-area { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+.hist-confirm-txt { font-size: 12.5px; color: var(--muted); }
+.hist-group-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted); margin: 18px 2px 8px;
+}
+.hist-card {
+  margin-bottom: 8px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--surface);
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+.hist-card:hover { border-color: var(--border-strong); }
+.hist-card.expanded { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-soft); }
+.hist-card.removing { opacity: 0; transform: translateX(12px); transition: opacity 0.25s ease, transform 0.25s ease; }
+.hist-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; cursor: pointer; user-select: none;
+}
+.hist-row-hint { font-size: 11px; color: var(--muted); opacity: 0; transition: opacity 0.14s ease; }
+.hist-card:hover .hist-row-hint { opacity: 1; }
+.hist-ico {
+  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--muted);
+}
+.hist-main { flex: 1; min-width: 0; }
+.hist-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hist-sub { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: 12px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.hist-sub > span { display: inline-flex; align-items: center; gap: 5px; }
+.hist-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+.hist-detail {
+  border-top: 1px solid var(--border); padding: 14px 16px 16px;
+  animation: view-in 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hist-detail-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.hist-detail-loading { color: var(--muted); font-size: 13px; padding: 8px 2px; }
+.hist-empty { text-align: center; padding: 56px 20px 40px; }
+.hist-empty .big-ico { display: flex; justify-content: center; color: var(--muted); opacity: 0.45; margin-bottom: 16px; }
+.hist-empty h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.hist-empty p { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+.hist-none { color: var(--muted); font-size: 13px; padding: 24px 4px; }
+
+/* Preview do documento (canvas redline) */
+.result-detail-panel {
+  margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px;
+  animation: view-in 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.detail-tabs {
+  display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px;
+  padding: 3px; background: var(--surface-2); border-radius: 9px; border: 1px solid var(--border);
+  width: fit-content; max-width: 100%;
+}
+.detail-tab {
+  border: none; background: transparent; color: var(--muted);
+  font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 7px;
+  transition: background 0.13s ease, color 0.13s ease;
+}
+.detail-tab:hover { color: var(--text); }
+.detail-tab.active { background: var(--surface); color: var(--accent); box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+.detail-tab-body { min-height: 48px; }
+.doc-preview-wrap { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface-2); }
+.doc-preview-head {
+  display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap;
+  padding: 6px 12px; border-bottom: 1px solid var(--border); background: var(--surface);
+  font-size: 11px; color: var(--muted);
+}
+.doc-preview-legend { display: flex; gap: 8px; flex-wrap: wrap; font-size: 10.5px; }
+.doc-preview-legend span { display: inline-flex; align-items: center; gap: 4px; }
+.doc-preview-scroll { max-height: min(62vh, 520px); overflow: auto; padding: 20px 16px 28px; }
+.doc-page {
+  max-width: 6.5in; margin: 0 auto; background: var(--doc-paper); color: #1a1a1a;
+  border: 1px solid var(--border); border-radius: 2px; box-shadow: var(--doc-shadow);
+  padding: 1in; font-family: "Times New Roman", Times, serif;
+  font-size: 11pt; line-height: 1.15; text-align: left; font-weight: 400;
+}
+[data-theme="dark"] .doc-page { color: var(--text); }
+.doc-block { margin: 0; position: relative; font-weight: inherit; }
+.doc-block[data-style="Title"] { text-align: center; }
+.doc-block[data-style="Bod"],
+.doc-block[data-style="List Paragraph"] { text-align: justify; }
+.doc-block[data-align="center"] { text-align: center; }
+.doc-block[data-align="right"] { text-align: right; }
+.doc-block[data-align="justify"] { text-align: justify; }
+.doc-block.block-ins { background: var(--mark-ins-bg); border-radius: 2px; padding: 0 2px; margin-left: -2px; margin-right: -2px; }
+.doc-block.block-del { background: var(--mark-del-bg); border-radius: 2px; padding: 0 2px; margin-left: -2px; margin-right: -2px; opacity: 0.92; }
+.doc-block.block-move { border-left: 3px solid var(--mark-move-fg); padding-left: 8px; }
+.doc-block.block-fmt { border-left: 3px solid var(--mark-fmt-fg); padding-left: 8px; }
+.doc-block.block-fmt.block-has-fmt-marks { border-left: none; padding-left: 0; }
+.doc-block[data-change-id].highlight { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+.doc-block h1, .doc-block h2, .doc-block h3 {
+  margin: 0; line-height: inherit; font-weight: inherit; font-family: inherit; font-size: inherit;
+}
+.doc-block strong { font-weight: 700; }
+.doc-block[data-style="Heading 1"] { margin-top: 10pt; margin-bottom: 4pt; }
+.doc-block[data-style="Heading 2"],
+.doc-block[data-style="Heading 3"],
+.doc-block[data-style="Heading 4"] { margin-top: 8pt; margin-bottom: 2pt; }
+.doc-block p, .doc-block li { margin: 0; }
+.doc-block > p, .doc-block > h1, .doc-block > h2, .doc-block > h3 { width: 100%; }
+.doc-block ul { margin: 0; padding: 0; list-style: none; }
+.doc-block li { position: relative; }
+.doc-block.doc-list-item { padding-left: 0; }
+.doc-block table { width: 100%; border-collapse: collapse; margin: 0.75em 0; font-size: 12.5px; }
+.doc-block th, .doc-block td { border: 1px solid var(--border); padding: 6px 8px; vertical-align: top; }
+.doc-block td.cell-ins { background: var(--mark-ins-bg); }
+.doc-block td.cell-del { background: var(--mark-del-bg); text-decoration: line-through; color: var(--mark-del-fg); }
+.doc-block .img-ph {
+  border: 1px dashed var(--border); border-radius: 6px; padding: 16px; text-align: center;
+  color: var(--muted); font-size: 12px; margin: 0.5em 0;
+}
+.mark-ins { color: var(--mark-ins-fg); text-decoration: underline; text-decoration-thickness: 1.5px; background: var(--mark-ins-bg); border-radius: 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.mark-del { color: var(--mark-del-fg); text-decoration: line-through; background: var(--mark-del-bg); border-radius: 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.mark-move { color: var(--mark-move-fg); }
+.mark-fmt {
+  color: inherit; background: var(--mark-fmt-bg); border-radius: 2px;
+  box-shadow: inset 0 -2px 0 var(--mark-fmt-fg);
+  box-decoration-break: clone; -webkit-box-decoration-break: clone;
+}
+.mark-fmt strong, .mark-fmt em, .mark-fmt u, .mark-fmt s { color: inherit; }
+.doc-preview-more {
+  display: block; width: 100%; margin-top: 10px; padding: 8px; border: 1px dashed var(--border);
+  border-radius: 8px; background: transparent; color: var(--muted); font-size: 12.5px;
+}
+.doc-preview-more:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.doc-preview-empty { padding: 24px; text-align: center; color: var(--muted); font-size: 13px; }
+
+/* ============================================================
+   Modal
+   ============================================================ */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(10, 12, 16, 0.45);
+  backdrop-filter: blur(8px) saturate(140%);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 6vh 20px 20px; overflow-y: auto;
+  animation: view-in 0.14s ease;
+}
+.modal {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 14px; box-shadow: var(--shadow-modal);
+  max-width: 640px; width: 100%; padding: 26px 28px;
+}
+[data-theme="dark"] .modal { background: rgba(22, 24, 28, 0.92); }
+.modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.modal-head h2 { font-size: 17px; font-weight: 600; }
+.modal h3 { font-size: 13px; font-weight: 600; margin: 18px 0 7px; color: var(--accent); }
+.modal p, .modal li { font-size: 13px; }
+.modal ol, .modal ul { padding-left: 20px; display: grid; gap: 4px; margin-top: 4px; }
+.modal .muted { color: var(--muted); }
+.legend { display: grid; gap: 6px; margin-top: 6px; }
+.legend .row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.mark { font-weight: 600; padding: 1px 8px; border-radius: 5px; font-size: 12px; }
+.mark.ins { color: #2563eb; text-decoration: underline; background: var(--accent-soft); }
+.mark.del { color: #dc2626; text-decoration: line-through; background: var(--danger-soft); }
+.mark.mod { color: #b45309; background: var(--warn-soft); }
+.mark.mov { color: #16a34a; background: var(--ok-soft); }
+.kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px;
+  background: var(--surface-2); border: 1px solid var(--border-strong);
+  border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px;
+}
+
+/* ============================================================
+   Toasts
+   ============================================================ */
+.toasts { position: fixed; right: 20px; bottom: 20px; z-index: 200; display: flex; flex-direction: column; gap: 8px; max-width: 380px; }
+.toast {
+  background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  border-radius: 10px; box-shadow: var(--shadow-modal); padding: 11px 14px;
+  font-size: 13px; display: flex; gap: 10px; align-items: flex-start;
+  animation: toast-in 0.2s ease;
+}
+.toast.error { border-left-color: var(--danger); }
+.toast.success { border-left-color: var(--ok); }
+.toast .t-close { margin-left: auto; color: var(--muted); flex-shrink: 0; display: flex; padding: 1px; border-radius: 5px; }
+.toast .t-close:hover { color: var(--text); }
+.toast.leaving { opacity: 0; transform: translateX(16px); transition: all 0.25s ease; }
+@keyframes toast-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+
+/* ============================================================
+   Licenciamento — conta, planos, banner, ativação
+   ============================================================ */
+.side-account-wrap { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); }
+.side-account-wrap + .side-foot { margin-top: 0; }
+.side-account {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 6px 8px; border-radius: 8px; text-align: left; position: relative;
+  transition: background 0.13s ease;
+}
+.side-account:hover { background: var(--surface-2); }
+.side-account.active { background: var(--accent-soft); }
+.acct-avatar {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  background: var(--accent-soft); color: var(--accent);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+}
+.acct-avatar.neutral { background: var(--surface-3); color: var(--muted); }
+.acct-lines { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.acct-line1 { font-size: 12px; font-weight: 600; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan-pill {
+  display: inline-flex; align-items: center; align-self: flex-start;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 1px 7px; border-radius: 999px; white-space: nowrap;
+  background: var(--surface-3); color: var(--muted);
+}
+.plan-pill.accent { background: var(--accent-soft); color: var(--accent); }
+.plan-pill.danger { background: var(--danger-soft); color: var(--danger); }
+
+@media (max-width: 860px) {
+  .acct-lines { display: none; }
+  .side-account { justify-content: center; padding: 8px 0; }
+  .side-account[data-tip]:hover::after, .side-account[data-tip]:focus-visible::after {
+    content: attr(data-tip);
+    position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%);
+    background: var(--text); color: var(--bg);
+    font-size: 12px; font-weight: 500; white-space: nowrap;
+    padding: 4px 9px; border-radius: 6px; z-index: 80; pointer-events: none;
+  }
+}
+
+.license-banner {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  border: 1px solid var(--border); border-left: 3px solid var(--warn);
+  background: var(--surface); border-radius: 10px;
+  padding: 10px 14px; margin-bottom: 20px; font-size: 13px;
+  animation: view-in 0.16s ease;
+}
+.license-banner .lb-text { flex: 1; min-width: 220px; font-variant-numeric: tabular-nums; }
+.license-banner .lb-text b { font-weight: 600; }
+.license-banner .lb-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.license-banner.warn { border-color: var(--warn); border-left-width: 3px; background: var(--warn-soft); }
+.license-banner.danger { border-color: var(--danger); border-left-width: 3px; background: var(--danger-soft); }
+
+.plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: stretch; }
+.plan-card {
+  position: relative; display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 24px 20px 20px;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+.plan-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-hover); }
+.plan-card.highlight { border: 1.5px solid var(--accent); }
+.plan-card.highlight:hover { border-color: var(--accent); }
+.plan-flag {
+  position: absolute; top: -9px; left: 50%; transform: translateX(-50%);
+  font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+  background: var(--accent); color: #fff; padding: 2px 10px; border-radius: 999px; white-space: nowrap;
+}
+.plan-flag.current { background: var(--surface-3); color: var(--muted); border: 1px solid var(--border-strong); }
+.plan-name { font-size: 13.5px; font-weight: 600; margin-bottom: 8px; }
+.plan-price-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.plan-price { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.plan-period { color: var(--muted); font-size: 12px; }
+.plan-features { list-style: none; padding: 0; margin: 0 0 18px; display: grid; gap: 7px; align-content: start; flex: 1; }
+.plan-features li { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; line-height: 1.45; }
+.plan-features .fcheck { color: var(--accent); display: inline-flex; margin-top: 2px; }
+.plan-cta { width: 100%; justify-content: center; text-align: center; }
+.btn.plan-cta:disabled { opacity: 0.55; cursor: default; }
+.btn.plan-cta:disabled:hover { background: transparent; border-color: var(--border); }
+.plans-activate-line { margin-top: 18px; text-align: center; color: var(--muted); font-size: 12.5px; }
+.link-btn {
+  background: none; border: none; padding: 0; color: var(--accent);
+  font-size: inherit; font-weight: 600; cursor: pointer;
+  transition: color 0.13s ease;
+}
+.link-btn:hover { color: var(--accent-hover); text-decoration: underline; }
+
+.lic-rows { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 16px; background: var(--surface); }
+.lic-row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+  padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.lic-row:last-child { border-bottom: none; }
+.lic-label { color: var(--muted); flex-shrink: 0; }
+.lic-value { font-weight: 500; text-align: right; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lic-value.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+.acct-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.acct-confirm-txt { font-size: 12.5px; color: var(--muted); }
+.card.card-warn { border-color: var(--warn); }
+.card.card-danger { border-color: var(--danger); }
+.acct-note { color: var(--muted); font-size: 12.5px; margin: 2px 0 16px; }
+.trial-meter { margin-bottom: 14px; }
+.trial-meter .tm-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 12.5px; margin-bottom: 6px; }
+.trial-meter .tm-num { color: var(--muted); font-variant-numeric: tabular-nums; }
+.trial-meter .tm-track { height: 4px; border-radius: 2px; background: var(--surface-3); overflow: hidden; }
+.trial-meter .tm-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.35s ease; }
+.trial-meter .tm-fill.low { background: var(--warn); }
+
+.modal-sm { max-width: 420px; }
+.modal .field { margin-top: 14px; }
+.modal .field input[type="text"], .modal .field input[type="email"] {
+  width: 100%; padding: 8px 12px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  font-size: 13px; transition: border-color 0.13s ease, box-shadow 0.13s ease;
+}
+.modal .field input[type="text"]:focus, .modal .field input[type="email"]:focus {
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--ring);
+}
+#act-key { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.04em; }
+.modal-error { color: var(--danger); font-size: 12.5px; font-weight: 500; margin-top: 12px; line-height: 1.45; }
+.modal-actions { margin-top: 18px; display: flex; }
+.modal-actions .btn-primary { flex: 1; justify-content: center; display: inline-flex; align-items: center; gap: 8px; }
+.modal-foot { margin-top: 14px; text-align: center; color: var(--muted); font-size: 12.5px; }
+.spin { animation: job-spin 0.7s linear infinite; display: inline-flex; }
+
+@media (max-width: 860px) {
+  .plans-grid { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   Prévia dos pares do lote
+   ============================================================ */
+.batch-preview-card { animation: view-in 0.16s ease; }
+.pairs-list {
+  border: 1px solid var(--border); border-radius: 10px;
+  background: var(--surface); overflow: hidden;
+  max-height: min(42vh, 360px); overflow-y: auto;
+}
+.pair-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-bottom: 1px solid var(--border);
+  font-size: 12.5px; min-width: 0;
+}
+.pair-row:last-child { border-bottom: none; }
+.pair-ico { color: var(--muted); display: inline-flex; flex-shrink: 0; }
+.pair-names { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pair-arrow { color: var(--muted); margin: 0 4px; }
+.method-badge {
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 999px; flex-shrink: 0; white-space: nowrap;
+}
+.method-badge.m-nome { background: var(--surface-3); color: var(--muted); }
+.method-badge.m-similaridade { background: var(--warn-soft); color: var(--warn); }
+.method-badge.m-conteudo { background: var(--accent-soft); color: var(--accent); }
+.unmatched-box {
+  margin-top: 12px; border: 1px solid var(--warn); background: var(--warn-soft);
+  border-radius: 10px; padding: 10px 14px; font-size: 12.5px;
+}
+.unmatched-box h3 {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--warn); margin-bottom: 6px;
+}
+.unmatched-box .u-side { margin-top: 4px; word-break: break-word; }
+.unmatched-box .u-side b { font-weight: 600; }
+.preview-foot { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 16px; }
+
+/* ============================================================
+   Visão lado a lado (painel de mudanças)
+   ============================================================ */
+.mode-switch {
+  display: flex; gap: 4px; padding: 3px; margin-bottom: 12px;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px;
+  width: fit-content; max-width: 100%;
+}
+.mode-btn {
+  border: none; background: transparent; color: var(--muted);
+  font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 7px;
+  transition: background 0.13s ease, color 0.13s ease;
+}
+.mode-btn:hover { color: var(--text); }
+.mode-btn.active { background: var(--surface); color: var(--accent); box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+
+.sbs-toolbar { display: flex; justify-content: flex-end; gap: 6px; margin-bottom: 8px; }
+.sbs-scroll {
+  border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+  max-height: min(62vh, 560px); overflow: auto; position: relative;
+}
+.sbs-head {
+  position: sticky; top: 0; z-index: 2;
+  display: grid; grid-template-columns: 1fr 1fr;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.sbs-head-col {
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted); padding: 6px 12px;
+}
+.sbs-head-col + .sbs-head-col { border-left: 1px solid var(--border); }
+.sbs-row { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
+.sbs-row:last-child { border-bottom: none; }
+.sbs-cell {
+  padding: 6px 12px; font-size: 12.5px; line-height: 1.5;
+  min-width: 0; word-break: break-word; white-space: pre-wrap;
+}
+.sbs-cell.sbs-comp { border-left: 1px solid var(--border); }
+.sbs-ins .sbs-cell.sbs-comp { background: var(--accent-soft); }
+.sbs-del .sbs-cell.sbs-base { background: var(--danger-soft); }
+.sbs-move .sbs-cell { border-left: 3px solid var(--mark-move-fg); padding-left: 9px; }
+.sbs-moved { color: var(--mark-move-fg); font-size: 11px; font-weight: 600; white-space: nowrap; }
+.sbs-eq { opacity: 0.55; }
+.sbs-only .sbs-eq:not(.sbs-ctx) { display: none; }
+.sbs-sep {
+  display: none; text-align: center; color: var(--muted); font-size: 11px;
+  letter-spacing: 4px; padding: 4px 0; border-bottom: 1px solid var(--border);
+  user-select: none;
+}
+.sbs-only .sbs-sep { display: block; }
+.sbs-crumb {
+  font-size: 11px; color: var(--muted); padding: 5px 12px 3px;
+  background: var(--surface-2); border-bottom: 1px solid var(--border);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sbs-hd-1 .sbs-cell { font-weight: 700; font-size: 15px; }
+.sbs-hd-2 .sbs-cell { font-weight: 700; font-size: 14px; }
+.sbs-hd-3 .sbs-cell { font-weight: 600; font-size: 13px; }
+.sbs-table { width: 100%; border-collapse: collapse; font-size: 11.5px; margin: 2px 0; white-space: normal; }
+.sbs-table td { border: 1px solid var(--border); padding: 3px 6px; vertical-align: top; }
+.sbs-tr-ins td { background: var(--accent-soft); }
+.sbs-tr-del td { background: var(--danger-soft); text-decoration: line-through; color: var(--mark-del-fg); }
+.sbs-img-ph {
+  border: 1px dashed var(--border); border-radius: 6px; padding: 8px;
+  text-align: center; color: var(--muted); font-size: 11.5px;
+}
+
+/* ============================================================
+   Marca do escritório (Conta)
+   ============================================================ */
+.card h2 .plan-pill { margin-left: 8px; vertical-align: 1px; }
+.branding-status {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 500; margin-bottom: 4px;
+}
+.branding-status .branding-check { color: var(--ok); display: inline-flex; }
+.branding-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+.branding-error { color: var(--danger); font-size: 12.5px; font-weight: 500; margin-top: 10px; line-height: 1.45; }
+
+/* ============================================================
+   Responsivo
+   ============================================================ */
+@media (max-width: 720px) {
+  .container { padding: 24px 18px 64px; }
+  .dz-row { grid-template-columns: 1fr; }
+  .swap-btn svg { transform: rotate(90deg); }
+  .diff-cols { grid-template-columns: 1fr; }
+  .page-tag { margin-left: 0; }
+  .hist-toolbar .search-box { width: 100%; }
+  .hist-clear-area { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-logo" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="12" height="15" rx="2"/><path d="M9 8h11a0 0 0 0 1 0 0v11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2" opacity="0.75"/></svg>
+      </span>
+      <span class="brand-name">Compare Docs</span>
+    </div>
+
+    <nav class="nav" aria-label="Navegação principal">
+      <button class="nav-item active" id="nav-compare" data-tip="Comparar" aria-current="page">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M8 8h13v11a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2z"/></svg>
+        <span class="nav-label">Comparar</span>
+      </button>
+      <button class="nav-item" id="nav-batch" data-tip="Lote">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span class="nav-label">Lote</span>
+      </button>
+      <button class="nav-item" id="nav-history" data-tip="Histórico">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <span class="nav-label">Histórico</span>
+      </button>
+      <button class="nav-item" id="nav-plans" data-tip="Planos">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12.4V5.5a2 2 0 0 1 2-2h6.9a2 2 0 0 1 1.4.6l6.3 6.3a2 2 0 0 1 0 2.8l-6.9 6.9a2 2 0 0 1-2.8 0l-6.3-6.3a2 2 0 0 1-.6-1.4z"/><circle cx="8.3" cy="8.3" r="1.2"/></svg>
+        <span class="nav-label">Planos</span>
+      </button>
+    </nav>
+
+    <div class="side-account-wrap">
+      <button class="side-account" id="side-account" data-tip="Conta" aria-label="Conta e licença">
+        <span class="acct-avatar neutral" id="acct-avatar" aria-hidden="true"></span>
+        <span class="acct-lines">
+          <span class="acct-line1" id="acct-line1">Avaliação gratuita</span>
+          <span class="acct-line2"><span class="plan-pill" id="acct-line2">Avaliação</span></span>
+        </span>
+      </button>
+    </div>
+
+    <div class="side-foot">
+      <button class="nav-item" id="btn-guide" data-tip="Guia de uso">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.4 2.33c-.7.28-.9.87-.9 1.67"/><circle cx="12" cy="16.5" r="0.5" fill="currentColor"/></svg>
+        <span class="nav-label">Guia de uso</span>
+      </button>
+      <button class="nav-item" id="btn-theme" data-tip="Alternar tema" aria-label="Alternar tema claro/escuro">
+        <span id="theme-icon" aria-hidden="true" style="display:flex"></span>
+        <span class="nav-label" id="theme-label">Tema escuro</span>
+      </button>
+      <div class="side-version">v1.0</div>
+    </div>
+  </aside>
+
+  <!-- Conteúdo -->
+  <main class="content">
+    <div class="container">
+
+      <!-- Banner global de licença -->
+      <div class="license-banner" id="license-banner" hidden></div>
+
+      <!-- View: Comparar -->
+      <section class="view" id="view-compare" aria-labelledby="hd-compare">
+        <header class="page-head">
+          <h1 id="hd-compare">Comparar documentos</h1>
+          <p>Compare duas versões de um documento e receba um redline padronizado.</p>
+        </header>
+        <section class="card" id="panel-single">
+          <h2>Selecione os documentos <span class="sub">DOCX, PDF ou Excel — arraste ou clique</span></h2>
+          <div class="dz-row">
+            <div class="dz-col">
+              <div class="dz-title">Documento base <span class="hint">(original)</span></div>
+              <div class="dropzone" id="dz-base" tabindex="0" role="button"
+                   aria-label="Documento base: arraste um arquivo .docx, .pdf ou .xlsx, ou pressione Enter para selecionar">
+                <div class="dz-body" id="dz-base-body"></div>
+              </div>
+              <input type="file" id="file-base" accept=".docx,.pdf,.xlsx" hidden>
+            </div>
+            <div class="swap-wrap">
+              <button class="swap-btn" id="btn-swap-single" aria-label="Inverter documento base e revisado" title="Inverter base e revisado">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h13l-3.5-3.5"/><path d="M20 15H7l3.5 3.5"/></svg>
+              </button>
+            </div>
+            <div class="dz-col">
+              <div class="dz-title">Documento revisado <span class="hint">(atualizado)</span></div>
+              <div class="dropzone" id="dz-compare" tabindex="0" role="button"
+                   aria-label="Documento revisado: arraste um arquivo .docx, .pdf ou .xlsx, ou pressione Enter para selecionar">
+                <div class="dz-body" id="dz-compare-body"></div>
+              </div>
+              <input type="file" id="file-compare" accept=".docx,.pdf,.xlsx" hidden>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <!-- View: Lote -->
+      <section class="view" id="view-batch" aria-labelledby="hd-batch" hidden>
+        <header class="page-head">
+          <h1 id="hd-batch">Comparação em lote</h1>
+          <p>Os pares são encontrados pelo nome ou pelo conteúdo, sem precisar renomear.</p>
+        </header>
+        <section class="card" id="panel-batch">
+          <h2>Pastas do lote <span class="sub">arraste, clique ou use o explorador</span></h2>
+          <div class="dz-row">
+            <div class="dz-col">
+              <div class="dz-title">Pasta base <span class="hint">(originais)</span></div>
+              <div class="dropzone" id="dz-dir-base" tabindex="0" role="button"
+                   aria-label="Pasta base: arraste uma pasta ou pressione Enter para selecionar">
+                <div class="dz-body" id="dz-dir-base-body"></div>
+              </div>
+              <input type="hidden" id="dir-base" value="">
+            </div>
+            <div class="swap-wrap">
+              <button class="swap-btn" id="btn-swap-batch" aria-label="Inverter pasta base e revisada" title="Inverter base e revisada">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h13l-3.5-3.5"/><path d="M20 15H7l3.5 3.5"/></svg>
+              </button>
+            </div>
+            <div class="dz-col">
+              <div class="dz-title">Pasta revisada <span class="hint">(atualizados)</span></div>
+              <div class="dropzone" id="dz-dir-compare" tabindex="0" role="button"
+                   aria-label="Pasta revisada: arraste uma pasta ou pressione Enter para selecionar">
+                <div class="dz-body" id="dz-dir-compare-body"></div>
+              </div>
+              <input type="hidden" id="dir-compare" value="">
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <!-- Fluxo compartilhado: opções, ação, running, resultado -->
+      <div id="compare-flow">
+        <div id="compare-setup">
+        <section class="card options-card">
+          <h2>Opções de saída</h2>
+          <p class="options-lead">Padrão: PDF redline. Ative extras só quando precisar.</p>
+          <div class="options-list">
+            <div class="option-row">
+              <div class="option-copy">
+                <div class="option-title">Só páginas alteradas</div>
+                <div class="option-desc">Gera um PDF adicional, recortado nas mudanças</div>
+              </div>
+              <label class="option-toggle" title="Exportar também só páginas alteradas">
+                <input type="checkbox" id="opt-changed-pages">
+                <span class="track" aria-hidden="true"></span>
+                <span class="thumb" aria-hidden="true"></span>
+              </label>
+            </div>
+            <div class="option-row">
+              <div class="option-copy">
+                <div class="option-title">DOCX editável</div>
+                <div class="option-desc">Redline no formato Word, com marcas aplicadas</div>
+              </div>
+              <label class="option-toggle" title="Gerar DOCX editável">
+                <input type="checkbox" id="opt-docx">
+                <span class="track" aria-hidden="true"></span>
+                <span class="thumb" aria-hidden="true"></span>
+              </label>
+            </div>
+            <div class="option-row">
+              <div class="option-copy">
+                <div class="option-title">Resumo executivo (1 página)</div>
+                <div class="option-desc">PDF de uma página com o essencial das mudanças</div>
+              </div>
+              <label class="option-toggle" title="Gerar resumo executivo de 1 página">
+                <input type="checkbox" id="opt-exec-summary">
+                <span class="track" aria-hidden="true"></span>
+                <span class="thumb" aria-hidden="true"></span>
+              </label>
+            </div>
+            <div class="option-row">
+              <div class="option-copy">
+                <div class="option-title">Relatório analítico</div>
+                <div class="option-desc">Resumo das mudanças em HTML, Excel ou JSON</div>
+              </div>
+              <label class="option-toggle" title="Relatório analítico">
+                <input type="checkbox" id="opt-report">
+                <span class="track" aria-hidden="true"></span>
+                <span class="thumb" aria-hidden="true"></span>
+              </label>
+            </div>
+            <div class="option-row nested" id="report-sub" hidden>
+              <div class="option-copy">
+                <div class="option-title">Formatos do relatório</div>
+              </div>
+              <div class="format-chips" role="group" aria-label="Formatos do relatório">
+                <label class="format-chip"><input type="checkbox" id="opt-report-html" checked>HTML</label>
+                <label class="format-chip"><input type="checkbox" id="opt-report-xlsx" checked>Excel</label>
+                <label class="format-chip"><input type="checkbox" id="opt-report-json">JSON</label>
+              </div>
+            </div>
+          </div>
+          <details class="options-advanced">
+            <summary>Pasta de saída personalizada</summary>
+            <div class="options-advanced-body field">
+              <label for="opt-outdir">Destino dos arquivos gerados</label>
+              <div class="outdir-row">
+                <input type="text" id="opt-outdir" placeholder="Padrão: pasta output/ do app"
+                       autocomplete="off" spellcheck="false">
+                <button type="button" class="btn" id="btn-pick-outdir" title="Selecionar pasta no explorador">Selecionar…</button>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <div id="batch-preview-host" hidden></div>
+
+        <div class="compare-actions" id="compare-actions">
+          <button class="btn-primary compare-cta" id="btn-compare" disabled>Comparar</button>
+          <span class="note" id="compare-note">Selecione o documento base e o revisado para começar.</span>
+        </div>
+        </div><!-- /compare-setup -->
+
+        <section id="job-running" class="job-stage job-running" hidden aria-live="polite">
+          <div class="job-running-inner">
+            <div class="job-spinner" aria-hidden="true"></div>
+            <h2 id="job-running-title">Comparando documentos…</h2>
+            <p class="job-running-sub" id="job-running-sub"></p>
+            <div class="job-running-track" role="progressbar" id="job-running-bar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div class="job-running-fill indeterminate" id="job-running-fill"></div>
+            </div>
+            <div class="job-running-count" id="job-running-count"></div>
+          </div>
+        </section>
+
+        <section id="job-done" class="job-stage" hidden>
+          <div class="job-done-head">
+            <div class="result-toolbar">
+              <div class="result-toolbar-start">
+                <button type="button" class="btn" id="btn-new-compare">← Nova</button>
+                <div class="done-title" id="job-done-title-wrap">
+                  <h2 id="job-done-title">Comparação concluída</h2>
+                  <p id="job-done-sub"></p>
+                </div>
+              </div>
+              <div class="result-toolbar-end">
+                <div class="result-toolbar-stats" id="job-done-stats"></div>
+                <div class="result-toolbar-actions" id="job-done-actions"></div>
+              </div>
+            </div>
+          </div>
+          <div id="job-done-body"></div>
+          <div class="job-batch-summary" id="job-batch-summary" hidden></div>
+        </section>
+      </div>
+
+      <!-- View: Histórico -->
+      <section class="view" id="view-history" aria-labelledby="hd-history" hidden>
+        <header class="page-head">
+          <h1 id="hd-history">Histórico</h1>
+          <p>Todas as comparações feitas neste computador. <b>Duplo clique</b> para ver o documento com marcas inline.</p>
+        </header>
+        <div class="hist-toolbar">
+          <div class="search-box">
+            <span class="sicon" aria-hidden="true">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>
+            </span>
+            <input type="search" id="hist-search" placeholder="Buscar por nome de arquivo…" aria-label="Buscar no histórico por nome de arquivo">
+          </div>
+          <div class="chip-row" role="group" aria-label="Filtrar histórico por status">
+            <button class="chip active" id="hist-filter-all" aria-pressed="true">Todos</button>
+            <button class="chip" id="hist-filter-ok" aria-pressed="false">OK</button>
+            <button class="chip" id="hist-filter-error" aria-pressed="false">Erros</button>
+          </div>
+          <div class="hist-clear-area" id="hist-clear-area"></div>
+        </div>
+        <div id="history-list"></div>
+        <div class="hist-empty" id="history-empty" hidden>
+          <div class="big-ico" aria-hidden="true">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          </div>
+          <h3>Nenhuma comparação ainda</h3>
+          <p>Quando você comparar documentos, o resultado aparecerá aqui.</p>
+          <button class="btn-primary" id="btn-hist-first">Fazer a primeira comparação</button>
+        </div>
+      </section>
+
+      <!-- View: Planos -->
+      <section class="view" id="view-plans" aria-labelledby="hd-plans" hidden>
+        <header class="page-head">
+          <h1 id="hd-plans">Planos e assinatura</h1>
+          <p>A avaliação gratuita já vem com tudo liberado. Escolha um plano para continuar depois dela.</p>
+        </header>
+        <div class="plans-grid" id="plans-grid"></div>
+        <p class="plans-activate-line">Já tem uma chave de licença?
+          <button type="button" class="link-btn" id="link-plans-activate">Ativar agora</button>
+        </p>
+      </section>
+
+      <!-- View: Conta -->
+      <section class="view" id="view-account" aria-labelledby="hd-account" hidden>
+        <header class="page-head">
+          <h1 id="hd-account">Conta</h1>
+          <p>Sua licença, avaliação e dispositivo neste computador.</p>
+        </header>
+        <div id="account-body"></div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- Toasts -->
+<div class="toasts" id="toasts" aria-live="assertive"></div>
+
+<!-- Modal: guia de uso -->
+<div class="modal-backdrop" id="guide-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="guide-title">
+    <div class="modal-head">
+      <h2 id="guide-title">Guia de uso</h2>
+      <button class="icon-btn" id="btn-guide-close" aria-label="Fechar guia">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <p class="muted">Compare duas versões de um documento e receba um PDF redline padronizado, com resumo das mudanças.</p>
+
+    <h3>Comparar (arquivo único)</h3>
+    <ol>
+      <li>Arraste (ou clique para escolher) o <b>Documento base</b> — a versão original.</li>
+      <li>Arraste o <b>Documento revisado</b> — a versão atualizada.</li>
+      <li>Selecionou na ordem errada? Use o botão de <b>inverter</b> entre as duas áreas.</li>
+      <li>Ajuste as opções de saída e clique em <b>Comparar</b>.</li>
+    </ol>
+
+    <h3>Lote (pastas)</h3>
+    <ol>
+      <li>Arraste as pastas ou clique para abrir o <b>explorador de arquivos</b> (Finder no Mac).</li>
+      <li>Selecione a pasta com os documentos <b>originais</b> e a pasta com os <b>revisados</b>.</li>
+      <li>O sistema encontra os pares pelo nome dos arquivos (variações como “v2”, “_rev” e “(1)” são ignoradas) ou pelo conteúdo.</li>
+      <li>Clique em <b>Ver pares</b> para conferir a prévia do pareamento e depois em <b>Processar</b>: cada par gera seu próprio redline. Se um par falhar, os demais continuam.</li>
+    </ol>
+
+    <h3>Histórico</h3>
+    <p>A aba <b>Histórico</b> guarda todas as comparações já feitas, mesmo depois de fechar o app.
+    Filtre por status, busque pelo nome do arquivo e reabra qualquer resultado.</p>
+
+    <h3>Marcações do redline</h3>
+    <div class="legend">
+      <div class="row"><span class="mark ins">texto inserido</span> azul sublinhado — conteúdo novo no documento revisado</div>
+      <div class="row"><span class="mark del">texto excluído</span> vermelho tachado — conteúdo removido do documento base</div>
+      <div class="row"><span class="mark mod">modificação</span> âmbar — trecho presente nos dois, com alterações</div>
+      <div class="row"><span class="mark mov">movimentação</span> verde — mesmo conteúdo em outra posição</div>
+    </div>
+
+    <h3>Sinal vs. ruído (categorias)</h3>
+    <p><b>Conteúdo</b> é a mudança substantiva — o que merece a sua atenção. <b>Rotineiras</b> são
+    alterações de data, versão, numeração de página, espaçamento ou pontuação: contadas e marcadas,
+    mas separadas para não competir com o que importa. <b>Formatação</b> é o mesmo texto com visual
+    diferente (negrito, itálico etc.). <b>Tabelas</b> e <b>Imagens</b> têm categorias próprias.
+    Use os filtros do painel “Ver mudanças” para focar só no substantivo.</p>
+
+    <h3>Licença e planos</h3>
+    <p>O Compare Docs começa em <b>avaliação gratuita</b>: 14 dias ou 25 comparações, o que
+    terminar primeiro. Para continuar depois, assine na aba <b>Planos</b> e use
+    <b>Ativar licença</b> com o e-mail da compra e a chave recebida. O bloco de conta na
+    barra lateral mostra o plano atual e abre a aba <b>Conta</b>, com os detalhes da
+    licença e do dispositivo.</p>
+
+    <h3>Atalhos</h3>
+    <ul>
+      <li><span class="kbd">Esc</span> — fecha este guia e menus abertos</li>
+      <li><span class="kbd">Enter</span> / <span class="kbd">Espaço</span> — abre o seletor de arquivos na área de soltar focada</li>
+      <li><span class="kbd">Tab</span> — navega entre os controles</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Modal: ativar licença -->
+<div class="modal-backdrop" id="activate-modal" hidden>
+  <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="activate-title">
+    <div class="modal-head">
+      <h2 id="activate-title">Ativar licença</h2>
+      <button class="icon-btn" id="btn-activate-close" aria-label="Fechar ativação">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <p class="muted">Use o e-mail da compra e a chave recebida por e-mail.</p>
+    <form id="activate-form" novalidate>
+      <div class="field">
+        <label for="act-email">E-mail</label>
+        <input type="email" id="act-email" autocomplete="email" spellcheck="false" placeholder="voce@empresa.com.br">
+      </div>
+      <div class="field">
+        <label for="act-key">Chave de licença</label>
+        <input type="text" id="act-key" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CDOC-XXXX-XXXX-XXXX-XXXX">
+      </div>
+      <div class="modal-error" id="act-error" role="alert" hidden></div>
+      <div class="modal-actions">
+        <button type="submit" class="btn-primary" id="btn-act-submit">Ativar</button>
+      </div>
+    </form>
+    <p class="modal-foot">Não tem uma chave?
+      <button type="button" class="link-btn" id="link-act-plans">Ver planos</button>
+    </p>
+  </div>
+</div>
+<script>
+"use strict";
+/* ============================================================
+   Compare Docs — frontend (vanilla JS, zero dependências)
+   ============================================================ */
+
+var state = {
+  theme: "light",
+  view: "compare",            /* compare | batch | history | plans | account */
+  activeTab: "single",        /* single | batch (modo de envio) */
+  license: {
+    status: null,             /* GET /api/license/status */
+    plans: null,              /* GET /api/plans (cache) */
+    salesEmail: "",
+    deactConfirm: false       /* confirmação em dois passos da desativação */
+  },
+  single: {
+    baseFile: null,
+    compareFile: null,
+    errors: { base: null, compare: null }
+  },
+  batch: {
+    errors: { base: null, compare: null },
+    preview: null,            /* resposta de POST /api/batch/preview */
+    previewLoading: false,
+    previewSeq: 0             /* invalida respostas atrasadas da prévia */
+  },
+  branding: {
+    data: null,               /* GET /api/branding */
+    loading: false,
+    uploading: false,
+    error: null,
+    confirmRemove: false
+  },
+  job: {
+    id: null,
+    lastJobId: null,
+    status: null,
+    phase: "idle",           /* idle | running | done */
+    finishedJob: null,
+    selectedIndex: 0,
+    timer: null,
+    startedAt: null,
+    pollFailures: 0
+  },
+  viewers: {},   /* por índice de item: { data, cats:Set, types:Set, search:"" } */
+  insights: {},  /* por índice: dados da análise IA */
+  history: {
+    entries: [],
+    search: "",
+    filter: "all",           /* all | ok | error */
+    loaded: false,
+    confirming: false,
+    expandedId: null
+  }
+};
+
+/* ------------------------------------------------------------
+   Constantes de domínio (espelham app/models.py)
+   ------------------------------------------------------------ */
+var TYPE_LABELS = {
+  insert: "Inserção",
+  delete: "Exclusão",
+  modify: "Modificação",
+  move: "Movimentação",
+  move_modify: "Mov. + modificação",
+  equal: "Sem alteração"
+};
+var CAT_LABELS = {
+  content: "Conteúdo",
+  formatting: "Formatação",
+  noise_date: "Data (rotineira)",
+  noise_version: "Versão (rotineira)",
+  noise_pagenum: "Nº de página (rotineira)",
+  noise_whitespace: "Espaçamento (rotineira)",
+  noise_punct: "Pontuação/caixa (rotineira)",
+  table: "Tabela",
+  image: "Imagem",
+  metadata: "Metadados (rotineira)"
+};
+var CAT_GROUPS = [
+  { key: "content", label: "Conteúdo", cats: ["content"] },
+  { key: "formatting", label: "Formatação", cats: ["formatting"] },
+  { key: "noise", label: "Rotineiras", cats: ["noise_date", "noise_version", "noise_pagenum", "noise_whitespace", "noise_punct", "metadata"] },
+  { key: "table", label: "Tabelas", cats: ["table"] },
+  { key: "image", label: "Imagens", cats: ["image"] }
+];
+var TYPE_GROUPS = [
+  { key: "insert", label: "Inserção", types: ["insert"] },
+  { key: "delete", label: "Exclusão", types: ["delete"] },
+  { key: "modify", label: "Modificação", types: ["modify"] },
+  { key: "move", label: "Movimentação", types: ["move", "move_modify"] }
+];
+var OUTPUT_LABELS = [
+  { keys: ["pdf", "redline_pdf"], label: "Abrir PDF" },
+  { keys: ["changed_pages_pdf", "pdf_changed_pages", "changed_pages"], label: "Abrir PDF (págs. alteradas)" },
+  { keys: ["docx", "redline_docx"], label: "Abrir DOCX" },
+  { keys: ["exec_summary"], label: "Abrir resumo" },
+  { keys: ["html", "report_html"], label: "Abrir relatório (HTML)" },
+  { keys: ["redline_xlsx", "xlsx"], label: "Abrir Excel redline" },
+  { keys: ["report_xlsx"], label: "Abrir relatório (Excel)" },
+  { keys: ["json", "report_json"], label: "Abrir relatório (JSON)" }
+];
+/* Ordem de preferência para "Abrir" no histórico */
+var HIST_OUTPUT_ORDER = [
+  { key: "pdf", label: "PDF" },
+  { key: "changed_pages_pdf", label: "PDF (págs. alteradas)" },
+  { key: "docx", label: "DOCX" },
+  { key: "exec_summary", label: "Resumo" },
+  { key: "redline_xlsx", label: "Excel redline" },
+  { key: "html", label: "Relatório HTML" },
+  { key: "xlsx", label: "Relatório Excel" },
+  { key: "json", label: "Relatório JSON" }
+];
+
+/* ------------------------------------------------------------
+   Ícones SVG (traço 1.5, estilo outline)
+   ------------------------------------------------------------ */
+var SVG_OPEN = '<svg width="__S__" height="__S__" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+var ICONS = {
+  x: '<path d="M6 6l12 12M18 6L6 18"/>',
+  warn: '<path d="M12 4 2.5 20h19z"/><path d="M12 10v4"/><circle cx="12" cy="17" r="0.5" fill="currentColor"/>',
+  page: '<path d="M6 2.8h8l4 4v14.4H6z"/><path d="M14 2.8v4h4"/>',
+  doc: '<path d="M6 2.8h8l4 4v14.4H6z"/><path d="M14 2.8v4h4"/><path d="M9 12h6M9 15.5h6"/>',
+  sheet: '<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M9.5 9.5v10"/>',
+  folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  upload: '<path d="M12 16V6"/><path d="m8 9.5 4-3.5 4 3.5"/><path d="M5 19h14"/>',
+  dots: '<circle cx="5" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.1" fill="currentColor" stroke="none"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5 5l1.6 1.6M17.4 17.4 19 19M19 5l-1.6 1.6M6.6 17.4 5 19"/>',
+  moon: '<path d="M20 13.5A8 8 0 0 1 10.5 4 8 8 0 1 0 20 13.5z"/>',
+  spark: '<path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z"/>',
+  user: '<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>',
+  check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  spinner: '<path d="M12 3a9 9 0 1 0 9 9"/>'
+};
+
+function svgIcon(name, size) {
+  var span = document.createElement("span");
+  span.setAttribute("aria-hidden", "true");
+  span.style.display = "inline-flex";
+  span.innerHTML = SVG_OPEN.replace(/__S__/g, String(size || 16)) + (ICONS[name] || "") + "</svg>";
+  return span;
+}
+
+/* ------------------------------------------------------------
+   Helpers puros
+   ------------------------------------------------------------ */
+function $(id) { return document.getElementById(id); }
+
+function el(tag, attrs) {
+  var node = document.createElement(tag);
+  if (attrs) {
+    Object.keys(attrs).forEach(function (k) {
+      if (k === "class") node.className = attrs[k];
+      else if (k === "text") node.textContent = attrs[k];
+      else if (k.indexOf("on") === 0 && typeof attrs[k] === "function") node.addEventListener(k.slice(2), attrs[k]);
+      else node.setAttribute(k, attrs[k]);
+    });
+  }
+  for (var i = 2; i < arguments.length; i++) {
+    var c = arguments[i];
+    if (c === null || c === undefined) continue;
+    node.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+  }
+  return node;
+}
+
+function basename(p) {
+  if (!p) return "";
+  var parts = String(p).split(/[\\/]/);
+  return parts[parts.length - 1] || p;
+}
+
+function dirname(p) {
+  var s = String(p);
+  var i = Math.max(s.lastIndexOf("/"), s.lastIndexOf("\\"));
+  return i > 0 ? s.slice(0, i) : s;
+}
+
+function formatBytes(n) {
+  if (typeof n !== "number" || isNaN(n)) return "";
+  if (n < 1024) return n + " B";
+  if (n < 1024 * 1024) return (n / 1024).toFixed(1).replace(".", ",") + " KB";
+  return (n / (1024 * 1024)).toFixed(2).replace(".", ",") + " MB";
+}
+
+function fileExt(name) {
+  var m = /\.([a-z0-9]+)$/i.exec(String(name || ""));
+  return m ? m[1].toLowerCase() : "";
+}
+
+function isValidDocFile(file) {
+  var ext = fileExt(file && file.name);
+  return ext === "docx" || ext === "pdf" || ext === "xlsx";
+}
+
+function formatSeconds(s) {
+  if (typeof s !== "number" || isNaN(s)) return "";
+  if (s < 60) return (Math.round(s * 10) / 10).toString().replace(".", ",") + "s";
+  var m = Math.floor(s / 60);
+  var r = Math.round(s % 60);
+  return m + "min " + r + "s";
+}
+
+function pad2(n) { return n < 10 ? "0" + n : String(n); }
+
+function iconForExt(ext) {
+  if (ext === "pdf") return "page";
+  if (ext === "xlsx") return "sheet";
+  return "doc";
+}
+
+/* ------------------------------------------------------------
+   Tema (dark/light)
+   ------------------------------------------------------------ */
+function initTheme() {
+  var saved = null;
+  try { saved = localStorage.getItem("compare-docs-theme"); } catch (e) { /* storage indisponível */ }
+  var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  state.theme = saved === "dark" || saved === "light" ? saved : (prefersDark ? "dark" : "light");
+  applyTheme();
+}
+
+function applyTheme() {
+  document.documentElement.setAttribute("data-theme", state.theme);
+  var icon = $("theme-icon");
+  icon.textContent = "";
+  icon.appendChild(svgIcon(state.theme === "dark" ? "sun" : "moon", 16));
+  $("theme-label").textContent = state.theme === "dark" ? "Tema claro" : "Tema escuro";
+}
+
+function toggleTheme() {
+  state.theme = state.theme === "dark" ? "light" : "dark";
+  try { localStorage.setItem("compare-docs-theme", state.theme); } catch (e) { /* ok */ }
+  applyTheme();
+}
+
+/* ------------------------------------------------------------
+   Toasts
+   ------------------------------------------------------------ */
+function toast(message, kind) {
+  var closeBtn = el("button", { class: "t-close", "aria-label": "Fechar aviso", onclick: dismiss });
+  closeBtn.appendChild(svgIcon("x", 12));
+  var box = el("div", { class: "toast " + (kind || "info"), role: "alert" },
+    el("span", { text: message }), closeBtn);
+  function dismiss() {
+    box.classList.add("leaving");
+    setTimeout(function () { if (box.parentNode) box.parentNode.removeChild(box); }, 280);
+  }
+  $("toasts").appendChild(box);
+  setTimeout(dismiss, 5000);
+}
+
+/* ------------------------------------------------------------
+   Navegação entre views (sidebar)
+   ------------------------------------------------------------ */
+var VIEW_HASH = { compare: "#comparar", batch: "#lote", history: "#historico", plans: "#planos", account: "#conta" };
+var VALID_VIEWS = ["compare", "batch", "history", "plans", "account"];
+
+function showView(view) {
+  if (VALID_VIEWS.indexOf(view) === -1) view = "compare";
+  state.view = view;
+  if (view === "compare") state.activeTab = "single";
+  if (view === "batch") state.activeTab = "batch";
+
+  ["compare", "batch", "history", "plans"].forEach(function (v) {
+    var nav = $("nav-" + v);
+    nav.classList.toggle("active", v === view);
+    if (v === view) nav.setAttribute("aria-current", "page");
+    else nav.removeAttribute("aria-current");
+  });
+  $("side-account").classList.toggle("active", view === "account");
+  applyViewVisibility();
+  closeMenus();
+
+  if (view === "history") loadHistory(state.history.loaded);
+  else updateCompareButton();
+  if (view === "plans") renderPlansView();
+  if (view === "account") { renderAccountView(); refreshLicense(); loadBranding(); }
+
+  try {
+    if (window.location.hash !== VIEW_HASH[view]) {
+      window.history.replaceState(null, "", VIEW_HASH[view]);
+    }
+  } catch (e) { /* file:// etc. */ }
+}
+
+function applyViewVisibility() {
+  var inJob = state.job.phase === "running" || state.job.phase === "done";
+  var idle = !inJob;
+  var inCompareFlow = state.view === "compare" || state.view === "batch";
+
+  $("view-compare").hidden = !idle || state.view !== "compare";
+  $("view-batch").hidden = !idle || state.view !== "batch";
+  $("view-history").hidden = state.view !== "history";
+  $("view-plans").hidden = state.view !== "plans";
+  $("view-account").hidden = state.view !== "account";
+  $("compare-flow").hidden = !inCompareFlow;
+  $("compare-setup").hidden = inJob || !inCompareFlow;
+  $("job-running").hidden = state.job.phase !== "running" || !inCompareFlow;
+  $("job-done").hidden = state.job.phase !== "done" || !inCompareFlow;
+}
+
+function startNewCompare() {
+  resetJobView();
+  state.job.status = null;
+  state.job.lastJobId = null;
+  setJobPhase("idle");
+  updateCompareButton();
+  showView(state.activeTab === "batch" ? "batch" : "compare");
+}
+
+function setJobPhase(phase) {
+  state.job.phase = phase;
+  applyViewVisibility();
+  if (phase === "idle") {
+    $("job-done-body").textContent = "";
+    $("job-batch-summary").hidden = true;
+  }
+}
+
+function viewFromHash() {
+  var h = String(window.location.hash || "");
+  if (h === "#lote") return "batch";
+  if (h === "#historico") return "history";
+  if (h === "#planos") return "plans";
+  if (h === "#conta") return "account";
+  return "compare";
+}
+
+/* ------------------------------------------------------------
+   Dropzones (arquivo único)
+   ------------------------------------------------------------ */
+function renderDropzone(side) {
+  var dz = $(side === "base" ? "dz-base" : "dz-compare");
+  var body = $(side === "base" ? "dz-base-body" : "dz-compare-body");
+  var file = side === "base" ? state.single.baseFile : state.single.compareFile;
+  var error = state.single.errors[side];
+
+  dz.classList.toggle("filled", !!file);
+  dz.classList.toggle("has-error", !!error);
+  body.textContent = "";
+
+  if (error) {
+    var eIco = el("div", { class: "dz-ico" }); eIco.appendChild(svgIcon("warn", 28));
+    body.appendChild(el("div", { class: "dz-empty" },
+      eIco,
+      el("p", { text: "Arquivo não aceito" }),
+      el("div", { class: "dz-error-msg", text: error }),
+      el("small", { text: "Tente novamente com .docx, .pdf ou .xlsx" })
+    ));
+    return;
+  }
+  if (!file) {
+    var ico = el("div", { class: "dz-ico" }); ico.appendChild(svgIcon("upload", 28));
+    body.appendChild(el("div", { class: "dz-empty" },
+      ico,
+      el("p", { text: "Arraste o arquivo aqui" }),
+      el("small", { text: "ou clique para selecionar (.docx, .pdf, .xlsx)" })
+    ));
+    return;
+  }
+  var ext = fileExt(file.name);
+  var icoClass = ext === "pdf" ? "pdf" : (ext === "xlsx" ? "xlsx" : "docx");
+  var fileIco = el("div", { class: "file-ico " + icoClass, "aria-hidden": "true" });
+  fileIco.appendChild(svgIcon(iconForExt(ext), 18));
+  var removeBtn = el("button", {
+    class: "dz-remove", "aria-label": "Remover arquivo " + file.name, title: "Remover",
+    onclick: function (ev) { ev.stopPropagation(); setFile(side, null); }
+  });
+  removeBtn.appendChild(svgIcon("x", 12));
+  body.appendChild(el("div", { class: "dz-file" },
+    fileIco,
+    el("div", { class: "dz-file-meta" },
+      el("div", { class: "name", text: file.name, title: file.name }),
+      el("div", { class: "size", text: formatBytes(file.size) })
+    ),
+    removeBtn
+  ));
+}
+
+function setFile(side, file) {
+  if (file && !isValidDocFile(file)) {
+    state.single.errors[side] = "Formato não suportado: use .docx, .pdf ou .xlsx.";
+    if (side === "base") state.single.baseFile = null; else state.single.compareFile = null;
+  } else {
+    state.single.errors[side] = null;
+    if (side === "base") state.single.baseFile = file; else state.single.compareFile = file;
+  }
+  renderDropzone(side);
+  updateCompareButton();
+}
+
+function setupDropzone(side) {
+  var dz = $(side === "base" ? "dz-base" : "dz-compare");
+  var input = $(side === "base" ? "file-base" : "file-compare");
+
+  dz.addEventListener("click", function () { input.click(); });
+  dz.addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); input.click(); }
+  });
+  input.addEventListener("change", function () {
+    if (input.files && input.files.length > 0) setFile(side, input.files[0]);
+    input.value = "";
+  });
+  ["dragenter", "dragover"].forEach(function (evName) {
+    dz.addEventListener(evName, function (ev) {
+      ev.preventDefault(); ev.stopPropagation();
+      dz.classList.add("dragover");
+    });
+  });
+  ["dragleave", "drop"].forEach(function (evName) {
+    dz.addEventListener(evName, function (ev) {
+      ev.preventDefault(); ev.stopPropagation();
+      dz.classList.remove("dragover");
+    });
+  });
+  dz.addEventListener("drop", function (ev) {
+    var files = ev.dataTransfer && ev.dataTransfer.files;
+    if (files && files.length > 0) setFile(side, files[0]);
+  });
+}
+
+/* ------------------------------------------------------------
+   Dropzones (pastas — lote)
+   ------------------------------------------------------------ */
+function getDirInput(side) {
+  return $(side === "base" ? "dir-base" : "dir-compare");
+}
+
+function getDirPath(side) {
+  return getDirInput(side).value.trim();
+}
+
+function setDirPath(side, path) {
+  getDirInput(side).value = path || "";
+  clearBatchPreview();
+  renderFolderDropzone(side);
+  updateCompareButton();
+}
+
+function basenameDir(path) {
+  if (!path) return "";
+  var clean = path.replace(/[\\/]+$/, "");
+  var parts = clean.split(/[\\/]/);
+  return parts[parts.length - 1] || clean;
+}
+
+function fileUriToPath(uri) {
+  if (!uri) return "";
+  var raw = uri.split("\n")[0].trim();
+  if (raw.indexOf("file://") !== 0) return raw;
+  try {
+    return decodeURIComponent(raw.replace(/^file:\/\//, ""));
+  } catch (e) {
+    return raw.replace(/^file:\/\//, "");
+  }
+}
+
+function pathFromFolderDrop(ev) {
+  var dt = ev.dataTransfer;
+  if (!dt) return null;
+
+  if (dt.files && dt.files.length === 1) {
+    var file = dt.files[0];
+    if (file.path) return file.path;
+    if (file.name && !file.size && file.type === "") return file.name;
+  }
+
+  var uri = dt.getData("text/uri-list") || dt.getData("text/plain");
+  if (uri && uri.indexOf("file://") === 0) return fileUriToPath(uri);
+
+  if (dt.items && dt.items.length === 1 && dt.items[0].webkitGetAsEntry) {
+    var entry = dt.items[0].webkitGetAsEntry();
+    if (entry && entry.isDirectory && entry.fullPath) {
+      toast("Arraste a pasta no app desktop para usar o caminho automaticamente.", "error");
+    }
+  }
+  return null;
+}
+
+function renderFolderDropzone(side) {
+  var dz = $(side === "base" ? "dz-dir-base" : "dz-dir-compare");
+  var body = $(side === "base" ? "dz-dir-base-body" : "dz-dir-compare-body");
+  var path = getDirPath(side);
+  var error = state.batch.errors[side];
+
+  dz.classList.toggle("filled", !!path);
+  dz.classList.toggle("has-error", !!error);
+  body.textContent = "";
+
+  if (error) {
+    var eIco = el("div", { class: "dz-ico" }); eIco.appendChild(svgIcon("warn", 28));
+    body.appendChild(el("div", { class: "dz-empty" },
+      eIco,
+      el("p", { text: "Pasta inválida" }),
+      el("div", { class: "dz-error-msg", text: error }),
+      el("small", { text: "Selecione uma pasta existente no explorador" })
+    ));
+    return;
+  }
+  if (!path) {
+    var ico = el("div", { class: "dz-ico" }); ico.appendChild(svgIcon("folder", 28));
+    body.appendChild(el("div", { class: "dz-empty" },
+      ico,
+      el("p", { text: "Arraste a pasta aqui" }),
+      el("small", { text: "ou clique para abrir o explorador de arquivos" })
+    ));
+    return;
+  }
+  var fIco = el("div", { class: "file-ico folder", "aria-hidden": "true" });
+  fIco.appendChild(svgIcon("folder", 18));
+  var removeBtn = el("button", {
+    class: "dz-remove", "aria-label": "Remover pasta " + basenameDir(path), title: "Remover",
+    onclick: function (ev) { ev.stopPropagation(); setDirPath(side, ""); }
+  });
+  removeBtn.appendChild(svgIcon("x", 12));
+  body.appendChild(el("div", { class: "dz-file" },
+    fIco,
+    el("div", { class: "dz-file-meta" },
+      el("div", { class: "name", text: basenameDir(path), title: path }),
+      el("div", { class: "size", text: path })
+    ),
+    removeBtn
+  ));
+}
+
+function pickFolderNative(initialDir, prompt) {
+  prompt = prompt || "Selecionar pasta";
+  function viaApi() {
+    return fetch("/api/pick-folder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ initial_dir: initialDir || null, prompt: prompt })
+    }).then(function (res) {
+      if (res.status === 204) return null;
+      if (!res.ok) {
+        return res.json().catch(function () { return {}; }).then(function (data) {
+          throw new Error(extractErrorMsg(data) || "Não foi possível abrir o explorador de arquivos.");
+        });
+      }
+      return res.json();
+    }).then(function (data) { return data && data.path ? data.path : null; });
+  }
+
+  if (window.pywebview && window.pywebview.api && window.pywebview.api.pick_folder) {
+    return Promise.resolve(window.pywebview.api.pick_folder(initialDir || ""))
+      .then(function (path) { return path || null; })
+      .catch(function () { return viaApi(); });
+  }
+  return viaApi();
+}
+
+function browseFolder(side) {
+  pickFolderNative(getDirPath(side), side === "base" ? "Pasta base (originais)" : "Pasta revisada")
+    .then(function (path) {
+      if (path) {
+        state.batch.errors[side] = null;
+        setDirPath(side, path);
+      }
+    })
+    .catch(function (err) {
+      toast(err.message || "Erro ao abrir o explorador de arquivos.", "error");
+    });
+}
+
+function setupFolderDropzone(side) {
+  var dz = $(side === "base" ? "dz-dir-base" : "dz-dir-compare");
+
+  dz.addEventListener("click", function () { browseFolder(side); });
+  dz.addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); browseFolder(side); }
+  });
+  ["dragenter", "dragover"].forEach(function (evName) {
+    dz.addEventListener(evName, function (ev) {
+      ev.preventDefault(); ev.stopPropagation();
+      dz.classList.add("dragover");
+    });
+  });
+  ["dragleave", "drop"].forEach(function (evName) {
+    dz.addEventListener(evName, function (ev) {
+      ev.preventDefault(); ev.stopPropagation();
+      dz.classList.remove("dragover");
+    });
+  });
+  dz.addEventListener("drop", function (ev) {
+    var path = pathFromFolderDrop(ev);
+    if (path) {
+      state.batch.errors[side] = null;
+      setDirPath(side, path);
+      return;
+    }
+    toast("Não foi possível usar essa pasta. Clique para abrir o explorador.", "error");
+  });
+}
+
+function swapSingle() {
+  var tmp = state.single.baseFile;
+  state.single.baseFile = state.single.compareFile;
+  state.single.compareFile = tmp;
+  var tmpErr = state.single.errors.base;
+  state.single.errors.base = state.single.errors.compare;
+  state.single.errors.compare = tmpErr;
+  animateSwap($("btn-swap-single"));
+  renderDropzone("base");
+  renderDropzone("compare");
+  updateCompareButton();
+}
+
+function swapBatch() {
+  var a = getDirPath("base"), b = getDirPath("compare");
+  setDirPath("base", b);
+  setDirPath("compare", a);
+  var tmpErr = state.batch.errors.base;
+  state.batch.errors.base = state.batch.errors.compare;
+  state.batch.errors.compare = tmpErr;
+  animateSwap($("btn-swap-batch"));
+  updateCompareButton();
+}
+
+function animateSwap(btn) {
+  btn.classList.remove("spinning");
+  void btn.offsetWidth; /* reinicia a animação */
+  btn.classList.add("spinning");
+}
+/* ------------------------------------------------------------
+   Opções
+   ------------------------------------------------------------ */
+function collectOptions() {
+  var reports = [];
+  if ($("opt-report").checked) {
+    if ($("opt-report-html").checked) reports.push("html");
+    if ($("opt-report-xlsx").checked) reports.push("xlsx");
+    if ($("opt-report-json").checked) reports.push("json");
+  }
+  var outDir = $("opt-outdir").value.trim();
+  return {
+    changed_pages_only: $("opt-changed-pages").checked,
+    export_docx: $("opt-docx").checked,
+    exec_summary: $("opt-exec-summary").checked,
+    reports: reports,
+    output_dir: outDir === "" ? null : outDir
+  };
+}
+
+/* ------------------------------------------------------------
+   Botão Comparar — habilitação
+   ------------------------------------------------------------ */
+function updateCompareButton() {
+  var btn = $("btn-compare");
+  var note = $("compare-note");
+  var running = state.job.status === "running";
+  var ready;
+  btn.textContent = "";
+  if (state.activeTab === "single") {
+    ready = !!(state.single.baseFile && state.single.compareFile);
+    btn.appendChild(document.createTextNode("Comparar"));
+    note.textContent = running ? "Comparação em andamento…"
+      : ready ? "Pronto para comparar." : "Selecione o documento base e o revisado para começar.";
+    btn.disabled = !ready || running;
+  } else {
+    ready = $("dir-base").value.trim() !== "" && $("dir-compare").value.trim() !== "";
+    if (state.batch.previewLoading) {
+      var sp = el("span", { class: "spin", "aria-hidden": "true" });
+      sp.appendChild(svgIcon("spinner", 14));
+      btn.appendChild(sp);
+      btn.appendChild(document.createTextNode("Carregando pares…"));
+    } else {
+      btn.appendChild(document.createTextNode("Ver pares"));
+    }
+    note.textContent = running ? "Comparação em andamento…"
+      : state.batch.previewLoading ? "Analisando as duas pastas…"
+      : ready ? "Veja a prévia dos pares antes de processar o lote." : "Selecione as duas pastas para começar.";
+    btn.disabled = !ready || running || state.batch.previewLoading;
+  }
+  renderBatchPreview();
+}
+
+/* ------------------------------------------------------------
+   Envio da comparação
+   ------------------------------------------------------------ */
+function startCompare() {
+  if (state.activeTab === "batch") {
+    /* No lote, o CTA vira "Ver pares": mostra a prévia antes de processar. */
+    loadBatchPreview();
+    return;
+  }
+  var options = collectOptions();
+  if ($("opt-report").checked && options.reports.length === 0) {
+    toast("Selecione ao menos um formato de relatório (HTML, Excel ou JSON).", "error");
+    return;
+  }
+  submitSingle(options);
+}
+
+function submitSingle(options) {
+  var fd = new FormData();
+  fd.append("base_file", state.single.baseFile);
+  fd.append("compare_file", state.single.compareFile);
+  fd.append("options", JSON.stringify(options));
+  postJob("/api/compare/single", { method: "POST", body: fd });
+}
+
+function submitBatch(options) {
+  var payload = {
+    base_dir: $("dir-base").value.trim(),
+    compare_dir: $("dir-compare").value.trim(),
+    options: options
+  };
+  postJob("/api/compare/batch", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+}
+
+/* ------------------------------------------------------------
+   Prévia dos pares do lote (POST /api/batch/preview)
+   ------------------------------------------------------------ */
+function clearBatchPreview() {
+  state.batch.previewSeq += 1;   /* descarta respostas em voo */
+  state.batch.preview = null;
+  state.batch.previewLoading = false;
+}
+
+function loadBatchPreview() {
+  var baseDir = getDirPath("base");
+  var compareDir = getDirPath("compare");
+  if (!baseDir || !compareDir || state.batch.previewLoading) return;
+  state.batch.previewSeq += 1;
+  var seq = state.batch.previewSeq;
+  state.batch.preview = null;
+  state.batch.previewLoading = true;
+  updateCompareButton();
+
+  fetch("/api/batch/preview", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ base_dir: baseDir, compare_dir: compareDir })
+  }).then(function (res) {
+    if (!res.ok) {
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        throw new Error(extractErrorMsg(data) || "Não foi possível gerar a prévia dos pares (HTTP " + res.status + ").");
+      });
+    }
+    return res.json();
+  }).then(function (data) {
+    if (seq !== state.batch.previewSeq) return; /* pastas mudaram durante a chamada */
+    state.batch.previewLoading = false;
+    state.batch.preview = {
+      pairs: (data && data.pairs) || [],
+      unmatched_base: (data && data.unmatched_base) || [],
+      unmatched_compare: (data && data.unmatched_compare) || []
+    };
+    updateCompareButton();
+  }).catch(function (err) {
+    if (seq !== state.batch.previewSeq) return;
+    state.batch.previewLoading = false;
+    updateCompareButton();
+    toast(err.message || "Erro de rede ao gerar a prévia dos pares.", "error");
+  });
+}
+
+function buildMethodBadge(method) {
+  var m = String(method || "nome");
+  var cls = "m-nome";
+  var tip = "pareado pelo nome do arquivo";
+  if (m === "similaridade") { cls = "m-similaridade"; tip = "pareado por similaridade do nome"; }
+  else if (m === "conteúdo" || m === "conteudo") { cls = "m-conteudo"; tip = "pareado pelo texto do documento"; }
+  return el("span", { class: "method-badge " + cls, title: tip, text: m });
+}
+
+function buildPairRow(p) {
+  var row = el("div", { class: "pair-row" });
+  var baseName = p.base_name || basename(p.base) || "?";
+  var compName = p.compare_name || basename(p.compare) || "?";
+  var ico = el("span", { class: "pair-ico", "aria-hidden": "true" });
+  ico.appendChild(svgIcon(iconForExt(fileExt(compName || baseName)), 15));
+  row.appendChild(ico);
+  var names = el("span", { class: "pair-names", title: baseName + " → " + compName });
+  names.appendChild(document.createTextNode(baseName));
+  names.appendChild(el("span", { class: "pair-arrow", "aria-hidden": "true", text: "→" }));
+  names.appendChild(document.createTextNode(compName));
+  row.appendChild(names);
+  row.appendChild(buildMethodBadge(p.method));
+  return row;
+}
+
+function buildUnmatchedLine(label, names) {
+  return el("div", { class: "u-side" },
+    el("b", { text: label + ": " }),
+    document.createTextNode(names.join(", ")));
+}
+
+function processBatchPreview() {
+  var options = collectOptions();
+  if ($("opt-report").checked && options.reports.length === 0) {
+    toast("Selecione ao menos um formato de relatório (HTML, Excel ou JSON).", "error");
+    return;
+  }
+  clearBatchPreview();
+  submitBatch(options);
+}
+
+function renderBatchPreview() {
+  var host = $("batch-preview-host");
+  if (!host) return;
+  var preview = state.batch.preview;
+  var show = state.activeTab === "batch" && !!preview;
+  $("compare-actions").hidden = show;
+  host.hidden = !show;
+  host.textContent = "";
+  if (!show) return;
+
+  var pairs = preview.pairs || [];
+  var ub = preview.unmatched_base || [];
+  var uc = preview.unmatched_compare || [];
+  var card = el("section", { class: "card batch-preview-card" });
+  var h2 = el("h2", {}, "Prévia dos pares");
+  var unmatchedCount = ub.length + uc.length;
+  h2.appendChild(el("span", {
+    class: "sub",
+    text: pairs.length + (pairs.length === 1 ? " par" : " pares") +
+      (unmatchedCount ? " · " + unmatchedCount + " sem correspondência" : "")
+  }));
+  card.appendChild(h2);
+
+  if (pairs.length) {
+    var list = el("div", { class: "pairs-list" });
+    pairs.forEach(function (p) { list.appendChild(buildPairRow(p)); });
+    card.appendChild(list);
+  } else {
+    card.appendChild(el("div", {
+      class: "changes-empty",
+      text: "Nenhum arquivo pareou entre as duas pastas. Verifique se os nomes são semelhantes nos dois lados ou se as pastas estão corretas."
+    }));
+  }
+
+  if (ub.length || uc.length) {
+    var box = el("div", { class: "unmatched-box" });
+    box.appendChild(el("h3", { text: "Sem correspondência" }));
+    if (ub.length) box.appendChild(buildUnmatchedLine("Pasta base", ub));
+    if (uc.length) box.appendChild(buildUnmatchedLine("Pasta revisada", uc));
+    card.appendChild(box);
+  }
+
+  var foot = el("div", { class: "preview-foot" });
+  if (pairs.length) {
+    foot.appendChild(el("button", {
+      class: "btn-primary", type: "button",
+      onclick: processBatchPreview
+    }, "Processar " + pairs.length + (pairs.length === 1 ? " par" : " pares")));
+  }
+  foot.appendChild(el("button", {
+    class: "btn", type: "button",
+    onclick: function () { clearBatchPreview(); updateCompareButton(); }
+  }, "Cancelar"));
+  card.appendChild(foot);
+  host.appendChild(card);
+}
+
+function postJob(url, init) {
+  resetJobView();
+  state.job.status = "running";
+  state.job.startedAt = Date.now();
+  updateCompareButton();
+  setJobPhase("running");
+  $("job-running-title").textContent = "Enviando…";
+  $("job-running-sub").textContent = "";
+  $("job-running-count").textContent = "";
+  $("job-running-fill").classList.add("indeterminate");
+  $("job-running-fill").style.width = "";
+
+  fetch(url, init).then(function (res) {
+    if (!res.ok) {
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        var err = new Error(extractErrorMsg(data) || (res.status === 402
+          ? "Comparações bloqueadas — ative uma licença para continuar."
+          : "Falha ao iniciar a comparação (HTTP " + res.status + ")."));
+        if (res.status === 402) err.licenseBlocked = true;
+        throw err;
+      });
+    }
+    return res.json();
+  }).then(function (data) {
+    if (!data || !data.job_id) throw new Error("Resposta inesperada do servidor: job_id ausente.");
+    state.job.id = data.job_id;
+    state.job.pollFailures = 0;
+    $("job-running-title").textContent = "Comparando documentos…";
+    schedulePoll();
+  }).catch(function (err) {
+    state.job.status = null;
+    setJobPhase("idle");
+    updateCompareButton();
+    toast(err.message || "Erro de rede ao iniciar a comparação.", "error");
+    if (err.licenseBlocked) {
+      refreshLicense();
+      openActivateModal();
+    }
+  });
+}
+
+function extractErrorMsg(data) {
+  if (!data) return null;
+  if (typeof data.detail === "string") return data.detail;
+  if (typeof data.error === "string") return data.error;
+  if (data.detail && data.detail.length && data.detail[0] && data.detail[0].msg) return data.detail[0].msg;
+  return null;
+}
+
+function resetJobView() {
+  if (state.job.timer) { clearTimeout(state.job.timer); state.job.timer = null; }
+  state.job.id = null;
+  state.job.finishedJob = null;
+  state.job.selectedIndex = 0;
+  state.viewers = {};
+  state.insights = {};
+  $("job-done-body").textContent = "";
+  $("job-done-stats").textContent = "";
+  $("job-done-actions").textContent = "";
+  $("job-batch-summary").hidden = true;
+  $("job-running-fill").style.width = "0%";
+  $("job-running-fill").classList.remove("indeterminate");
+  $("job-running-bar").setAttribute("aria-valuenow", "0");
+  $("job-running-count").textContent = "";
+  $("job-running-sub").textContent = "";
+}
+
+/* ------------------------------------------------------------
+   Preview do documento (render_blocks → canvas HTML)
+   ------------------------------------------------------------ */
+var PREVIEW_BLOCK_BATCH = 80;
+
+function escapeHtml(text) {
+  return String(text || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function applyPageLayout(page, layout) {
+  if (!layout) return;
+  if (layout.font_family) {
+    page.style.fontFamily = '"' + layout.font_family + '", "Times New Roman", Times, serif';
+  }
+  if (layout.font_size_pt) page.style.fontSize = layout.font_size_pt + "pt";
+  if (layout.line_height) page.style.lineHeight = String(layout.line_height);
+}
+
+function applyBlockLayout(node, rb) {
+  if (!rb) return;
+  if (rb.style_name) node.setAttribute("data-style", rb.style_name);
+  if (rb.align) node.setAttribute("data-align", rb.align);
+  var s = node.style;
+  if (rb.indent_left_pt != null) s.paddingLeft = rb.indent_left_pt + "pt";
+  if (rb.indent_right_pt != null) s.paddingRight = rb.indent_right_pt + "pt";
+  if (rb.indent_first_pt != null) s.textIndent = rb.indent_first_pt + "pt";
+  if (rb.space_before_pt != null) s.marginTop = rb.space_before_pt + "pt";
+  if (rb.space_after_pt != null) s.marginBottom = rb.space_after_pt + "pt";
+}
+
+function buildPreviewLegend(className) {
+  var cls = className || "doc-preview-legend";
+  return el("div", { class: cls },
+    el("span", {}, el("span", { class: "mark-ins", text: "inserido" })),
+    el("span", {}, el("span", { class: "mark-del", text: "removido" })),
+    el("span", {}, el("span", { class: "mark-fmt", text: "formatação" })),
+    el("span", { text: "↦ movido" })
+  );
+}
+
+function applyInlineStyle(inner, frag) {
+  if (frag.bold && !isBoldFontName(frag.font_name)) inner = "<strong>" + inner + "</strong>";
+  if (frag.italic && !/\bItalic\b/i.test(frag.font_name || "")) inner = "<em>" + inner + "</em>";
+  if (frag.underline) inner = "<u>" + inner + "</u>";
+  if (frag.strike) inner = "<s>" + inner + "</s>";
+  return inner;
+}
+
+function isBoldFontName(name) {
+  return !!(name && /\bBold\b/i.test(name));
+}
+
+function fragmentHtml(frag, blockType) {
+  var text = escapeHtml(frag.text || "");
+  if (!text) return "";
+  var op = frag.op || "equal";
+  if (op === "equal") {
+    if (blockType === "insert") op = "insert";
+    else if (blockType === "delete") op = "delete";
+  }
+  var inner = applyInlineStyle(text, frag);
+  if (op === "insert") return wrapFragmentStyle('<span class="mark-ins">' + inner + "</span>", frag);
+  if (op === "delete") return wrapFragmentStyle('<span class="mark-del">' + inner + "</span>", frag);
+  if (op === "format") return wrapFragmentStyle('<span class="mark-fmt">' + inner + "</span>", frag);
+  return wrapFragmentStyle(inner, frag);
+}
+
+function wrapFragmentStyle(html, frag) {
+  if (!frag || (!frag.font_name && frag.font_size_pt == null)) return html;
+  var parts = [];
+  if (frag.font_name) parts.push('font-family:"' + frag.font_name + '",serif');
+  if (frag.font_size_pt != null) parts.push("font-size:" + frag.font_size_pt + "pt");
+  return '<span style="' + parts.join(";") + '">' + html + "</span>";
+}
+
+function blockHasFormatMarks(rb) {
+  return (rb.fragments || []).some(function (f) { return f.op === "format"; });
+}
+
+function blockClassNames(rb) {
+  var ct = rb.change_type || "equal";
+  var cat = rb.category || "";
+  var cls = ["doc-block"];
+  if (ct === "insert") cls.push("block-ins");
+  else if (ct === "delete") cls.push("block-del");
+  else if (ct === "move" || ct === "move_modify") cls.push("block-move");
+  if (cat === "formatting") {
+    cls.push("block-fmt");
+    if (blockHasFormatMarks(rb)) cls.push("block-has-fmt-marks");
+  }
+  return cls.join(" ");
+}
+
+function renderPreviewBlock(rb) {
+  var kind = rb.kind || "paragraph";
+  var attrs = { class: blockClassNames(rb) };
+  if (rb.change_id != null) attrs["data-change-id"] = String(rb.change_id);
+  if (kind === "list_item") attrs.class += " doc-list-item";
+
+  if (kind === "table") {
+    var table = el("table");
+    var tbody = document.createElement("tbody");
+    (rb.rows || []).forEach(function (row, ri) {
+      var tr = document.createElement("tr");
+      var rowOp = (rb.row_ops && rb.row_ops[ri]) || "equal";
+      row.forEach(function (cellFrags) {
+        var td = document.createElement("td");
+        if (rowOp === "insert") td.className = "cell-ins";
+        else if (rowOp === "delete") td.className = "cell-del";
+        var html = (cellFrags || []).map(function (f) {
+          return fragmentHtml(f, rowOp === "equal" ? rb.change_type : rowOp);
+        }).join("");
+        td.innerHTML = html || " ";
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    var wrap = el("div", attrs);
+    wrap.appendChild(table);
+    applyBlockLayout(wrap, rb);
+    return wrap;
+  }
+
+  if (kind === "image") {
+    var labels = {
+      insert: "Imagem inserida", delete: "Imagem removida", modify: "Imagem alterada",
+      move: "Imagem movida", move_modify: "Imagem movida e alterada"
+    };
+    var label = labels[rb.change_type] || "Imagem";
+    var imgWrap = el("div", attrs, el("div", { class: "img-ph", text: label }));
+    applyBlockLayout(imgWrap, rb);
+    return imgWrap;
+  }
+
+  var html = (rb.fragments || []).map(function (f) { return fragmentHtml(f, rb.change_type); }).join("");
+  if (rb.change_type === "move" || rb.change_type === "move_modify") {
+    html = '<span class="mark-move">↦ </span>' + html;
+  }
+  if (!html) html = "&nbsp;";
+
+  if (kind === "heading") {
+    var level = Math.min(Math.max(rb.level || 1, 1), 3);
+    var h = document.createElement("h" + level);
+    h.innerHTML = html;
+    var box = el("div", attrs);
+    box.appendChild(h);
+    applyBlockLayout(box, rb);
+    return box;
+  }
+  if (kind === "list_item") {
+    var li = document.createElement("li");
+    li.innerHTML = html;
+    var ul = el("ul");
+    ul.appendChild(li);
+    var box2 = el("div", attrs);
+    box2.appendChild(ul);
+    applyBlockLayout(box2, rb);
+    return box2;
+  }
+  var p = document.createElement("p");
+  p.innerHTML = html;
+  var box3 = el("div", attrs);
+  box3.appendChild(p);
+  applyBlockLayout(box3, rb);
+  return box3;
+}
+
+function buildDocPreviewPanel(data, viewerKey) {
+  var blocks = (data && data.render_blocks) || [];
+  var wrap = el("div", { class: "doc-preview-wrap" });
+  var head = el("div", { class: "doc-preview-head" });
+  head.appendChild(buildPreviewLegend());
+  wrap.appendChild(head);
+
+  if (!blocks.length) {
+    wrap.appendChild(el("div", { class: "doc-preview-empty", text: "Visualização inline disponível para DOCX e PDF. Abra o PDF ou Excel redline gerado." }));
+    return wrap;
+  }
+
+  var scroll = el("div", { class: "doc-preview-scroll" });
+  var page = el("article", { class: "doc-page", id: "doc-page-" + viewerKey.replace(/[^a-z0-9]/gi, "") });
+  applyPageLayout(page, data.preview_layout);
+  scroll.appendChild(page);
+  wrap.appendChild(scroll);
+
+  var shown = 0;
+  function appendBatch() {
+    var end = Math.min(shown + PREVIEW_BLOCK_BATCH, blocks.length);
+    for (var i = shown; i < end; i++) {
+      page.appendChild(renderPreviewBlock(blocks[i]));
+    }
+    shown = end;
+    var moreBtn = wrap.querySelector(".doc-preview-more");
+    if (shown < blocks.length) {
+      if (!moreBtn) {
+        moreBtn = el("button", { class: "doc-preview-more", type: "button" }, "Carregar mais… (" + (blocks.length - shown) + " blocos)");
+        moreBtn.addEventListener("click", appendBatch);
+        scroll.appendChild(moreBtn);
+      } else {
+        moreBtn.textContent = "Carregar mais… (" + (blocks.length - shown) + " blocos)";
+      }
+    } else if (moreBtn) {
+      moreBtn.parentNode.removeChild(moreBtn);
+    }
+  }
+  appendBatch();
+  return wrap;
+}
+
+function highlightPreviewChange(viewerKey, changeId) {
+  var page = document.getElementById("doc-page-" + String(viewerKey).replace(/[^a-z0-9]/gi, ""));
+  if (!page) return;
+  page.querySelectorAll(".doc-block.highlight").forEach(function (n) { n.classList.remove("highlight"); });
+  if (changeId == null) return;
+  var target = page.querySelector('[data-change-id="' + changeId + '"]');
+  if (target) {
+    target.classList.add("highlight");
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+
+function ensureViewerData(viewerKey, loadFn) {
+  var key = String(viewerKey);
+  if (state.viewers[key] && state.viewers[key].data) {
+    return Promise.resolve(state.viewers[key].data);
+  }
+  return loadFn().then(function (result) {
+    state.viewers[key] = {
+      data: result,
+      cats: activeSetAll(CAT_GROUPS, "key"),
+      types: activeSetAll(TYPE_GROUPS, "key"),
+      search: ""
+    };
+    return result;
+  });
+}
+
+function renderDetailTabBody(viewerKey, tab, bodyEl, ctx) {
+  bodyEl.textContent = "";
+  var key = String(viewerKey);
+  if (tab === "visual") {
+    var viewer = state.viewers[key];
+    if (!viewer || !viewer.data) {
+      bodyEl.appendChild(el("div", { class: "hist-detail-loading", text: "Carregando documento…" }));
+      ctx.load().then(function () {
+        if (bodyEl.parentNode) renderDetailTabBody(viewerKey, "visual", bodyEl, ctx);
+      }).catch(function (err) {
+        bodyEl.textContent = "";
+        bodyEl.appendChild(el("div", { class: "changes-empty", text: err.message || "Erro ao carregar." }));
+      });
+      return;
+    }
+    bodyEl.appendChild(buildDocPreviewPanel(viewer.data, key));
+    return;
+  }
+  if (tab === "list") {
+    if (!state.viewers[key] || !state.viewers[key].data) {
+      bodyEl.appendChild(el("div", { class: "hist-detail-loading", text: "Carregando mudanças…" }));
+      ctx.load().then(function () {
+        if (bodyEl.parentNode) renderDetailTabBody(viewerKey, "list", bodyEl, ctx);
+      }).catch(function (err) {
+        bodyEl.textContent = "";
+        bodyEl.appendChild(el("div", { class: "changes-empty", text: err.message || "Erro ao carregar." }));
+      });
+      return;
+    }
+    var listPanel = buildChangesPanel(viewerKey);
+    bodyEl.appendChild(listPanel);
+    listPanel.querySelectorAll(".change-item").forEach(function (item) {
+      item.style.cursor = "pointer";
+      item.title = "Clique para localizar no documento";
+      item.addEventListener("click", function () {
+        var id = item.getAttribute("data-change-id");
+        if (id) highlightPreviewChange(key, id);
+      });
+    });
+    return;
+  }
+  if (tab === "ai") {
+    if (state.insights[key]) {
+      bodyEl.appendChild(buildInsightsPanel(state.insights[key]));
+      return;
+    }
+    bodyEl.appendChild(el("div", { class: "hist-detail-loading", text: "Gerando análise…" }));
+    ctx.loadInsights().then(function (data) {
+      state.insights[key] = data;
+      if (bodyEl.parentNode) renderDetailTabBody(viewerKey, "ai", bodyEl, ctx);
+    }).catch(function (err) {
+      bodyEl.textContent = "";
+      bodyEl.appendChild(el("div", { class: "changes-empty", text: err.message || "Erro na análise IA." }));
+    });
+  }
+}
+
+function buildDetailPanel(viewerKey, ctx) {
+  var panel = el("div", { class: "result-detail-panel" });
+  var tabs = el("div", { class: "detail-tabs", role: "tablist", "aria-label": "Modo de visualização" });
+  var body = el("div", { class: "detail-tab-body" });
+  var tabDefs = [
+    { id: "visual", label: "Documento" },
+    { id: "list", label: "Lista" },
+    { id: "ai", label: "Análise IA" }
+  ];
+  var activeTab = "visual";
+  tabDefs.forEach(function (td) {
+    var btn = el("button", {
+      class: "detail-tab" + (td.id === activeTab ? " active" : ""),
+      role: "tab", type: "button",
+      "aria-selected": td.id === activeTab ? "true" : "false",
+      onclick: function () {
+        activeTab = td.id;
+        tabDefs.forEach(function (x) {
+          var b = tabs.querySelector('[data-tab="' + x.id + '"]');
+          if (!b) return;
+          b.classList.toggle("active", x.id === activeTab);
+          b.setAttribute("aria-selected", x.id === activeTab ? "true" : "false");
+        });
+        renderDetailTabBody(viewerKey, activeTab, body, ctx);
+      }
+    }, td.label);
+    btn.setAttribute("data-tab", td.id);
+    tabs.appendChild(btn);
+  });
+  tabs.appendChild(buildPreviewLegend("detail-tab-legend"));
+  panel.appendChild(tabs);
+  panel.appendChild(body);
+  renderDetailTabBody(viewerKey, activeTab, body, ctx);
+  return panel;
+}
+
+function toggleResultDetail(host, viewerKey, ctx, btn) {
+  var existing = host.querySelector(".result-detail-panel");
+  if (existing) {
+    existing.parentNode.removeChild(existing);
+    if (btn) {
+      btn.setAttribute("aria-expanded", "false");
+      btn.textContent = "Ver redline";
+    }
+    return;
+  }
+  if (btn) {
+    btn.setAttribute("aria-expanded", "true");
+    btn.textContent = "Ocultar redline";
+  }
+  host.appendChild(buildDetailPanel(viewerKey, ctx));
+}
+
+function schedulePoll() {
+  state.job.timer = setTimeout(pollJob, 700);
+}
+
+function pollJob() {
+  if (!state.job.id) return;
+  fetch("/api/jobs/" + encodeURIComponent(state.job.id)).then(function (res) {
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  }).then(function (job) {
+    state.job.pollFailures = 0;
+    renderProgress(job);
+    if (job.status === "done" || job.status === "error") {
+      finishJob(job);
+    } else {
+      schedulePoll();
+    }
+  }).catch(function (err) {
+    state.job.pollFailures += 1;
+    if (state.job.pollFailures >= 6) {
+      state.job.status = null;
+      setJobPhase("idle");
+      $("job-running-title").textContent = "Conexão perdida";
+      $("job-running-fill").classList.remove("indeterminate");
+      updateCompareButton();
+      toast("Não foi possível acompanhar o andamento: " + err.message, "error");
+    } else {
+      schedulePoll();
+    }
+  });
+}
+
+function renderProgress(job) {
+  var p = job.progress || {};
+  var done = p.done || 0;
+  var total = p.total || 0;
+  var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  var fill = $("job-running-fill");
+  fill.classList.toggle("indeterminate", total === 0);
+  if (total > 0) {
+    fill.style.width = pct + "%";
+    $("job-running-bar").setAttribute("aria-valuenow", String(pct));
+  }
+  $("job-running-count").textContent = total > 0
+    ? Math.min(done + (job.status === "running" ? 1 : 0), total) + " de " + total + " documento" + (total === 1 ? "" : "s")
+    : "";
+  $("job-running-sub").textContent = p.current ? p.current : "";
+  if (job.status === "running") {
+    $("job-running-title").textContent = total > 1 ? "Processando lote…" : "Comparando documentos…";
+  }
+}
+
+function finishJob(job) {
+  state.job.status = job.status;
+  state.job.lastJobId = state.job.id;
+  state.job.finishedJob = job;
+  state.job.selectedIndex = 0;
+  $("job-running-fill").classList.remove("indeterminate");
+  $("job-running-fill").style.width = "100%";
+  $("job-running-bar").setAttribute("aria-valuenow", "100");
+  if (job.status === "error" && (!job.items || job.items.length === 0)) {
+    setJobPhase("idle");
+    toast(extractErrorMsg(job) || "A comparação falhou. Verifique os arquivos e tente novamente.", "error");
+    state.job.status = null;
+    updateCompareButton();
+    return;
+  }
+  setJobPhase("done");
+  renderJobDone(job);
+  state.job.status = null;
+  updateCompareButton();
+  loadHistory(true);
+  $("job-done").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* ------------------------------------------------------------
+   Resultado — tela dedicada com canvas
+   ------------------------------------------------------------ */
+function resultLoadCtx(index) {
+  var jobId = state.job.lastJobId;
+  return {
+    load: function () {
+      return ensureViewerData(index, function () {
+        return fetch("/api/jobs/" + encodeURIComponent(jobId) + "/result/" + index).then(function (res) {
+          if (!res.ok) {
+            return res.json().catch(function () { return {}; }).then(function (data) {
+              throw new Error(extractErrorMsg(data) || "Não foi possível carregar o resultado.");
+            });
+          }
+          return res.json();
+        });
+      });
+    },
+    loadInsights: function () {
+      return fetch("/api/jobs/" + encodeURIComponent(jobId) + "/result/" + index + "/insights").then(function (res) {
+        if (!res.ok) {
+          return res.json().catch(function () { return {}; }).then(function (data) {
+            throw new Error(extractErrorMsg(data) || "Não foi possível gerar a análise IA.");
+          });
+        }
+        return res.json();
+      });
+    }
+  };
+}
+
+function buildOutputActions(outputs, container) {
+  var usedKeys = {};
+  var firstPath = null;
+  OUTPUT_LABELS.forEach(function (spec) {
+    spec.keys.forEach(function (key) {
+      var p = outputs[key];
+      if (p && !usedKeys[key]) {
+        usedKeys[key] = true;
+        if (!firstPath) firstPath = p;
+        container.appendChild(el("button", {
+          class: "btn" + (spec.label.indexOf("PDF") >= 0 || spec.label.indexOf("Excel") >= 0 ? " btn-accent" : ""),
+          onclick: function () { openPath(p); }
+        }, spec.label));
+      }
+    });
+  });
+  Object.keys(outputs || {}).forEach(function (key) {
+    if (usedKeys[key] || key === "dir" || key === "output_dir") return;
+    var p = outputs[key];
+    if (!p) return;
+    if (!firstPath) firstPath = p;
+    container.appendChild(el("button", {
+      class: "btn", onclick: function () { openPath(p); }
+    }, "Abrir " + key.toUpperCase()));
+  });
+  var folder = outputs.dir || outputs.output_dir || (firstPath ? dirname(firstPath) : null);
+  if (folder) {
+    container.appendChild(el("button", { class: "btn", onclick: function () { openPath(folder); } }, "Abrir pasta"));
+  }
+}
+
+function buildStatsPills(stats, container) {
+  container.appendChild(el("span", { class: "job-stat-pill" },
+    el("span", { class: "dot content", "aria-hidden": "true" }),
+    document.createTextNode((stats.content_changes != null ? stats.content_changes : "–") + " conteúdo")));
+  container.appendChild(el("span", { class: "job-stat-pill" },
+    el("span", { class: "dot noise", "aria-hidden": "true" }),
+    document.createTextNode((stats.noise_changes != null ? stats.noise_changes : "–") + " rotineiras")));
+  container.appendChild(el("span", { class: "job-stat-pill" },
+    el("span", { class: "dot formatting", "aria-hidden": "true" }),
+    document.createTextNode((stats.formatting_changes != null ? stats.formatting_changes : "–") + " formatação")));
+}
+
+function buildStatsInline(stats, container) {
+  container.appendChild(el("span", { class: "stat" },
+    el("span", { class: "dot content", "aria-hidden": "true" }),
+    document.createTextNode(String(stats.content_changes != null ? stats.content_changes : "–") + " conteúdo")));
+  container.appendChild(el("span", { class: "stat" },
+    el("span", { class: "dot noise", "aria-hidden": "true" }),
+    document.createTextNode(String(stats.noise_changes != null ? stats.noise_changes : "–") + " rotineiras")));
+  container.appendChild(el("span", { class: "stat" },
+    el("span", { class: "dot formatting", "aria-hidden": "true" }),
+    document.createTextNode(String(stats.formatting_changes != null ? stats.formatting_changes : "–") + " formatação")));
+}
+
+function populateJobDoneToolbar(item) {
+  var statsNode = $("job-done-stats");
+  var actionsNode = $("job-done-actions");
+  statsNode.textContent = "";
+  actionsNode.textContent = "";
+  if (!item || item.status !== "ok") return;
+  buildStatsInline(item.stats || {}, statsNode);
+  buildOutputActions(item.outputs || {}, actionsNode);
+}
+
+function renderJobDoneHero(item, index) {
+  var wrap = el("div", { class: "job-done-hero" });
+
+  (item.warnings || []).forEach(function (msg) {
+    var warnBox = el("div", { class: "result-warning-msg" });
+    warnBox.appendChild(svgIcon("warn", 14));
+    warnBox.appendChild(el("span", { text: msg }));
+    wrap.appendChild(warnBox);
+  });
+
+  var panelHost = el("div", { class: "job-done-panel" });
+  panelHost.appendChild(el("div", { class: "hist-detail-loading", text: "Carregando preview do documento…" }));
+  wrap.appendChild(panelHost);
+
+  resultLoadCtx(index).load().then(function () {
+    panelHost.textContent = "";
+    panelHost.appendChild(buildDetailPanel(index, resultLoadCtx(index)));
+  }).catch(function (err) {
+    panelHost.textContent = "";
+    panelHost.appendChild(el("div", { class: "changes-empty", text: err.message || "Erro ao carregar preview." }));
+  });
+
+  return wrap;
+}
+
+function renderJobDoneBatch(job, items) {
+  var layout = el("div", { class: "job-batch-layout" });
+  var list = el("div", { class: "job-batch-list", role: "listbox", "aria-label": "Resultados do lote" });
+  var detail = el("div", { class: "job-batch-detail" });
+
+  function selectIndex(idx) {
+    state.job.selectedIndex = idx;
+    list.querySelectorAll(".job-batch-item").forEach(function (btn, i) {
+      btn.classList.toggle("active", i === idx);
+      btn.setAttribute("aria-selected", i === idx ? "true" : "false");
+    });
+    detail.textContent = "";
+    var item = items[idx];
+    if (!item || item.status !== "ok") {
+      detail.appendChild(el("div", { class: "card result-card failed" },
+        el("div", { class: "result-error-msg", text: (item && item.error) || "Falha neste par." })));
+      return;
+    }
+    $("job-done-title").textContent = basename((item.pair && item.pair[0]) || "Documento");
+    $("job-done-sub").textContent = pairLabel(item);
+    populateJobDoneToolbar(item);
+    detail.appendChild(renderJobDoneHero(item, idx));
+  }
+
+  items.forEach(function (item, idx) {
+    var btn = el("button", {
+      class: "job-batch-item" + (idx === state.job.selectedIndex ? " active" : ""),
+      type: "button", role: "option",
+      "aria-selected": idx === state.job.selectedIndex ? "true" : "false",
+      onclick: function () { selectIndex(idx); }
+    });
+    btn.appendChild(el("div", { class: "name", text: basename((item.pair && item.pair[0]) || "Par " + (idx + 1)), title: pairLabel(item) }));
+    btn.appendChild(el("div", { class: "meta", text: item.status === "ok" ? "OK" : "Erro" }));
+    list.appendChild(btn);
+  });
+
+  layout.appendChild(list);
+  layout.appendChild(detail);
+  selectIndex(state.job.selectedIndex);
+  return layout;
+}
+
+function renderJobDone(job) {
+  var items = job.items || [];
+  var okItems = items.filter(function (i) { return i.status === "ok"; });
+  var s = job.summary || {};
+  var seconds = typeof s.seconds === "number" ? s.seconds : (state.job.startedAt ? (Date.now() - state.job.startedAt) / 1000 : 0);
+
+  if (items.length === 0) {
+    $("job-done-title").textContent = "Nenhum resultado";
+    $("job-done-sub").textContent = "Verifique as pastas informadas.";
+    return;
+  }
+
+  var body = $("job-done-body");
+  body.textContent = "";
+
+  if (items.length === 1) {
+    var one = items[0];
+    if (one.status === "ok") {
+      $("job-done-title").textContent = basename((one.pair && one.pair[0]) || "Documento");
+      $("job-done-sub").textContent = "Comparado com " + basename((one.pair && one.pair[1]) || "revisado") + " · " + formatSeconds(seconds);
+      populateJobDoneToolbar(one);
+      body.appendChild(renderJobDoneHero(one, 0));
+    } else {
+      $("job-done-title").textContent = "Comparação falhou";
+      $("job-done-sub").textContent = pairLabel(one);
+      body.appendChild(el("div", { class: "card result-card failed" },
+        el("div", { class: "result-error-msg", text: one.error || "Falha desconhecida ao comparar este par." })));
+    }
+  } else {
+    $("job-done-title").textContent = items.length + " documentos processados";
+    $("job-done-sub").textContent = formatSeconds(seconds);
+    body.appendChild(renderJobDoneBatch(job, items));
+  }
+
+  var sumNode = $("job-batch-summary");
+  sumNode.textContent = "";
+  if (items.length > 1) {
+    var ok = typeof s.ok === "number" ? s.ok : okItems.length;
+    var failed = typeof s.failed === "number" ? s.failed : items.length - ok;
+    sumNode.appendChild(el("span", { class: "s-ok", text: ok + " concluída" + (ok === 1 ? "" : "s") }));
+    sumNode.appendChild(el("span", { class: "sep", "aria-hidden": "true", text: "·" }));
+    sumNode.appendChild(el("span", { class: "s-fail", text: failed + " falha" + (failed === 1 ? "" : "s") }));
+    sumNode.appendChild(el("span", { class: "sep", "aria-hidden": "true", text: "·" }));
+    sumNode.appendChild(el("span", { class: "s-time", text: formatSeconds(seconds) }));
+    sumNode.hidden = false;
+  } else {
+    sumNode.hidden = true;
+  }
+}
+
+function renderResults(job) {
+  renderJobDone(job);
+}
+
+function pairLabel(item) {
+  var pair = item.pair || [];
+  var b = basename(pair[0]) || "documento base";
+  var c = basename(pair[1]) || "documento revisado";
+  return b + "  vs  " + c;
+}
+
+function openPath(path) {
+  fetch("/api/open", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path: path })
+  }).then(function (res) {
+    if (!res.ok) {
+      if (res.status === 404) {
+        throw new Error("Arquivo não encontrado — pode ter sido movido ou apagado.");
+      }
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        throw new Error(extractErrorMsg(data) || "Não foi possível abrir: " + basename(path));
+      });
+    }
+  }).catch(function (err) {
+    toast(err.message || "Erro de rede ao abrir o arquivo.", "error");
+  });
+}
+
+/* ------------------------------------------------------------
+   Análise IA (painel)
+   ------------------------------------------------------------ */
+function buildInsightsPanel(data) {
+  var panel = el("div", { class: "ai-panel" });
+  var head = el("div", { class: "ai-panel-head" });
+  var spark = el("span", { class: "ai-spark" });
+  spark.appendChild(svgIcon("spark", 15));
+  head.appendChild(spark);
+  head.appendChild(el("h3", {}, data.mode_label || "Análise IA"));
+  head.appendChild(el("span", { class: "ai-mode" },
+    data.mode === "ai_enhanced" ? "Generativa" : "100% local"));
+  panel.appendChild(head);
+  panel.appendChild(el("p", { class: "ai-exec" }, data.executive_summary || ""));
+
+  if (data.highlights && data.highlights.length) {
+    panel.appendChild(el("div", { class: "ai-section-title" }, "Destaques"));
+    var hl = el("ul", { class: "ai-list" });
+    data.highlights.forEach(function (h) { hl.appendChild(el("li", {}, h)); });
+    panel.appendChild(hl);
+  }
+  if (data.risks && data.risks.length) {
+    panel.appendChild(el("div", { class: "ai-section-title" }, "Alertas de risco"));
+    var rl = el("ul", { class: "ai-list" });
+    data.risks.forEach(function (r) {
+      rl.appendChild(el("li", {},
+        el("span", { class: "ai-risk" }, (r.type || "risco") + ": "),
+        r.message || ""));
+    });
+    panel.appendChild(rl);
+  }
+  if (data.recommendations && data.recommendations.length) {
+    panel.appendChild(el("div", { class: "ai-section-title" }, "Recomendações"));
+    var rec = el("ul", { class: "ai-list" });
+    data.recommendations.forEach(function (r) { rec.appendChild(el("li", {}, r)); });
+    panel.appendChild(rec);
+  }
+  panel.appendChild(el("p", { class: "ai-privacy" },
+    data.privacy || "Nenhum dado foi enviado à nuvem."));
+  return panel;
+}
+
+function activeSetAll(groups, key) {
+  var s = {};
+  groups.forEach(function (g) { s[g[key]] = true; });
+  return s;
+}
+
+function catGroupOf(category) {
+  for (var i = 0; i < CAT_GROUPS.length; i++) {
+    if (CAT_GROUPS[i].cats.indexOf(category) !== -1) return CAT_GROUPS[i].key;
+  }
+  return "content";
+}
+
+function typeGroupOf(changeType) {
+  for (var i = 0; i < TYPE_GROUPS.length; i++) {
+    if (TYPE_GROUPS[i].types.indexOf(changeType) !== -1) return TYPE_GROUPS[i].key;
+  }
+  return "modify";
+}
+
+function changeMatches(viewer, change) {
+  if (!viewer.cats[catGroupOf(change.category)]) return false;
+  if (!viewer.types[typeGroupOf(change.change_type)]) return false;
+  var q = viewer.search.trim().toLowerCase();
+  if (q !== "") {
+    var hay = [
+      change.old_text || "", change.new_text || "", change.summary || "",
+      (change.section_path || []).join(" › ")
+    ].join("\n").toLowerCase();
+    if (hay.indexOf(q) === -1) return false;
+  }
+  return true;
+}
+
+/* ------------------------------------------------------------
+   Visão lado a lado (render_blocks → grid Base | Revisado)
+   ------------------------------------------------------------ */
+function sbsFragHtml(frag, side, promote) {
+  var text = escapeHtml(frag.text || "");
+  if (!text) return "";
+  var op = frag.op || "equal";
+  if (op === "equal" && promote) op = promote;
+  if (side === "base" && op === "insert") return "";
+  if (side === "comp" && op === "delete") return "";
+  var inner = applyInlineStyle(text, frag);
+  if (op === "delete") return '<span class="mark-del">' + inner + "</span>";
+  if (op === "insert") return '<span class="mark-ins">' + inner + "</span>";
+  if (op === "format") return '<span class="mark-fmt">' + inner + "</span>";
+  return inner;
+}
+
+function sbsPromoteFor(changeType, side) {
+  if (side === "base" && changeType === "delete") return "delete";
+  if (side === "comp" && changeType === "insert") return "insert";
+  return null;
+}
+
+function sbsBlockHtml(rb, side) {
+  var ct = rb.change_type || "equal";
+  if (side === "base" && ct === "insert") return "";
+  if (side === "comp" && ct === "delete") return "";
+  var promote = sbsPromoteFor(ct, side);
+  var html = (rb.fragments || []).map(function (f) {
+    return sbsFragHtml(f, side, promote);
+  }).join("");
+  if (rb.kind === "list_item" && html) html = "• " + html;
+  if ((ct === "move" || ct === "move_modify") && html) {
+    html += ' <span class="sbs-moved">[movido]</span>';
+  }
+  return html;
+}
+
+function buildSbsTable(rb, side) {
+  var ct = rb.change_type || "equal";
+  var table = el("table", { class: "sbs-table" });
+  var tbody = document.createElement("tbody");
+  (rb.rows || []).forEach(function (row, ri) {
+    var rowOp = (rb.row_ops && rb.row_ops[ri]) || "equal";
+    if (side === "base" && rowOp === "insert") return;
+    if (side === "comp" && rowOp === "delete") return;
+    var tr = document.createElement("tr");
+    if (side === "base" && rowOp === "delete") tr.className = "sbs-tr-del";
+    else if (side === "comp" && rowOp === "insert") tr.className = "sbs-tr-ins";
+    var promote = sbsPromoteFor(ct, side) ||
+      (side === "base" && rowOp === "delete" ? "delete" : null) ||
+      (side === "comp" && rowOp === "insert" ? "insert" : null);
+    row.forEach(function (cellFrags) {
+      var td = document.createElement("td");
+      td.innerHTML = (cellFrags || []).map(function (f) {
+        return sbsFragHtml(f, side, promote);
+      }).join("") || "&nbsp;";
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  return table;
+}
+
+var SBS_IMAGE_LABELS = {
+  insert: "[Imagem inserida]", delete: "[Imagem removida]", modify: "[Imagem alterada]",
+  move: "[Imagem movida]", move_modify: "[Imagem movida e alterada]"
+};
+
+function fillSbsCell(cell, rb, side) {
+  var kind = rb.kind || "paragraph";
+  var ct = rb.change_type || "equal";
+  if (kind === "table") {
+    if ((side === "base" && ct === "insert") || (side === "comp" && ct === "delete")) return;
+    cell.appendChild(buildSbsTable(rb, side));
+    if (ct === "move" || ct === "move_modify") {
+      cell.appendChild(el("span", { class: "sbs-moved", text: "[movido]" }));
+    }
+    return;
+  }
+  if (kind === "image") {
+    if ((side === "base" && ct === "insert") || (side === "comp" && ct === "delete")) return;
+    var label = SBS_IMAGE_LABELS[ct] || "[Imagem]";
+    cell.appendChild(el("div", { class: "sbs-img-ph", text: label }));
+    if (ct === "move" || ct === "move_modify") {
+      cell.appendChild(el("span", { class: "sbs-moved", text: "[movido]" }));
+    }
+    return;
+  }
+  cell.innerHTML = sbsBlockHtml(rb, side) || "";
+}
+
+function buildSbsRow(rb, eq, ctx) {
+  var ct = rb.change_type || "equal";
+  var cls = "sbs-row";
+  if (eq) cls += " sbs-eq" + (ctx ? " sbs-ctx" : "");
+  else if (ct === "insert") cls += " sbs-ins";
+  else if (ct === "delete") cls += " sbs-del";
+  else if (ct === "move" || ct === "move_modify") cls += " sbs-move";
+  else cls += " sbs-mod";
+  if ((rb.kind || "") === "heading") {
+    cls += " sbs-hd-" + Math.min(Math.max(rb.level || 1, 1), 3);
+  }
+  var baseCell = el("div", { class: "sbs-cell sbs-base" });
+  var compCell = el("div", { class: "sbs-cell sbs-comp" });
+  fillSbsCell(baseCell, rb, "base");
+  fillSbsCell(compCell, rb, "comp");
+  return el("div", { class: cls }, baseCell, compCell);
+}
+
+function buildSideBySidePanel(viewer) {
+  var blocks = (viewer.data && viewer.data.render_blocks) || [];
+  var wrap = el("div", { class: "sbs-wrap" + (viewer.sbsOnly ? " sbs-only" : "") });
+
+  var toggle = el("button", {
+    class: "chip" + (viewer.sbsOnly ? " active" : ""),
+    type: "button",
+    "aria-pressed": viewer.sbsOnly ? "true" : "false",
+    onclick: function () {
+      viewer.sbsOnly = !viewer.sbsOnly;
+      wrap.classList.toggle("sbs-only", viewer.sbsOnly);
+      toggle.classList.toggle("active", viewer.sbsOnly);
+      toggle.setAttribute("aria-pressed", viewer.sbsOnly ? "true" : "false");
+    }
+  }, "Só mudanças");
+  wrap.appendChild(el("div", { class: "sbs-toolbar" }, toggle));
+
+  if (!blocks.length) {
+    wrap.appendChild(el("div", { class: "changes-empty", text: "Visão lado a lado indisponível para este documento. Use a Lista ou abra o PDF gerado." }));
+    return wrap;
+  }
+
+  var scroll = el("div", { class: "sbs-scroll" });
+  scroll.appendChild(el("div", { class: "sbs-head", "aria-hidden": "true" },
+    el("div", { class: "sbs-head-col", text: "Base" }),
+    el("div", { class: "sbs-head-col", text: "Revisado" })
+  ));
+
+  var n = blocks.length;
+  var isEq = new Array(n);
+  var i;
+  for (i = 0; i < n; i++) isEq[i] = (blocks[i].change_type || "equal") === "equal";
+  /* contexto: 1 bloco equal antes/depois de cada grupo alterado */
+  var isCtx = new Array(n);
+  for (i = 0; i < n; i++) {
+    isCtx[i] = isEq[i] && ((i > 0 && !isEq[i - 1]) || (i < n - 1 && !isEq[i + 1]));
+  }
+
+  var frag = document.createDocumentFragment();
+  var lastCrumb = null;
+  var inHiddenRun = false;
+  for (i = 0; i < n; i++) {
+    var rb = blocks[i];
+    var hiddenEq = isEq[i] && !isCtx[i];
+    if (hiddenEq && !inHiddenRun) {
+      frag.appendChild(el("div", { class: "sbs-sep", "aria-hidden": "true", text: "· · ·" }));
+      inHiddenRun = true;
+    }
+    if (!hiddenEq) inHiddenRun = false;
+    var crumbTxt = (rb.section_path || []).join(" › ");
+    if (crumbTxt && crumbTxt !== lastCrumb) {
+      var crumbCls = "sbs-crumb" + (isEq[i] ? " sbs-eq" + (isCtx[i] ? " sbs-ctx" : "") : "");
+      frag.appendChild(el("div", { class: crumbCls, text: crumbTxt, title: crumbTxt }));
+      lastCrumb = crumbTxt;
+    }
+    frag.appendChild(buildSbsRow(rb, isEq[i], isCtx[i]));
+  }
+  scroll.appendChild(frag);
+  wrap.appendChild(scroll);
+  return wrap;
+}
+
+function buildChangesPanel(viewerKey) {
+  var viewer = state.viewers[String(viewerKey)];
+  var changes = (viewer && viewer.data && viewer.data.changes) || [];
+  var panel = el("div", { class: "changes-panel" });
+  if (!viewer.mode) viewer.mode = "list";
+  if (viewer.sbsOnly === undefined) viewer.sbsOnly = true;
+
+  /* Seletor de modo: Lista | Lado a lado */
+  var modeBtns = {};
+  var modeRow = el("div", { class: "mode-switch", role: "tablist", "aria-label": "Modo de exibição das mudanças" });
+  var listWrap = el("div", { class: "changes-mode-list" });
+  var sbsWrap = el("div", { class: "changes-mode-sbs" }, null);
+  var sbsBuilt = false;
+  function setMode(mode) {
+    viewer.mode = mode;
+    Object.keys(modeBtns).forEach(function (k) {
+      modeBtns[k].classList.toggle("active", k === mode);
+      modeBtns[k].setAttribute("aria-selected", k === mode ? "true" : "false");
+    });
+    listWrap.hidden = mode !== "list";
+    sbsWrap.hidden = mode !== "sbs";
+    if (mode === "sbs" && !sbsBuilt) {
+      sbsBuilt = true;
+      sbsWrap.appendChild(buildSideBySidePanel(viewer));
+    }
+  }
+  [{ id: "list", label: "Lista" }, { id: "sbs", label: "Lado a lado" }].forEach(function (md) {
+    var b = el("button", {
+      class: "mode-btn", type: "button", role: "tab", "aria-selected": "false",
+      onclick: function () { setMode(md.id); }
+    }, md.label);
+    modeBtns[md.id] = b;
+    modeRow.appendChild(b);
+  });
+  panel.appendChild(modeRow);
+
+  /* Modo Lista (visão atual) */
+  var catCounts = {}, typeCounts = {};
+  changes.forEach(function (c) {
+    var cg = catGroupOf(c.category); catCounts[cg] = (catCounts[cg] || 0) + 1;
+    var tg = typeGroupOf(c.change_type); typeCounts[tg] = (typeCounts[tg] || 0) + 1;
+  });
+
+  var toolbar = el("div", { class: "changes-toolbar" });
+  toolbar.appendChild(buildChipRow("Categoria:", CAT_GROUPS, catCounts, viewer.cats, function () { renderChangeList(viewerKey, panel); }));
+  toolbar.appendChild(buildChipRow("Tipo:", TYPE_GROUPS, typeCounts, viewer.types, function () { renderChangeList(viewerKey, panel); }));
+
+  var searchInput = el("input", {
+    type: "search", placeholder: "Buscar no texto das mudanças…",
+    "aria-label": "Buscar no texto das mudanças",
+    oninput: function (ev) { viewer.search = ev.target.value; renderChangeList(viewerKey, panel); }
+  });
+  var sicon = el("span", { class: "sicon" });
+  sicon.innerHTML = SVG_OPEN.replace(/__S__/g, "13") + '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>';
+  toolbar.appendChild(el("div", { class: "search-box" }, sicon, searchInput));
+  listWrap.appendChild(toolbar);
+
+  listWrap.appendChild(el("div", { class: "changes-list" }));
+  panel.appendChild(listWrap);
+  panel.appendChild(sbsWrap);
+  renderChangeList(viewerKey, panel);
+  setMode(viewer.mode);
+  return panel;
+}
+
+function buildChipRow(label, groups, counts, activeMap, onChange) {
+  var row = el("div", { class: "chip-row" }, el("span", { class: "lbl", text: label }));
+  groups.forEach(function (g) {
+    var count = counts[g.key] || 0;
+    var chip = el("button", {
+      class: "chip" + (activeMap[g.key] ? " active" : ""),
+      "aria-pressed": activeMap[g.key] ? "true" : "false",
+      onclick: function () {
+        activeMap[g.key] = !activeMap[g.key];
+        chip.classList.toggle("active", activeMap[g.key]);
+        chip.setAttribute("aria-pressed", activeMap[g.key] ? "true" : "false");
+        onChange();
+      }
+    }, g.label);
+    chip.appendChild(el("span", { class: "cnt", text: "(" + count + ")" }));
+    row.appendChild(chip);
+  });
+  return row;
+}
+
+var RENDER_CAP = 400;
+
+function renderChangeList(viewerKey, panel) {
+  var viewer = state.viewers[String(viewerKey)];
+  var listNode = panel.querySelector(".changes-list");
+  listNode.textContent = "";
+  var changes = (viewer && viewer.data && viewer.data.changes) || [];
+
+  if (changes.length === 0) {
+    listNode.appendChild(el("div", { class: "changes-empty", text: "Nenhuma mudança detectada entre os dois documentos." }));
+    return;
+  }
+  var filtered = changes.filter(function (c) { return changeMatches(viewer, c); });
+  if (filtered.length === 0) {
+    listNode.appendChild(el("div", { class: "changes-empty", text: "Nenhuma mudança corresponde aos filtros selecionados." }));
+    return;
+  }
+  filtered.slice(0, RENDER_CAP).forEach(function (change) {
+    listNode.appendChild(buildChangeItem(change));
+  });
+  if (filtered.length > RENDER_CAP) {
+    listNode.appendChild(el("div", {
+      class: "changes-truncated",
+      text: "Exibindo " + RENDER_CAP + " de " + filtered.length + " mudanças — refine os filtros ou a busca para ver as demais."
+    }));
+  }
+}
+
+function buildChangeItem(change) {
+  var attrs = { class: "change-item" };
+  if (change.id != null) attrs["data-change-id"] = String(change.id);
+  var item = el("div", attrs);
+  var meta = el("div", { class: "change-meta" },
+    el("span", { class: "tbadge " + (change.change_type || "modify"), text: TYPE_LABELS[change.change_type] || change.change_type || "?" }),
+    el("span", { class: "cat-tag", text: CAT_LABELS[change.category] || change.category || "—" })
+  );
+  var crumbs = change.section_path || [];
+  if (crumbs.length > 0) {
+    meta.appendChild(el("span", { class: "crumb", title: crumbs.join(" › "), text: crumbs.join(" › ") }));
+  }
+  var page = change.page_compare != null ? change.page_compare : change.page_base;
+  if (page != null) {
+    meta.appendChild(el("span", { class: "page-tag", text: "pág. " + page }));
+  }
+  item.appendChild(meta);
+
+  if (change.summary) {
+    item.appendChild(el("div", { class: "change-summary", text: change.summary }));
+  }
+
+  var oldEmpty = !change.old_text;
+  var newEmpty = !change.new_text;
+  item.appendChild(el("div", { class: "diff-cols" },
+    el("div", { class: "diff-col old" },
+      el("div", { class: "dhead", text: "Anterior" }),
+      el("div", { class: "dbody" + (oldEmpty ? " empty" : ""), text: oldEmpty ? "—" : change.old_text })
+    ),
+    el("div", { class: "diff-col new" },
+      el("div", { class: "dhead", text: "Atual" }),
+      el("div", { class: "dbody" + (newEmpty ? " empty" : ""), text: newEmpty ? "—" : change.new_text })
+    )
+  ));
+  return item;
+}
+/* ------------------------------------------------------------
+   Histórico (persistente entre sessões)
+   ------------------------------------------------------------ */
+function loadHistory(silent) {
+  fetch("/api/history?limit=200").then(function (res) {
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  }).then(function (data) {
+    state.history.entries = (data && data.entries) || [];
+    state.history.loaded = true;
+    if (state.view === "history") renderHistory();
+  }).catch(function (err) {
+    if (!silent) toast("Não foi possível carregar o histórico: " + err.message, "error");
+    if (state.view === "history" && !state.history.loaded) renderHistory();
+  });
+}
+
+function historyDayLabel(iso) {
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return "Data desconhecida";
+  var now = new Date();
+  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  var day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  var diff = Math.round((today - day) / 86400000);
+  if (diff === 0) return "Hoje";
+  if (diff === 1) return "Ontem";
+  return pad2(d.getDate()) + "/" + pad2(d.getMonth() + 1) + "/" + d.getFullYear();
+}
+
+function formatTime(iso) {
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+}
+
+function historyEntryTitle(e) {
+  var b = e.base_name || basename(e.base_path) || "documento";
+  var c = e.compare_name || basename(e.compare_path) || "documento";
+  return b === c ? b : b + " → " + c;
+}
+
+function historyEntryMatches(e) {
+  var f = state.history.filter;
+  if (f === "ok" && e.status !== "ok") return false;
+  if (f === "error" && e.status === "ok") return false;
+  var q = state.history.search.trim().toLowerCase();
+  if (q !== "") {
+    var hay = ((e.base_name || "") + "\n" + (e.compare_name || "")).toLowerCase();
+    if (hay.indexOf(q) === -1) return false;
+  }
+  return true;
+}
+
+function firstHistoryOutput(e) {
+  var outputs = e.outputs || {};
+  for (var i = 0; i < HIST_OUTPUT_ORDER.length; i++) {
+    var spec = HIST_OUTPUT_ORDER[i];
+    if (outputs[spec.key]) return { path: outputs[spec.key], label: spec.label, key: spec.key };
+  }
+  var keys = Object.keys(outputs);
+  for (var j = 0; j < keys.length; j++) {
+    if (outputs[keys[j]]) return { path: outputs[keys[j]], label: keys[j].toUpperCase(), key: keys[j] };
+  }
+  return null;
+}
+
+function setHistoryFilter(filter) {
+  state.history.filter = filter;
+  ["all", "ok", "error"].forEach(function (f) {
+    var chip = $("hist-filter-" + f);
+    chip.classList.toggle("active", f === filter);
+    chip.setAttribute("aria-pressed", f === filter ? "true" : "false");
+  });
+  renderHistory();
+}
+
+function renderHistoryToolbarClear() {
+  var area = $("hist-clear-area");
+  area.textContent = "";
+  if (state.history.entries.length === 0) return;
+  if (state.history.confirming) {
+    area.appendChild(el("span", { class: "hist-confirm-txt", text: "Apagar tudo?" }));
+    area.appendChild(el("button", {
+      class: "btn btn-danger",
+      onclick: function () { state.history.confirming = false; clearHistory(); }
+    }, "Confirmar"));
+    area.appendChild(el("button", {
+      class: "btn",
+      onclick: function () { state.history.confirming = false; renderHistoryToolbarClear(); }
+    }, "Cancelar"));
+  } else {
+    area.appendChild(el("button", {
+      class: "btn",
+      onclick: function () { state.history.confirming = true; renderHistoryToolbarClear(); }
+    }, "Limpar histórico"));
+  }
+}
+
+function renderHistory() {
+  var listNode = $("history-list");
+  var emptyNode = $("history-empty");
+  listNode.textContent = "";
+  closeMenus();
+  renderHistoryToolbarClear();
+
+  var all = state.history.entries;
+  if (all.length === 0) {
+    emptyNode.hidden = false;
+    return;
+  }
+  emptyNode.hidden = true;
+
+  var filtered = all.filter(historyEntryMatches);
+  if (filtered.length === 0) {
+    listNode.appendChild(el("div", { class: "hist-none", text: "Nenhuma comparação corresponde à busca ou ao filtro." }));
+    return;
+  }
+
+  var lastDay = null;
+  filtered.forEach(function (e) {
+    var day = historyDayLabel(e.at);
+    if (day !== lastDay) {
+      listNode.appendChild(el("div", { class: "hist-group-label", text: day }));
+      lastDay = day;
+    }
+    listNode.appendChild(buildHistoryRow(e));
+  });
+}
+
+function historyViewerKey(entryId) {
+  return "hist:" + entryId;
+}
+
+function buildHistoryOutputActions(outputs, container) {
+  var usedKeys = {};
+  var firstPath = null;
+  OUTPUT_LABELS.forEach(function (spec) {
+    spec.keys.forEach(function (key) {
+      var p = outputs[key];
+      if (p && !usedKeys[key]) {
+        usedKeys[key] = true;
+        if (!firstPath) firstPath = p;
+        container.appendChild(el("button", {
+          class: "btn" + (spec.label.indexOf("PDF") >= 0 || spec.label.indexOf("Excel") >= 0 ? " btn-accent" : ""),
+          onclick: function (ev) { ev.stopPropagation(); openPath(p); }
+        }, spec.label));
+      }
+    });
+  });
+  Object.keys(outputs).forEach(function (key) {
+    if (usedKeys[key] || key === "dir" || key === "output_dir") return;
+    var p = outputs[key];
+    if (!p) return;
+    if (!firstPath) firstPath = p;
+    container.appendChild(el("button", {
+      class: "btn",
+      onclick: function (ev) { ev.stopPropagation(); openPath(p); }
+    }, "Abrir " + key.toUpperCase()));
+  });
+  var folder = outputs.dir || outputs.output_dir || (firstPath ? dirname(firstPath) : null);
+  if (folder) {
+    container.appendChild(el("button", {
+      class: "btn",
+      onclick: function (ev) { ev.stopPropagation(); openPath(folder); }
+    }, "Pasta"));
+  }
+}
+
+function historyDetailCtx(entry) {
+  var viewerKey = historyViewerKey(entry.id);
+  return {
+    load: function () {
+      return ensureViewerData(viewerKey, function () {
+        return fetch("/api/history/" + encodeURIComponent(entry.id) + "/result").then(function (res) {
+          if (!res.ok) {
+            return res.json().catch(function () { return {}; }).then(function (data) {
+              throw new Error(extractErrorMsg(data) || "Não foi possível carregar as mudanças.");
+            });
+          }
+          return res.json();
+        });
+      });
+    },
+    loadInsights: function () {
+      return fetch("/api/history/" + encodeURIComponent(entry.id) + "/insights").then(function (res) {
+        if (!res.ok) {
+          return res.json().catch(function () { return {}; }).then(function (data) {
+            throw new Error(extractErrorMsg(data) || "Não foi possível gerar a análise IA.");
+          });
+        }
+        return res.json();
+      });
+    }
+  };
+}
+
+function fillHistoryDetail(entry, detail) {
+  detail.textContent = "";
+  var actions = el("div", { class: "hist-detail-actions" });
+  buildHistoryOutputActions(entry.outputs || {}, actions);
+  detail.appendChild(actions);
+  detail.appendChild(buildDetailPanel(historyViewerKey(entry.id), historyDetailCtx(entry)));
+}
+
+function toggleHistoryDetail(entry, card) {
+  if (entry.status !== "ok") {
+    toast("Esta comparação falhou — não há mudanças para exibir.", "error");
+    return;
+  }
+
+  var existing = card.querySelector(".hist-detail");
+  if (existing) {
+    card.classList.remove("expanded");
+    existing.parentNode.removeChild(existing);
+    state.history.expandedId = null;
+    return;
+  }
+
+  document.querySelectorAll(".hist-card.expanded .hist-detail").forEach(function (node) {
+    var host = node.closest(".hist-card");
+    if (host) {
+      host.classList.remove("expanded");
+      node.parentNode.removeChild(node);
+    }
+  });
+
+  card.classList.add("expanded");
+  state.history.expandedId = entry.id;
+  var detail = el("div", { class: "hist-detail" });
+  detail.appendChild(el("div", { class: "hist-detail-loading", text: "Carregando documento…" }));
+  card.appendChild(detail);
+
+  var viewerKey = historyViewerKey(entry.id);
+  if (state.viewers[viewerKey] && state.viewers[viewerKey].data) {
+    fillHistoryDetail(entry, detail);
+    return;
+  }
+
+  historyDetailCtx(entry).load().then(function () {
+    if (card.querySelector(".hist-detail")) fillHistoryDetail(entry, detail);
+  }).catch(function (err) {
+    if (detail.parentNode) {
+      detail.textContent = "";
+      detail.appendChild(el("div", { class: "changes-empty", text: err.message || "Erro ao carregar." }));
+    }
+  });
+}
+
+function buildHistoryRow(e) {
+  var card = el("div", { class: "hist-card" + (state.history.expandedId === e.id ? " expanded" : "") });
+  var row = el("div", { class: "hist-row", tabindex: "0", role: "button",
+    "aria-label": "Duplo clique para ver mudanças: " + historyEntryTitle(e) });
+
+  var ext = fileExt(e.base_name || e.compare_name || "");
+  var ico = el("div", { class: "hist-ico", "aria-hidden": "true" });
+  ico.appendChild(svgIcon(iconForExt(ext), 16));
+  row.appendChild(ico);
+
+  var sub = el("div", { class: "hist-sub" });
+  var t = formatTime(e.at);
+  if (t) sub.appendChild(el("span", { text: t }));
+  if (e.status === "ok") {
+    var stats = e.stats || {};
+    sub.appendChild(el("span", {},
+      el("span", { class: "dot content", "aria-hidden": "true" }),
+      document.createTextNode(String(stats.content_changes != null ? stats.content_changes : "–"))));
+    sub.appendChild(el("span", {},
+      el("span", { class: "dot noise", "aria-hidden": "true" }),
+      document.createTextNode(String(stats.noise_changes != null ? stats.noise_changes : "–"))));
+    sub.appendChild(el("span", {},
+      el("span", { class: "dot formatting", "aria-hidden": "true" }),
+      document.createTextNode(String(stats.formatting_changes != null ? stats.formatting_changes : "–"))));
+  } else {
+    sub.appendChild(el("span", { class: "badge err", text: "Erro" }));
+    if (e.error) sub.appendChild(el("span", { text: e.error, title: e.error, style: "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:320px" }));
+  }
+  if (typeof e.duration_seconds === "number") {
+    sub.appendChild(el("span", { text: formatSeconds(e.duration_seconds) }));
+  }
+  row.appendChild(el("div", { class: "hist-main" },
+    el("div", { class: "hist-name", text: historyEntryTitle(e), title: historyEntryTitle(e) }),
+    sub
+  ));
+
+  if (e.status === "ok") {
+    row.appendChild(el("span", { class: "hist-row-hint", text: "Duplo clique → preview" }));
+  }
+
+  var actions = el("div", { class: "hist-actions" });
+  var primary = firstHistoryOutput(e);
+  if (primary) {
+    actions.appendChild(el("button", {
+      class: "btn btn-accent",
+      onclick: function (ev) { ev.stopPropagation(); openPath(primary.path); }
+    }, primary.key === "pdf" ? "PDF" : primary.label));
+  }
+
+  actions.appendChild(el("button", {
+    class: "icon-btn btn-danger", title: "Remover do histórico", "aria-label": "Remover do histórico",
+    onclick: function (ev) { ev.stopPropagation(); removeHistoryEntry(e, card); }
+  }, "✕"));
+  row.appendChild(actions);
+
+  var clickTimer = null;
+  row.addEventListener("dblclick", function (ev) {
+    if (ev.target.closest(".hist-actions")) return;
+    ev.preventDefault();
+    if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
+    toggleHistoryDetail(e, card);
+  });
+  row.addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter") toggleHistoryDetail(e, card);
+  });
+
+  card.appendChild(row);
+
+  if (state.history.expandedId === e.id && e.status === "ok") {
+    var detail = el("div", { class: "hist-detail" });
+    detail.appendChild(el("div", { class: "hist-detail-loading", text: "Carregando documento…" }));
+    card.appendChild(detail);
+    var viewerKey = historyViewerKey(e.id);
+    if (state.viewers[viewerKey] && state.viewers[viewerKey].data) {
+      fillHistoryDetail(e, detail);
+    } else {
+      historyDetailCtx(e).load().then(function () {
+        if (card.querySelector(".hist-detail")) fillHistoryDetail(e, detail);
+      }).catch(function () {
+        if (detail.parentNode) detail.parentNode.removeChild(detail);
+        card.classList.remove("expanded");
+        state.history.expandedId = null;
+      });
+    }
+  }
+
+  return card;
+}
+
+function closeMenus() {
+  /* menus de contexto removidos — mantido para compatibilidade com handlers globais */
+}
+
+function removeHistoryEntry(e, card) {
+  fetch("/api/history/" + encodeURIComponent(e.id), { method: "DELETE" }).then(function (res) {
+    if (!res.ok && res.status !== 404) {
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        throw new Error(extractErrorMsg(data) || "Não foi possível remover a entrada (HTTP " + res.status + ").");
+      });
+    }
+    state.history.entries = state.history.entries.filter(function (x) { return x.id !== e.id; });
+    if (state.history.expandedId === e.id) state.history.expandedId = null;
+    delete state.viewers[historyViewerKey(e.id)];
+    delete state.insights["hist:" + e.id];
+    card.classList.add("removing");
+    card.style.overflow = "hidden";
+    card.style.maxHeight = card.offsetHeight + "px";
+    requestAnimationFrame(function () {
+      card.style.transition = "opacity 0.22s ease, transform 0.22s ease, max-height 0.25s ease 0.1s, margin 0.25s ease 0.1s";
+      card.style.maxHeight = "0";
+      card.style.marginBottom = "0";
+      card.style.opacity = "0";
+    });
+    setTimeout(function () { renderHistory(); }, 380);
+  }).catch(function (err) {
+    toast(err.message || "Erro de rede ao remover do histórico.", "error");
+  });
+}
+
+function clearHistory() {
+  fetch("/api/history", { method: "DELETE" }).then(function (res) {
+    if (!res.ok) {
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        throw new Error(extractErrorMsg(data) || "Não foi possível limpar o histórico (HTTP " + res.status + ").");
+      });
+    }
+    state.history.entries = [];
+    state.history.expandedId = null;
+    renderHistory();
+    toast("Histórico limpo.", "success");
+  }).catch(function (err) {
+    renderHistoryToolbarClear();
+    toast(err.message || "Erro de rede ao limpar o histórico.", "error");
+  });
+}
+
+/* ------------------------------------------------------------
+   Licenciamento — estado global, conta, planos, ativação
+   ------------------------------------------------------------ */
+var TRIAL_TOTAL_DAYS = 14;
+var TRIAL_TOTAL_COMPARISONS = 25;
+var PLAN_NAMES = { pro: "Pro", team: "Equipe", trial: "Avaliação" };
+
+function planDisplayName(planId) {
+  if (!planId) return "—";
+  if (PLAN_NAMES[planId]) return PLAN_NAMES[planId];
+  var plans = state.license.plans || [];
+  for (var i = 0; i < plans.length; i++) {
+    if (plans[i].id === planId) return plans[i].name;
+  }
+  return String(planId).charAt(0).toUpperCase() + String(planId).slice(1);
+}
+
+function initialsFromEmail(email) {
+  var local = String(email || "").split("@")[0];
+  var parts = local.split(/[._\-+]+/).filter(function (p) { return p.length > 0; });
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return local.slice(0, 2).toUpperCase() || "?";
+}
+
+function formatDateBR(iso) {
+  if (!iso) return null;
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  return pad2(d.getDate()) + "/" + pad2(d.getMonth() + 1) + "/" + d.getFullYear();
+}
+
+function relTime(iso) {
+  if (!iso) return "—";
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  var diff = Math.max(0, Date.now() - d.getTime());
+  var min = Math.round(diff / 60000);
+  if (min < 1) return "agora mesmo";
+  if (min < 60) return "há " + min + " min";
+  var h = Math.round(min / 60);
+  if (h < 24) return "há " + h + " h";
+  var days = Math.round(h / 24);
+  return days === 1 ? "há 1 dia" : "há " + days + " dias";
+}
+
+function refreshLicense() {
+  return fetch("/api/license/status").then(function (res) {
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  }).then(function (st) {
+    applyLicenseStatus(st);
+    return st;
+  }).catch(function () {
+    /* backend sem licenciamento ou offline: mantém o último estado conhecido */
+    return null;
+  });
+}
+
+function applyLicenseStatus(st) {
+  if (!st || typeof st !== "object" || !st.state) return;
+  state.license.status = st;
+  renderSideAccount();
+  renderLicenseBanner();
+  if (state.view === "account") renderAccountView();
+  if (state.view === "plans") renderPlansView();
+}
+
+function ensurePlans() {
+  if (state.license.plans) return Promise.resolve(state.license.plans);
+  return fetch("/api/plans").then(function (res) {
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  }).then(function (data) {
+    state.license.plans = (data && data.plans) || [];
+    state.license.salesEmail = (data && data.sales_email) || "";
+    return state.license.plans;
+  });
+}
+
+function openMailto(subject) {
+  ensurePlans().catch(function () { return null; }).then(function () {
+    var to = state.license.salesEmail || "vendas@comparedocs.app";
+    var a = document.createElement("a");
+    a.href = "mailto:" + to + "?subject=" + encodeURIComponent(subject);
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  });
+}
+
+/* Bloco de conta na sidebar */
+function renderSideAccount() {
+  var st = state.license.status;
+  var avatar = $("acct-avatar");
+  var line1 = $("acct-line1");
+  var pill = $("acct-line2");
+  avatar.textContent = "";
+  if (!st) {
+    avatar.className = "acct-avatar neutral";
+    avatar.appendChild(svgIcon("user", 14));
+    line1.textContent = "Avaliação gratuita";
+    pill.className = "plan-pill";
+    pill.textContent = "Avaliação";
+    return;
+  }
+  if (st.state === "active" || st.state === "expired") {
+    var email = st.email || "—";
+    line1.textContent = email;
+    line1.title = email;
+    if (st.state === "active") {
+      avatar.className = "acct-avatar";
+      avatar.textContent = initialsFromEmail(email);
+      pill.className = "plan-pill accent";
+      pill.textContent = planDisplayName(st.plan);
+    } else {
+      avatar.className = "acct-avatar neutral";
+      avatar.textContent = initialsFromEmail(email);
+      pill.className = "plan-pill danger";
+      pill.textContent = "Expirada";
+    }
+    return;
+  }
+  avatar.className = "acct-avatar neutral";
+  avatar.appendChild(svgIcon("user", 14));
+  if (st.state === "locked") {
+    line1.textContent = "Bloqueado";
+    line1.title = "Avaliação encerrada";
+    pill.className = "plan-pill danger";
+    pill.textContent = "Expirada";
+  } else {
+    line1.textContent = "Avaliação gratuita";
+    line1.title = "Avaliação gratuita";
+    pill.className = "plan-pill";
+    pill.textContent = "Avaliação";
+  }
+}
+
+/* Banner global no topo do conteúdo */
+function renderLicenseBanner() {
+  var banner = $("license-banner");
+  var st = state.license.status;
+  banner.textContent = "";
+  banner.className = "license-banner";
+  if (!st) { banner.hidden = true; return; }
+
+  if (st.state === "locked" || st.state === "expired") {
+    banner.classList.add(st.state === "locked" ? "warn" : "danger");
+    var strongMsg = st.state === "locked"
+      ? "Avaliação encerrada — ative uma licença para continuar comparando."
+      : "Licença expirada — renove a assinatura ou ative uma nova chave.";
+    banner.appendChild(el("span", { class: "lb-text" }, el("b", { text: strongMsg })));
+    banner.appendChild(el("span", { class: "lb-actions" },
+      el("button", { class: "btn-primary", onclick: function () { openActivateModal(); } }, "Ativar licença"),
+      el("button", { class: "btn", onclick: function () { showView("plans"); } }, "Ver planos")
+    ));
+    banner.hidden = false;
+    return;
+  }
+
+  if (st.state === "trial" && st.trial && !st.trial.expired) {
+    var days = st.trial.days_left;
+    var comps = st.trial.comparisons_left;
+    if (days <= 3 || comps <= 5) {
+      var txt = el("span", { class: "lb-text" },
+        el("b", { text: "Sua avaliação termina em breve" }),
+        " — " + days + (days === 1 ? " dia" : " dias") + " · " +
+        comps + (comps === 1 ? " comparação restante" : " comparações restantes"));
+      banner.appendChild(txt);
+      banner.appendChild(el("button", { class: "link-btn", onclick: function () { openActivateModal(); } }, "Ativar agora"));
+      banner.hidden = false;
+      return;
+    }
+  }
+  banner.hidden = true;
+}
+
+/* View Planos */
+function isCurrentPlan(plan) {
+  var st = state.license.status;
+  if (!st) return false;
+  if (st.state === "active") return plan.id === st.plan;
+  if (st.state === "trial") return plan.id === "trial";
+  return false;
+}
+
+function buildPlanCard(plan) {
+  var card = el("div", { class: "plan-card" + (plan.highlight ? " highlight" : "") });
+  var current = isCurrentPlan(plan);
+  if (current) {
+    card.appendChild(el("span", { class: "plan-flag current", text: "Seu plano" }));
+  } else if (plan.highlight) {
+    card.appendChild(el("span", { class: "plan-flag", text: "Recomendado" }));
+  }
+  card.appendChild(el("div", { class: "plan-name", text: plan.name || "" }));
+  card.appendChild(el("div", { class: "plan-price-row" },
+    el("span", { class: "plan-price", text: plan.price || "" }),
+    el("span", { class: "plan-period", text: plan.period || "" })
+  ));
+  var ul = el("ul", { class: "plan-features" });
+  (plan.features || []).forEach(function (f) {
+    var check = el("span", { class: "fcheck" });
+    check.appendChild(svgIcon("check", 13));
+    ul.appendChild(el("li", {}, check, el("span", { text: f })));
+  });
+  card.appendChild(ul);
+
+  var cta;
+  if (current) {
+    cta = el("button", { class: "btn plan-cta", type: "button", disabled: "disabled" }, "Plano atual");
+  } else if (plan.id === "trial") {
+    cta = el("button", { class: "btn plan-cta", type: "button", disabled: "disabled" }, plan.cta || "Começa automaticamente");
+  } else if (plan.checkout_url) {
+    cta = el("button", {
+      class: (plan.highlight ? "btn-primary" : "btn") + " plan-cta", type: "button",
+      onclick: function () { window.open(plan.checkout_url, "_blank", "noopener"); }
+    }, plan.cta || "Assinar");
+  } else {
+    cta = el("button", {
+      class: (plan.highlight ? "btn-primary" : "btn") + " plan-cta", type: "button",
+      onclick: function () { openMailto("Plano " + (plan.name || "") + " — Compare Docs"); }
+    }, plan.cta || "Falar com vendas");
+  }
+  card.appendChild(cta);
+  return card;
+}
+
+function renderPlansView() {
+  var grid = $("plans-grid");
+  grid.textContent = "";
+  grid.appendChild(el("div", { class: "hist-detail-loading", text: "Carregando planos…" }));
+  ensurePlans().then(function (plans) {
+    if (state.view !== "plans") return;
+    grid.textContent = "";
+    if (!plans.length) {
+      grid.appendChild(el("div", { class: "changes-empty", text: "Nenhum plano disponível no momento." }));
+      return;
+    }
+    plans.forEach(function (plan) { grid.appendChild(buildPlanCard(plan)); });
+  }).catch(function () {
+    grid.textContent = "";
+    grid.appendChild(el("div", { class: "changes-empty", text: "Não foi possível carregar os planos. Verifique a conexão e tente novamente." }));
+  });
+}
+
+/* View Conta */
+function buildLicRow(label, value, mono) {
+  return el("div", { class: "lic-row" },
+    el("span", { class: "lic-label", text: label }),
+    el("span", { class: "lic-value" + (mono ? " mono" : ""), text: value || "—", title: value || "" })
+  );
+}
+
+function renderDeactivateActions(host) {
+  host.textContent = "";
+  host.appendChild(el("button", {
+    class: "btn",
+    onclick: function () { openMailto("Assinatura Compare Docs — gerenciar"); }
+  }, "Gerenciar assinatura"));
+  if (state.license.deactConfirm) {
+    host.appendChild(el("span", { class: "acct-confirm-txt", text: "Desativar a licença neste dispositivo?" }));
+    host.appendChild(el("button", {
+      class: "btn btn-danger",
+      onclick: function () { state.license.deactConfirm = false; doDeactivate(); }
+    }, "Confirmar"));
+    host.appendChild(el("button", {
+      class: "btn",
+      onclick: function () { state.license.deactConfirm = false; renderDeactivateActions(host); }
+    }, "Cancelar"));
+  } else {
+    host.appendChild(el("button", {
+      class: "btn btn-danger",
+      onclick: function () { state.license.deactConfirm = true; renderDeactivateActions(host); }
+    }, "Desativar neste dispositivo"));
+  }
+}
+
+function doDeactivate() {
+  fetch("/api/license/deactivate", { method: "POST" }).then(function (res) {
+    if (!res.ok) {
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        throw new Error(extractErrorMsg(data) || "Não foi possível desativar a licença (HTTP " + res.status + ").");
+      });
+    }
+    return res.json();
+  }).then(function (st) {
+    toast("Licença desativada neste dispositivo.", "success");
+    applyLicenseStatus(st);
+  }).catch(function (err) {
+    toast(err.message || "Erro de rede ao desativar a licença.", "error");
+    if (state.view === "account") renderAccountView();
+  });
+}
+
+function buildTrialMeter(label, left, total) {
+  var safeLeft = Math.max(0, Math.min(left != null ? left : 0, total));
+  var pct = total > 0 ? Math.round((safeLeft / total) * 100) : 0;
+  var low = label.indexOf("Dias") === 0 ? safeLeft <= 3 : safeLeft <= 5;
+  var meter = el("div", { class: "trial-meter" },
+    el("div", { class: "tm-head" },
+      el("span", { text: label }),
+      el("span", { class: "tm-num", text: safeLeft + " de " + total })
+    ),
+    el("div", { class: "tm-track" },
+      el("div", { class: "tm-fill" + (low ? " low" : ""), style: "width:" + pct + "%" })
+    )
+  );
+  return meter;
+}
+
+function renderAccountView() {
+  var body = $("account-body");
+  var st = state.license.status;
+  body.textContent = "";
+  if (!st) {
+    body.appendChild(el("div", { class: "hist-detail-loading", text: "Carregando informações da licença…" }));
+  } else if (st.state === "active") {
+    var card = el("section", { class: "card" });
+    card.appendChild(el("h2", { text: "Licença" }));
+    var rows = el("div", { class: "lic-rows" });
+    rows.appendChild(buildLicRow("E-mail", st.email));
+    rows.appendChild(buildLicRow("Plano", planDisplayName(st.plan)));
+    rows.appendChild(buildLicRow("Chave", st.key_hint, true));
+    rows.appendChild(buildLicRow("Válida até", st.expires_at ? (formatDateBR(st.expires_at) || "—") : "Perpétua"));
+    rows.appendChild(buildLicRow("Dispositivo", st.device_name));
+    rows.appendChild(buildLicRow("Última validação", relTime(st.last_validated_at)));
+    card.appendChild(rows);
+    var actions = el("div", { class: "acct-actions" });
+    renderDeactivateActions(actions);
+    card.appendChild(actions);
+    body.appendChild(card);
+  } else if (st.state === "trial") {
+    var trial = st.trial || {};
+    var tCard = el("section", { class: "card" });
+    tCard.appendChild(el("h2", { text: "Avaliação gratuita" }));
+    tCard.appendChild(buildTrialMeter("Dias restantes", trial.days_left, TRIAL_TOTAL_DAYS));
+    tCard.appendChild(buildTrialMeter("Comparações restantes", trial.comparisons_left, TRIAL_TOTAL_COMPARISONS));
+    tCard.appendChild(el("p", { class: "acct-note", text: "A avaliação termina quando os dias ou as comparações acabarem — o que ocorrer primeiro." }));
+    var tActions = el("div", { class: "acct-actions" });
+    tActions.appendChild(el("button", { class: "btn-primary", onclick: function () { openActivateModal(); } }, "Ativar licença"));
+    tActions.appendChild(el("button", { class: "btn", onclick: function () { showView("plans"); } }, "Ver planos"));
+    tCard.appendChild(tActions);
+    body.appendChild(tCard);
+  } else {
+    /* locked | expired */
+    var isLocked = st.state === "locked";
+    var wCard = el("section", { class: "card " + (isLocked ? "card-warn" : "card-danger") });
+    wCard.appendChild(el("h2", { text: isLocked ? "Avaliação encerrada" : "Licença expirada" }));
+    wCard.appendChild(el("p", { class: "acct-note", text: isLocked
+      ? "O período de avaliação gratuita chegou ao fim. Ative uma licença para voltar a comparar documentos."
+      : "Sua licença venceu. Renove a assinatura ou ative uma nova chave para continuar." }));
+    var wActions = el("div", { class: "acct-actions" });
+    wActions.appendChild(el("button", { class: "btn-primary", onclick: function () { openActivateModal(); } }, "Ativar licença"));
+    wActions.appendChild(el("button", { class: "btn", onclick: function () { showView("plans"); } }, "Ver planos"));
+    wCard.appendChild(wActions);
+    body.appendChild(wCard);
+  }
+
+  /* Marca do escritório — sempre visível na Conta */
+  body.appendChild(buildBrandingCard());
+}
+
+/* ------------------------------------------------------------
+   Marca do escritório (GET/POST/DELETE /api/branding*)
+   ------------------------------------------------------------ */
+function loadBranding() {
+  if (state.branding.loading) return;
+  state.branding.loading = true;
+  state.branding.error = null;
+  fetch("/api/branding").then(function (res) {
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  }).then(function (data) {
+    state.branding.loading = false;
+    state.branding.data = data || null;
+    if (state.view === "account") renderAccountView();
+  }).catch(function () {
+    state.branding.loading = false;
+    if (!state.branding.data) {
+      state.branding.error = "Não foi possível carregar as informações de marca.";
+    }
+    if (state.view === "account") renderAccountView();
+  });
+}
+
+function uploadBrandingLogo(file) {
+  if (!file || state.branding.uploading) return;
+  var type = String(file.type || "").toLowerCase();
+  var extOk = /\.(png|jpe?g)$/i.test(String(file.name || ""));
+  if (type !== "image/png" && type !== "image/jpeg" && !extOk) {
+    state.branding.error = "Formato não suportado: envie um logo em PNG ou JPEG.";
+    if (state.view === "account") renderAccountView();
+    return;
+  }
+  if (file.size > 1024 * 1024) {
+    state.branding.error = "O logo deve ter no máximo 1 MB.";
+    if (state.view === "account") renderAccountView();
+    return;
+  }
+  state.branding.uploading = true;
+  state.branding.error = null;
+  if (state.view === "account") renderAccountView();
+  var fd = new FormData();
+  fd.append("logo", file);
+  fetch("/api/branding/logo", { method: "POST", body: fd }).then(function (res) {
+    if (!res.ok) {
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        throw new Error(extractErrorMsg(data) || "Não foi possível enviar o logo (HTTP " + res.status + ").");
+      });
+    }
+    return res.json();
+  }).then(function (data) {
+    state.branding.uploading = false;
+    state.branding.data = data || state.branding.data;
+    toast("Logo enviado — será aplicado aos PDFs e relatórios.", "success");
+    if (state.view === "account") renderAccountView();
+  }).catch(function (err) {
+    state.branding.uploading = false;
+    state.branding.error = err.message || "Erro de rede ao enviar o logo.";
+    if (state.view === "account") renderAccountView();
+  });
+}
+
+function removeBrandingLogo() {
+  fetch("/api/branding/logo", { method: "DELETE" }).then(function (res) {
+    if (!res.ok) {
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        throw new Error(extractErrorMsg(data) || "Não foi possível remover o logo (HTTP " + res.status + ").");
+      });
+    }
+    return res.json();
+  }).then(function (data) {
+    state.branding.data = data || state.branding.data;
+    state.branding.error = null;
+    toast("Logo removido dos relatórios.", "success");
+    if (state.view === "account") renderAccountView();
+  }).catch(function (err) {
+    state.branding.error = err.message || "Erro de rede ao remover o logo.";
+    if (state.view === "account") renderAccountView();
+  });
+}
+
+function buildBrandingCard() {
+  var card = el("section", { class: "card" });
+  var h = el("h2", {}, "Marca do escritório");
+  card.appendChild(h);
+
+  var br = state.branding;
+  if (!br.data && br.loading) {
+    card.appendChild(el("div", { class: "hist-detail-loading", text: "Carregando informações de marca…" }));
+    return card;
+  }
+  if (!br.data) {
+    card.appendChild(el("p", { class: "acct-note", text: br.error || "Não foi possível carregar as informações de marca." }));
+    card.appendChild(el("button", { class: "btn", type: "button", onclick: function () { loadBranding(); } }, "Tentar novamente"));
+    return card;
+  }
+
+  if (!br.data.allowed) {
+    h.appendChild(el("span", { class: "plan-pill accent", text: "Equipe" }));
+    card.appendChild(el("p", { class: "acct-note",
+      text: "Adicione o logo do seu escritório aos PDFs e relatórios — exclusivo do plano Equipe." }));
+    card.appendChild(el("button", { class: "btn", type: "button", onclick: function () { showView("plans"); } }, "Ver planos"));
+    return card;
+  }
+
+  card.appendChild(el("p", { class: "acct-note",
+    text: "O logo (PNG ou JPEG, até 1 MB) é aplicado aos PDFs e relatórios gerados." }));
+
+  var input = el("input", { type: "file", accept: "image/png,image/jpeg,.png,.jpg,.jpeg", hidden: "hidden" });
+  input.addEventListener("change", function () {
+    if (input.files && input.files.length > 0) uploadBrandingLogo(input.files[0]);
+    input.value = "";
+  });
+  card.appendChild(input);
+
+  var actions = el("div", { class: "branding-actions" });
+  if (br.data.has_logo) {
+    var status = el("div", { class: "branding-status" });
+    var chk = el("span", { class: "branding-check", "aria-hidden": "true" });
+    chk.appendChild(svgIcon("check", 14));
+    status.appendChild(chk);
+    status.appendChild(el("span", { text: "Logo ativo nos relatórios" }));
+    card.appendChild(status);
+    if (br.confirmRemove) {
+      actions.appendChild(el("span", { class: "acct-confirm-txt", text: "Remover o logo dos relatórios?" }));
+      actions.appendChild(el("button", {
+        class: "btn btn-danger", type: "button",
+        onclick: function () { state.branding.confirmRemove = false; removeBrandingLogo(); }
+      }, "Confirmar"));
+      actions.appendChild(el("button", {
+        class: "btn", type: "button",
+        onclick: function () { state.branding.confirmRemove = false; renderAccountView(); }
+      }, "Cancelar"));
+    } else {
+      var replaceBtn = el("button", {
+        class: "btn", type: "button",
+        onclick: function () { input.click(); }
+      }, br.uploading ? "Enviando…" : "Substituir logo");
+      if (br.uploading) replaceBtn.disabled = true;
+      actions.appendChild(replaceBtn);
+      actions.appendChild(el("button", {
+        class: "btn btn-danger", type: "button",
+        onclick: function () { state.branding.confirmRemove = true; renderAccountView(); }
+      }, "Remover"));
+    }
+  } else {
+    var upBtn = el("button", {
+      class: "btn btn-accent", type: "button",
+      onclick: function () { input.click(); }
+    }, br.uploading ? "Enviando…" : "Enviar logo");
+    if (br.uploading) upBtn.disabled = true;
+    actions.appendChild(upBtn);
+    actions.appendChild(el("span", { class: "acct-confirm-txt", text: "PNG ou JPEG, até 1 MB" }));
+  }
+  card.appendChild(actions);
+
+  if (br.error) {
+    card.appendChild(el("div", { class: "branding-error", role: "alert", text: br.error }));
+  }
+  return card;
+}
+
+/* Modal de ativação */
+function openActivateModal() {
+  var st = state.license.status;
+  $("act-error").hidden = true;
+  $("act-error").textContent = "";
+  if (st && st.email && $("act-email").value.trim() === "") {
+    $("act-email").value = st.email;
+  }
+  $("activate-modal").hidden = false;
+  $("act-email").focus();
+}
+
+function closeActivateModal() {
+  $("activate-modal").hidden = true;
+}
+
+function setActivateLoading(loading) {
+  var btn = $("btn-act-submit");
+  btn.disabled = loading;
+  btn.textContent = "";
+  if (loading) {
+    var sp = el("span", { class: "spin", "aria-hidden": "true" });
+    sp.appendChild(svgIcon("spinner", 14));
+    btn.appendChild(sp);
+    btn.appendChild(document.createTextNode("Ativando…"));
+  } else {
+    btn.appendChild(document.createTextNode("Ativar"));
+  }
+}
+
+function submitActivate(ev) {
+  if (ev) ev.preventDefault();
+  var errNode = $("act-error");
+  errNode.hidden = true;
+  errNode.textContent = "";
+  var email = $("act-email").value.trim();
+  var key = $("act-key").value.toUpperCase().replace(/\s+/g, "");
+  $("act-key").value = key;
+  if (!email || email.indexOf("@") === -1) {
+    errNode.textContent = "Informe o e-mail usado na compra da licença.";
+    errNode.hidden = false;
+    $("act-email").focus();
+    return;
+  }
+  if (!key) {
+    errNode.textContent = "Informe a chave de licença (formato CDOC-XXXX-XXXX-XXXX-XXXX).";
+    errNode.hidden = false;
+    $("act-key").focus();
+    return;
+  }
+  setActivateLoading(true);
+  fetch("/api/license/activate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: email, key: key })
+  }).then(function (res) {
+    if (!res.ok) {
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        throw new Error(extractErrorMsg(data) || "Não foi possível ativar a licença (HTTP " + res.status + ").");
+      });
+    }
+    return res.json();
+  }).then(function (st) {
+    setActivateLoading(false);
+    closeActivateModal();
+    $("act-key").value = "";
+    applyLicenseStatus(st);
+    toast("Licença ativada — plano " + planDisplayName(st && st.plan) + ".", "success");
+  }).catch(function (err) {
+    setActivateLoading(false);
+    errNode.textContent = err.message || "Erro de rede ao ativar a licença.";
+    errNode.hidden = false;
+  });
+}
+
+/* ------------------------------------------------------------
+   Modal do guia
+   ------------------------------------------------------------ */
+function openGuide() {
+  $("guide-modal").hidden = false;
+  $("btn-guide-close").focus();
+}
+function closeGuide() {
+  $("guide-modal").hidden = true;
+  $("btn-guide").focus();
+}
+
+/* ------------------------------------------------------------
+   Inicialização
+   ------------------------------------------------------------ */
+function init() {
+  initTheme();
+  renderDropzone("base");
+  renderDropzone("compare");
+  setupDropzone("base");
+  setupDropzone("compare");
+  renderFolderDropzone("base");
+  renderFolderDropzone("compare");
+  setupFolderDropzone("base");
+  setupFolderDropzone("compare");
+
+  $("btn-theme").addEventListener("click", toggleTheme);
+  $("nav-compare").addEventListener("click", function () { showView("compare"); });
+  $("nav-batch").addEventListener("click", function () { showView("batch"); });
+  $("nav-history").addEventListener("click", function () { showView("history"); });
+  $("nav-plans").addEventListener("click", function () { showView("plans"); });
+  $("side-account").addEventListener("click", function () { showView("account"); });
+  $("btn-hist-first").addEventListener("click", function () { showView("compare"); });
+
+  /* Licenciamento */
+  $("link-plans-activate").addEventListener("click", function () { openActivateModal(); });
+  $("btn-activate-close").addEventListener("click", closeActivateModal);
+  $("activate-form").addEventListener("submit", submitActivate);
+  $("link-act-plans").addEventListener("click", function () {
+    closeActivateModal();
+    showView("plans");
+  });
+  $("activate-modal").addEventListener("click", function (ev) {
+    if (ev.target === $("activate-modal")) closeActivateModal();
+  });
+  $("act-key").addEventListener("input", function (ev) {
+    var v = ev.target.value.toUpperCase().replace(/\s+/g, "");
+    if (v !== ev.target.value) ev.target.value = v;
+  });
+  window.addEventListener("hashchange", function () {
+    var v = viewFromHash();
+    if (v !== state.view) showView(v);
+  });
+
+  $("btn-swap-single").addEventListener("click", swapSingle);
+  $("btn-swap-batch").addEventListener("click", swapBatch);
+  $("btn-compare").addEventListener("click", startCompare);
+  $("btn-new-compare").addEventListener("click", startNewCompare);
+
+  $("btn-pick-outdir").addEventListener("click", function () {
+    pickFolderNative($("opt-outdir").value.trim(), "Pasta de saída")
+      .then(function (path) { if (path) $("opt-outdir").value = path; })
+      .catch(function (err) {
+        toast(err.message || "Erro ao abrir o explorador de arquivos.", "error");
+      });
+  });
+
+  $("opt-report").addEventListener("change", function () {
+    $("report-sub").hidden = !$("opt-report").checked;
+  });
+
+  /* Histórico: busca + filtros */
+  $("hist-search").addEventListener("input", function (ev) {
+    state.history.search = ev.target.value;
+    renderHistory();
+  });
+  $("hist-filter-all").addEventListener("click", function () { setHistoryFilter("all"); });
+  $("hist-filter-ok").addEventListener("click", function () { setHistoryFilter("ok"); });
+  $("hist-filter-error").addEventListener("click", function () { setHistoryFilter("error"); });
+
+  $("btn-guide").addEventListener("click", openGuide);
+  $("btn-guide-close").addEventListener("click", closeGuide);
+  $("guide-modal").addEventListener("click", function (ev) {
+    if (ev.target === $("guide-modal")) closeGuide();
+  });
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape") {
+      if (!$("activate-modal").hidden) { closeActivateModal(); return; }
+      if (!$("guide-modal").hidden) { closeGuide(); return; }
+      closeMenus();
+    }
+  });
+  document.addEventListener("click", function () { closeMenus(); });
+
+  /* impede o navegador de abrir arquivos soltos fora das dropzones */
+  ["dragover", "drop"].forEach(function (evName) {
+    document.addEventListener(evName, function (ev) { ev.preventDefault(); });
+  });
+
+  showView(viewFromHash());
+  applyViewVisibility();
+  updateCompareButton();
+  renderSideAccount();       /* estado neutro até a resposta da API */
+  refreshLicense();          /* estado global de licença no boot */
+  loadHistory(true); /* pré-carrega em segundo plano */
+}
+
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
