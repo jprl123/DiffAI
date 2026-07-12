@@ -1,0 +1,9 @@
+# Dependências mínimas do servidor de licenças (Railway / Docker).
+# O app desktop usa requirements.txt completo na raiz do repo.
+fastapi>=0.110
+uvicorn[standard]>=0.29
+cryptography>=42.0
+httpx>=0.27
+stripe>=11.0
+python-dotenv>=1.0
+python-multipart>=0.0.9
