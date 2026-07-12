@@ -47,9 +47,72 @@ Agora:
 
 ---
 
-## 2. Variáveis na Vercel (passo a passo com prints mentais)
+## 1b. Conectar GitHub (repo não aparece na Vercel)
 
-1. Abra https://vercel.com → projeto **comparedocs-landing**
+O repo **jprl123/DiffAI** está **privado** e a landing **não está na raiz** do repo.
+Por isso a Vercel muitas vezes não lista o projeto ou importa o app Python errado.
+
+### Por que não aparece
+
+| Motivo | O que fazer |
+|--------|-------------|
+| Repo **privado** | Dar permissão ao app **Vercel** no GitHub |
+| Conta GitHub errada na Vercel | Conectar a conta **jprl123** (mesma do push) |
+| Nome diferente | Procurar **`DiffAI`**, não `Compare-docs` |
+| Monorepo | A landing é Next.js numa **subpasta** (ver abaixo) |
+
+### Passo 1 — Liberar o repo privado no GitHub
+
+1. Abra: https://github.com/settings/installations  
+2. Clique em **Vercel** → **Configure**  
+3. Em **Repository access**, escolha:
+   - **All repositories**, ou  
+   - **Only select repositories** → marque **`jprl123/DiffAI`**  
+4. Salve (**Save**)
+
+Se **Vercel** não aparecer na lista, instale primeiro:  
+https://github.com/apps/vercel → **Install** → conta **jprl123**
+
+### Passo 2 — Conectar na Vercel (projeto existente)
+
+Landing já no ar: **comparedocs-landing**
+
+1. Abra: https://vercel.com/jprl123s-projects/comparedocs-landing/settings/git  
+2. **Connect Git Repository** → GitHub → **jprl123/DiffAI**  
+3. **Root Directory** (obrigatório):
+
+   ```
+   agentic-build-and-orchestrate-ai-agents-while-you-sleep
+   ```
+
+4. Framework: **Next.js** (auto)  
+5. Salve e faça **Redeploy**
+
+### Passo 2 (alternativa) — Importar projeto novo
+
+1. https://vercel.com/new  
+2. **Import** → **DiffAI**  
+3. **Root Directory** → **Edit** → mesma pasta acima  
+4. Nome sugerido: `diffai-landing`  
+5. Adicione as envs da seção 2 → **Deploy**
+
+> O deploy anterior (via Cursor, sem Git) continua funcionando até você
+> conectar o repo. Depois de conectar, cada `git push` na `main` redeploya.
+
+### Checklist se ainda não listar
+
+- [ ] GitHub logado na Vercel = **jprl123** (Settings → Authentication)  
+- [ ] App Vercel com acesso a **DiffAI** (privado)  
+- [ ] Root Directory = subpasta da landing (não a raiz do repo)  
+- [ ] Branch = **main**
+
+---
+
+## 2. Variáveis na Vercel (passo a passo)
+
+Guia Railway completo: **[docs/RAILWAY.md](RAILWAY.md)**
+
+1. Abra https://vercel.com → projeto da landing (ex.: **comparedocs-landing** ou **diffai-landing**)
 2. **Settings** → **Environment Variables**
 3. Adicione (Production + Preview):
 
@@ -70,53 +133,11 @@ Checklist rápido depois do redeploy:
 
 ---
 
-## 3. Subir a API de licenças no Railway (recomendado, sem plugin)
+## 3. Subir a API de licenças no Railway
 
-### 3.1 Conta e projeto
+**Guia detalhado:** [docs/RAILWAY.md](RAILWAY.md) — Dockerfile, volume `/data`, envs, webhook Stripe.
 
-1. Crie conta em https://railway.app  
-2. **New Project** → **Deploy from GitHub** (repo deste código) **ou** **Empty Project** + deploy via CLI  
-3. Root / start: pasta do repo com `licensing_server`
-
-### 3.2 Comando e porta
-
-No serviço Railway:
-
-- **Start command:**  
-  `uvicorn licensing_server.server:app --host 0.0.0.0 --port $PORT`
-- Gere domínio público: **Settings** → **Networking** → **Generate Domain**  
-  Ex.: `https://diffai-api-production.up.railway.app`
-
-### 3.3 Volume (SQLite)
-
-- **Add Volume** montado em `/data`
-- Envs de caminho (ajuste se o código usar outro dir): dados em `/data`
-
-### 3.4 Variáveis de ambiente no Railway
-
-```text
-PORT=                    # Railway preenche
-STRIPE_SECRET_KEY=sk_live_...   # ou sk_test_... no sandbox
-STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRICE_PRO=price_...
-STRIPE_PRICE_TEAM=price_...
-MAIL_BACKEND=resend
-RESEND_API_KEY=re_...
-PORTAL_ALLOWED_ORIGINS=https://comparedocs-landing.vercel.app,https://diffai.app
-COMPAREDOCS_SIGNING_KEY=/data/signing_key.pem
-```
-
-- Gere chave de produção com `scripts/rotate_license_keys.py` — **não** use a chave de dev do repo.
-- No Stripe Dashboard → Webhooks → endpoint  
-  `https://SUA-API.up.railway.app/v1/stripe/webhook`  
-  eventos de checkout/subscription conforme o código.
-
-### 3.5 Ligar landing ↔ API
-
-1. Copie a URL HTTPS do Railway  
-2. Cole em `NEXT_PUBLIC_LICENSE_API` na Vercel  
-3. Redeploy da landing  
-4. Confirme `PORTAL_ALLOWED_ORIGINS` com a URL exata da landing (com `https://`, sem path)
+Resumo:
 
 ### Render (alternativa parecida)
 

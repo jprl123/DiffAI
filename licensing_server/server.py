@@ -41,7 +41,7 @@ try:
 except ImportError:
     pass
 
-app = FastAPI(title="Compare Docs — Licensing", docs_url=None, redoc_url=None)
+app = FastAPI(title="diffAI — Licensing", docs_url=None, redoc_url=None)
 
 # CORS: o portal do cliente (landing na Vercel) chama esta API do navegador.
 # Em produção, restrinja via PORTAL_ALLOWED_ORIGINS="https://comparedocs.app".

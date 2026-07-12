@@ -14,6 +14,9 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
+BRAND = os.environ.get("DIFFAI_BRAND", "diffAI")
+SUPPORT_EMAIL = os.environ.get("DIFFAI_SALES_EMAIL", "vendas@diffai.app")
+
 PLAN_LABELS = {
     "pro": "Pro",
     "team": "Equipe",
@@ -37,20 +40,20 @@ def send_license_email(email: str, key: str, plan: str) -> None:
 
 def _compose(email: str, key: str, plan: str) -> tuple:
     label = PLAN_LABELS.get(plan, plan)
-    subject = "Sua chave Compare Docs — plano %s" % label
+    subject = "Sua chave %s — plano %s" % (BRAND, label)
     body = (
         "Olá,\n\n"
         "Seu pagamento foi confirmado. Aqui está a chave do plano %s:\n\n"
         "    %s\n\n"
         "Como ativar:\n"
-        "  1. Abra o Compare Docs\n"
+        "  1. Abra o %s\n"
         "  2. Clique em Ativar licença\n"
         "  3. Informe este e-mail (%s) e a chave acima\n\n"
         "A chave vale para o período da assinatura e renova automaticamente "
         "enquanto o pagamento estiver em dia.\n\n"
-        "Dúvidas: vendas@comparedocs.app\n"
-        "— Equipe Compare Docs\n"
-    ) % (label, key, email)
+        "Dúvidas: %s\n"
+        "— Equipe %s\n"
+    ) % (label, key, BRAND, email, SUPPORT_EMAIL, BRAND)
     return subject, body
 
 
@@ -70,7 +73,7 @@ def _send_resend(email: str, subject: str, body: str) -> None:
     if not api_key:
         raise RuntimeError("RESEND_API_KEY não configurada.")
     from_addr = (
-        os.environ.get("MAIL_FROM") or "Compare Docs <onboarding@resend.dev>"
+        os.environ.get("MAIL_FROM") or "%s <onboarding@resend.dev>" % BRAND
     ).strip()
     payload = json.dumps(
         {
@@ -86,7 +89,7 @@ def _send_resend(email: str, subject: str, body: str) -> None:
         headers={
             "Authorization": "Bearer %s" % api_key,
             "Content-Type": "application/json",
-            "User-Agent": "CompareDocs-Licensing/1.0",
+            "User-Agent": "diffAI-Licensing/1.0",
             "Accept": "application/json",
         },
         method="POST",
