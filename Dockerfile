@@ -16,7 +16,8 @@ RUN chmod +x ./scripts/start_licensing_server.sh
 ENV COMPAREDOCS_DATA_DIR=/data
 ENV PYTHONUNBUFFERED=1
 
-VOLUME ["/data"]
+# Volume persistente: configure no Railway (Settings → Volumes → mount /data).
+# Não use VOLUME aqui — o builder da Railway rejeita.
 
 EXPOSE 8390
 

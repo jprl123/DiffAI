@@ -206,6 +206,7 @@ Vercel → projeto landing → **Settings** → **Environment Variables**:
 | Mensagem no log | Significado | Ação |
 |-----------------|-------------|------|
 | `Dockerfile not found` | GitHub sem Dockerfile | Push do repo atualizado |
+| `docker VOLUME ... is not supported` | `VOLUME` no Dockerfile | Removido — use Railway Volumes (mount `/data`) |
 | `ModuleNotFoundError` | build errado | Builder = Dockerfile |
 | `Application failed to respond` | crash ao iniciar | Deploy Logs; teste health |
 | `STRIPE_SECRET_KEY` | checkout sem env | Normal até configurar Stripe |
