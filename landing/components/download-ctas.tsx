@@ -121,7 +121,7 @@ export function DownloadSection() {
             </h3>
             <p className="text-sm text-black/50 mb-6 flex-1">
               {macReady
-                ? "Download do instalador (.dmg)."
+                ? "Baixe o .zip, abra e arraste o diffAI.app para Aplicativos."
                 : "Build Mac em preparação. Avise-nos e mandamos o link assim que sair."}
             </p>
             {macReady ? (
@@ -129,7 +129,7 @@ export function DownloadSection() {
                 href={DOWNLOAD_URL_MAC}
                 className={`${baseBtn} bg-[#111] text-white hover:bg-black/80`}
               >
-                Baixar .dmg
+                Baixar .zip
               </a>
             ) : (
               <a
