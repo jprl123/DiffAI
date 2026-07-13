@@ -143,8 +143,21 @@ async def _body(request: Request) -> Dict[str, Any]:
 
 
 @app.get("/v1/health")
-def health() -> Dict[str, bool]:
-    return {"ok": True}
+def health() -> Dict[str, Any]:
+    """Status + flags de config (sem vazar segredos) para depurar Railway."""
+    def present(name: str) -> bool:
+        v = (os.environ.get(name) or "").strip().strip('"').strip("'")
+        return bool(v)
+
+    return {
+        "ok": True,
+        "stripe_secret": present("STRIPE_SECRET_KEY"),
+        "stripe_price_pro": present("STRIPE_PRICE_PRO"),
+        "stripe_price_team": present("STRIPE_PRICE_TEAM"),
+        "stripe_webhook": present("STRIPE_WEBHOOK_SECRET"),
+        "success_url": present("SUCCESS_URL"),
+        "cancel_url": present("CANCEL_URL"),
+    }
 
 
 @app.post("/v1/activate")
@@ -350,11 +363,15 @@ def checkout(plan: str):
         logger.error("Checkout falhou: %s", exc)
         raise HTTPException(
             status_code=503,
-            detail="Checkout indisponível no momento. Verifique a configuração Stripe.",
+            detail=str(exc)[:220],
         ) from exc
     except Exception as exc:
         logger.exception("Erro ao criar Checkout Session")
-        raise HTTPException(status_code=502, detail="Falha ao falar com o Stripe.") from exc
+        hint = str(exc).strip().split("\n")[0][:180]
+        raise HTTPException(
+            status_code=502,
+            detail="Falha ao falar com o Stripe: %s" % (hint or type(exc).__name__),
+        ) from exc
     return RedirectResponse(url=url, status_code=303)
 
 

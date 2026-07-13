@@ -5,8 +5,10 @@
 export const BRAND = "diffAI"
 export const BRAND_DOMAIN = "diffai.app"
 
-export const LICENSE_API =
+// Sem barra no final — evita //v1/... (404) quando a env vem com /
+export const LICENSE_API = (
   process.env.NEXT_PUBLIC_LICENSE_API ?? "http://127.0.0.1:8390"
+).replace(/\/+$/, "")
 
 /** URL do .dmg / .zip macOS. Vazio ou "#" = ainda não publicado. */
 export const DOWNLOAD_URL_MAC = (

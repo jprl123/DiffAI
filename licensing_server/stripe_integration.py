@@ -20,8 +20,13 @@ PLAN_DEVICES = {"pro": 2, "team": 5}
 PLAN_MONTHS = {"pro": 1, "team": 1}
 
 
+def _env(name: str) -> str:
+    """Lê env e remove aspas/espaços acidentais (comum ao colar no Railway)."""
+    return (os.environ.get(name) or "").strip().strip('"').strip("'")
+
+
 def _configure_stripe() -> None:
-    key = (os.environ.get("STRIPE_SECRET_KEY") or "").strip()
+    key = _env("STRIPE_SECRET_KEY")
     if not key:
         raise RuntimeError("STRIPE_SECRET_KEY não configurada.")
     stripe.api_key = key
@@ -30,7 +35,7 @@ def _configure_stripe() -> None:
 def price_id_for_plan(plan: str) -> str:
     plan = plan.strip().lower()
     env_key = "STRIPE_PRICE_%s" % plan.upper()
-    price_id = (os.environ.get(env_key) or "").strip()
+    price_id = _env(env_key)
     if not price_id:
         raise RuntimeError(
             "Preço Stripe não configurado para o plano '%s' (%s)." % (plan, env_key)
@@ -42,7 +47,7 @@ def plan_from_price_id(price_id: Optional[str]) -> Optional[str]:
     if not price_id:
         return None
     for plan in ("pro", "team"):
-        if (os.environ.get("STRIPE_PRICE_%s" % plan.upper()) or "").strip() == price_id:
+        if _env("STRIPE_PRICE_%s" % plan.upper()) == price_id:
             return plan
     return None
 
@@ -55,26 +60,33 @@ def create_checkout_session(plan: str) -> str:
     _configure_stripe()
     price_id = price_id_for_plan(plan)
     success = (
-        os.environ.get("SUCCESS_URL")
+        _env("SUCCESS_URL")
         or "http://127.0.0.1:8390/v1/checkout/success?session_id={CHECKOUT_SESSION_ID}"
     )
-    cancel = os.environ.get("CANCEL_URL") or "http://127.0.0.1:8390/v1/checkout/cancel"
-    session = stripe.checkout.Session.create(
-        mode="subscription",
-        line_items=[{"price": price_id, "quantity": 1}],
-        success_url=success,
-        cancel_url=cancel,
-        metadata={"plan": plan},
-        subscription_data={"metadata": {"plan": plan}},
-        allow_promotion_codes=True,
-    )
+    cancel = _env("CANCEL_URL") or "http://127.0.0.1:8390/v1/checkout/cancel"
+    try:
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+            line_items=[{"price": price_id, "quantity": 1}],
+            success_url=success,
+            cancel_url=cancel,
+            metadata={"plan": plan},
+            subscription_data={"metadata": {"plan": plan}},
+            allow_promotion_codes=True,
+        )
+    except Exception as exc:
+        # stripe.error.StripeError (SDK antigo/novo) — mensagem sem vazar secret
+        if "stripe" not in type(exc).__module__.lower() and "Stripe" not in type(exc).__name__:
+            raise
+        msg = getattr(exc, "user_message", None) or str(exc)
+        raise RuntimeError("Stripe: %s" % msg) from exc
     if not session.url:
         raise RuntimeError("Stripe não retornou URL de checkout.")
     return session.url
 
 
 def construct_event(payload: bytes, sig_header: str) -> Any:
-    secret = (os.environ.get("STRIPE_WEBHOOK_SECRET") or "").strip()
+    secret = _env("STRIPE_WEBHOOK_SECRET")
     if not secret:
         raise RuntimeError("STRIPE_WEBHOOK_SECRET não configurada.")
     return stripe.Webhook.construct_event(payload, sig_header, secret)
