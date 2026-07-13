@@ -21,6 +21,7 @@ $PY -m PyInstaller \
   --windowed \
   --noconfirm \
   --add-data "web:web" \
+  --collect-data docx \
   --collect-submodules app \
   --collect-submodules reportlab \
   --hidden-import openpyxl \
@@ -38,6 +39,27 @@ if [[ ! -d "$APP" ]]; then
   exit 1
 fi
 
+# python-docx resolve templates via __file__/../templates (ex.: parts/hdrftr.py).
+# No bundle, os .py ficam no PYZ e só os XML vão para Resources/docx/templates.
+# Sem o diretório `parts` no disco, open(".../parts/../templates/...") falha com ENOENT.
+echo "==> Corrigindo paths do python-docx no bundle"
+DOCX_RES="${APP}/Contents/Resources/docx"
+if [[ -d "${DOCX_RES}/templates" ]]; then
+  mkdir -p "${DOCX_RES}/parts"
+  # Garante ficheiros reais (não só symlink) sob Frameworks — App Translocation
+  # no macOS por vezes parte symlinks relativos do PyInstaller.
+  DOCX_FW="${APP}/Contents/Frameworks/docx"
+  if [[ -L "${DOCX_FW}" ]]; then
+    rm -f "${DOCX_FW}"
+    mkdir -p "${DOCX_FW}/parts"
+    cp -R "${DOCX_RES}/templates" "${DOCX_FW}/templates"
+    # py.typed opcional
+    [[ -f "${DOCX_RES}/py.typed" ]] && cp "${DOCX_RES}/py.typed" "${DOCX_FW}/py.typed"
+  elif [[ -d "${DOCX_FW}" ]]; then
+    mkdir -p "${DOCX_FW}/parts"
+  fi
+fi
+
 echo "==> Empacotando ZIP para download"
 (
   cd dist
@@ -49,7 +71,9 @@ if command -v hdiutil >/dev/null 2>&1; then
   echo "==> Criando DMG"
   DMG="dist/${APP_NAME}-mac.dmg"
   rm -f "$DMG"
-  hdiutil create -volname "$APP_NAME" -srcfolder "$APP" -ov -format UDZO "$DMG"
+  if ! hdiutil create -volname "$APP_NAME" -srcfolder "$APP" -ov -format UDZO "$DMG"; then
+    echo "AVISO: DMG falhou (ZIP continua ok)."
+  fi
 fi
 
 echo ""
