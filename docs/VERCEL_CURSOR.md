@@ -1,7 +1,7 @@
 # diffAI — Guia completo: landing (Vercel) + API de licenças + downloads
 
 Landing: https://comparedocs-landing.vercel.app  
-Código da landing: `agentic-build-and-orchestrate-ai-agents-while-you-sleep/`  
+Código da landing: `landing/`  
 API de licenças: `licensing_server/` (FastAPI + SQLite — **não** vai na Vercel)
 
 ---
@@ -47,7 +47,25 @@ Agora:
 
 ---
 
-## 1b. Conectar GitHub (repo não aparece na Vercel)
+## Fix 404 após conectar GitHub (Root Directory)
+
+Se o build log mostrar só **`Route (pages) ─ /404`** ou o site der 404:
+
+1. Vercel → projeto **comparedocs-landing** → **Settings** → **General**
+2. **Root Directory** → **Edit** → digite: **`landing`**
+3. **Save**
+4. **Deployments** → ⋮ no último → **Redeploy** → marque **Clear build cache** (importante)
+
+Build correto deve listar:
+
+```text
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+└ ○ /conta
+```
+
+---
 
 O repo **jprl123/DiffAI** está **privado** e a landing **não está na raiz** do repo.
 Por isso a Vercel muitas vezes não lista o projeto ou importa o app Python errado.
@@ -82,7 +100,7 @@ Landing já no ar: **comparedocs-landing**
 3. **Root Directory** (obrigatório):
 
    ```
-   agentic-build-and-orchestrate-ai-agents-while-you-sleep
+   landing
    ```
 
 4. Framework: **Next.js** (auto)  
