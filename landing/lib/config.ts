@@ -14,7 +14,7 @@ export const LICENSE_API = (
 export const DOWNLOAD_URL_MAC = (
   process.env.NEXT_PUBLIC_DOWNLOAD_URL_MAC ??
   process.env.NEXT_PUBLIC_DOWNLOAD_URL ??
-  ""
+  "https://github.com/jprl123/DiffAI/releases/download/v0.1.0/diffAI-mac.dmg"
 ).trim()
 
 /** URL do instalador Windows (.exe / .msi). Vazio = ainda não publicado. */
