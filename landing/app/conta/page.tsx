@@ -45,11 +45,21 @@ export default function ContaPage() {
   const [loading, setLoading] = useState(false)
   const [booting, setBooting] = useState(true)
   const [pendingDevice, setPendingDevice] = useState<string | null>(null)
+  const [checkoutOk, setCheckoutOk] = useState(false)
 
   const loadMe = useCallback(async (tok: string) => {
     const data = await portalMe(tok)
     setLicense(data.license)
     setToken(tok)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("checkout") === "ok") {
+      setCheckoutOk(true)
+      window.history.replaceState({}, "", "/conta")
+    }
   }, [])
 
   useEffect(() => {
@@ -121,6 +131,20 @@ export default function ContaPage() {
             Entre com o e-mail da compra e a chave recebida (formato CDOC-…). Sem senha —
             o mesmo par usado para ativar no app.
           </p>
+
+          {checkoutOk && (
+            <div className="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-5 text-sm text-emerald-950 leading-relaxed">
+              <p className="font-medium mb-1">Pagamento confirmado</p>
+              <p>
+                Enviamos a chave de licença para o <strong>e-mail que você usou no
+                Stripe Checkout</strong>. Confira a caixa de entrada e o spam.
+              </p>
+              <p className="mt-2 text-emerald-900/80">
+                Quando receber a chave, entre abaixo (e-mail + chave) ou ative no app
+                diffAI.
+              </p>
+            </div>
+          )}
 
           {booting ? (
             <p className="text-sm text-black/40">Carregando…</p>

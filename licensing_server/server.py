@@ -327,11 +327,22 @@ async def portal_deactivate(request: Request) -> Dict[str, Any]:
 def checkout_success() -> str:
     return (
         "<!doctype html><html lang='pt-BR'><meta charset='utf-8'>"
-        "<title>Pagamento confirmado</title>"
-        "<body style='font-family:system-ui;max-width:480px;margin:48px auto;padding:0 16px'>"
-        "<h1>Pagamento confirmado</h1>"
-        "<p>Enviamos a chave de licença para o e-mail informado no checkout. "
-        "Abra o Compare Docs e use <b>Ativar licença</b>.</p>"
+        "<title>Pagamento confirmado — diffAI</title>"
+        "<body style='font-family:system-ui;max-width:520px;margin:48px auto;padding:0 16px;"
+        "background:#F5F4F0;color:#111'>"
+        "<p style='font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.45'>diffAI</p>"
+        "<h1 style='font-weight:300;font-size:2rem'>Pagamento confirmado</h1>"
+        "<p>Enviamos a <b>chave de licença</b> para o e-mail informado no checkout. "
+        "Confira a caixa de entrada e o spam.</p>"
+        "<ol style='line-height:1.6;opacity:.75'>"
+        "<li>Abra o e-mail com a chave (formato CDOC-…)</li>"
+        "<li>Baixe o diffAI e use <b>Ativar licença</b>, ou</li>"
+        "<li>Entre em <a href='https://comparedocs-landing.vercel.app/conta'>Conta</a> "
+        "com o mesmo e-mail + chave</li>"
+        "</ol>"
+        "<p style='margin-top:2rem'><a href='https://comparedocs-landing.vercel.app/conta'"
+        " style='display:inline-block;padding:12px 20px;background:#111;color:#fff;"
+        "text-decoration:none;border-radius:12px'>Ir para Conta</a></p>"
         "</body></html>"
     )
 

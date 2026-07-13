@@ -10,4 +10,4 @@ tratados no fluxo da Vercel/Cursor — ver docs/VERCEL_CURSOR.md.
 """
 from __future__ import annotations
 
-DEFAULT_SERVER_URL = "http://127.0.0.1:8390"
+DEFAULT_SERVER_URL = "https://diffai-production.up.railway.app"
