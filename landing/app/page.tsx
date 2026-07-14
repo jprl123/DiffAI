@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useCallback, useEffect, useState } from "react"
-import Image from "next/image"
 import { IntroAnimation, HERO_REVEAL_MS } from "@/components/intro-animation"
 import { MobileNav } from "@/components/mobile-nav"
 import { DownloadButtons, DownloadSection } from "@/components/download-ctas"
@@ -269,28 +268,16 @@ export default function HomePage() {
         <div className="h-20" />
 
         <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col px-6 md:px-12 pb-12 max-w-3xl">
-          <div
-            className="flex items-center gap-3 mb-4"
+          <p
+            className="text-xs tracking-[0.3em] uppercase text-black/45 mb-4"
             style={{
+              fontFamily: '"IBM Plex Sans", sans-serif',
               opacity: heroReady ? 1 : 0,
               transition: "opacity 0.8s ease",
             }}
           >
-            <Image
-              src="/icon.png"
-              alt=""
-              width={36}
-              height={36}
-              className="rounded-[9px] shadow-md"
-              priority
-            />
-            <p
-              className="text-xs tracking-[0.3em] uppercase text-black/45"
-              style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
-            >
-              {BRAND}
-            </p>
-          </div>
+            {BRAND}
+          </p>
           <h1
             className="text-5xl sm:text-6xl md:text-7xl font-light text-[#111] leading-[1.05] tracking-tight mb-6"
             style={{
@@ -693,10 +680,7 @@ export default function HomePage() {
       {/* ── FOOTER ────────────────────────────────────────────────────────── */}
       <footer className="py-10 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-          <span className="flex items-center gap-2.5 font-pixel text-xs tracking-[0.25em] text-black/50">
-            <Image src="/icon.png" alt="" width={22} height={22} className="rounded-[6px]" />
-            {BRAND}
-          </span>
+          <span className="font-pixel text-xs tracking-[0.25em] text-black/50">{BRAND}</span>
 
           <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
             {[

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
 import Link from "next/link"
 import { BRAND } from "@/lib/config"
 
@@ -30,16 +29,8 @@ export function MobileNav() {
           className="flex items-center justify-between px-5 py-3 rounded-2xl border border-black/[0.06]"
           style={NAV_STYLE}
         >
-          <Link href="/" className="flex items-center gap-2.5 text-black/70 hover:text-black transition-colors">
-            <Image
-              src="/icon.png"
-              alt=""
-              width={28}
-              height={28}
-              className="rounded-[7px] shadow-sm"
-              priority
-            />
-            <span className="font-pixel text-xs tracking-[0.2em]">{BRAND}</span>
+          <Link href="/" className="font-pixel text-xs tracking-[0.2em] text-black/70">
+            {BRAND}
           </Link>
 
           <div
