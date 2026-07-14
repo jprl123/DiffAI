@@ -1,4 +1,4 @@
-"""Ponto de entrada do Compare Docs Desktop."""
+"""Ponto de entrada do diffAI Desktop."""
 from __future__ import annotations
 
 import os
@@ -17,7 +17,7 @@ def _show_fatal_error(message: str) -> None:
 
         root = tk.Tk()
         root.withdraw()
-        messagebox.showerror("Compare Docs — erro ao iniciar", message)
+        messagebox.showerror("diffAI — erro ao iniciar", message)
         root.destroy()
     except Exception:
         pass
@@ -26,7 +26,7 @@ def _show_fatal_error(message: str) -> None:
 
 def main() -> None:
     os.environ.setdefault("TK_SILENCE_DEPRECATION", "1")
-    logger.info("Iniciando Compare Docs Desktop…")
+    logger.info("Iniciando diffAI Desktop…")
 
     # Modo 1 (padrão): janela nativa com interface web — funciona no macOS.
     if "--tk" not in sys.argv:

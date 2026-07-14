@@ -10,7 +10,7 @@ from __future__ import annotations
 import os
 from typing import Any, Dict, List
 
-SALES_EMAIL = os.environ.get("COMPAREDOCS_SALES_EMAIL", "vendas@comparedocs.app")
+SALES_EMAIL = os.environ.get("COMPAREDOCS_SALES_EMAIL", "vendas@diffai.app")
 
 PLANS: List[Dict[str, Any]] = [
     {

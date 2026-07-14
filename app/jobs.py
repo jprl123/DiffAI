@@ -16,7 +16,9 @@ import datetime
 import logging
 import os
 import re
+import shutil
 import sys
+import tempfile
 import threading
 import time
 import uuid
@@ -76,8 +78,9 @@ def _fallback_redline_pdf_name(base_path: str, compare_path: str) -> str:
 
 
 def _fallback_changed_pages_pdf_name(base_path: str, compare_path: str) -> str:
-    return "[Redline-Changed Pages] %s vs %s.pdf" % (
-        _sanitize_stem(base_path), _sanitize_stem(compare_path)
+    # Alinha com app.output.naming (sufixo localizado quando o módulo existe).
+    return "[Redline-Changed Pages] %s.pdf" % (
+        "%s vs %s" % (_sanitize_stem(base_path), _sanitize_stem(compare_path))
     )
 
 
@@ -102,6 +105,9 @@ def _fallback_report_name(base_path: str, compare_path: str, ext: str) -> str:
 _PIPELINE_IMPORTS: Dict[str, Tuple[str, str]] = {
     "load_document": ("app.extract.loader", "load_document"),
     "compare_documents": ("app.engine.compare", "compare_documents"),
+    "convert_pdf_to_docx": ("app.extract.pdf_to_docx", "convert_pdf_to_docx"),
+    "has_tracked_revisions": ("app.extract.docx_revisions", "has_tracked_revisions"),
+    "accept_all_revisions": ("app.extract.docx_revisions", "accept_all_revisions"),
     "write_redline_pdf": ("app.output.redline_pdf", "write_redline_pdf"),
     "write_redline_docx": ("app.output.redline_docx", "write_redline_docx"),
     "write_redline_docx_inplace": ("app.output.redline_docx_inplace", "write_redline_docx_inplace"),
@@ -131,6 +137,7 @@ _NAMING_FALLBACKS: Dict[str, Callable[..., str]] = {
 VALID_REPORTS = ("html", "xlsx", "json")
 _XLSX_EXTENSIONS = (".xlsx", ".xlsm")
 _DOCX_EXTENSIONS = (".docx",)
+_PDF_EXTENSIONS = (".pdf",)
 
 
 def _is_xlsx_pair(base_path: str, compare_path: str) -> bool:
@@ -157,7 +164,7 @@ def _comparison_result_from_xlsx_diff(
     insertions = int(xs.row_add) + int(xs.col_add) + int(xs.value_changes)
     deletions = int(xs.row_del) + int(xs.col_del) + int(xs.emptied_cells)
     modifications = int(xs.modified_cells)
-    total = max(table_changes, int(xlsx_diff.summary.deletions) + int(xlsx_diff.summary.insertions))
+    total = insertions + deletions + modifications
     stats = Stats(
         total_changes=total,
         insertions=insertions,
@@ -182,6 +189,12 @@ def _is_docx_pair(base_path: str, compare_path: str) -> bool:
     base_ext = os.path.splitext(base_path)[1].lower()
     compare_ext = os.path.splitext(compare_path)[1].lower()
     return base_ext in _DOCX_EXTENSIONS and compare_ext in _DOCX_EXTENSIONS
+
+
+def _is_pdf_pair(base_path: str, compare_path: str) -> bool:
+    base_ext = os.path.splitext(base_path)[1].lower()
+    compare_ext = os.path.splitext(compare_path)[1].lower()
+    return base_ext in _PDF_EXTENSIONS and compare_ext in _PDF_EXTENSIONS
 
 
 class JobManager:
@@ -353,7 +366,7 @@ class JobManager:
             # saída vai para a pasta do usuário.
             if getattr(sys, "frozen", False):
                 root = os.path.join(
-                    os.path.expanduser("~"), "Documents", "Compare Docs"
+                    os.path.expanduser("~"), "Documents", "diffAI"
                 )
             else:
                 root = os.path.join(PROJECT_ROOT, "output")
@@ -400,16 +413,50 @@ class JobManager:
             load_document = self._resolve("load_document")
             compare_documents = self._resolve("compare_documents")
 
-            base_doc = load_document(base_path)
-            compare_doc = load_document(compare_path)
-            result = compare_documents(base_doc, compare_doc)
-            result.compared_at = datetime.datetime.now().isoformat()
-            result.duration_seconds = round(time.time() - pair_started, 3)
-
-            outputs = self._generate_outputs(
-                result, base_path, compare_path, options, output_dir,
-                warnings=item["warnings"],
+            # PDF x PDF: converte ambos para DOCX e segue o MESMO pipeline dos
+            # pares Word (redline in-place + PDF fiel). Se a conversão falhar
+            # (PDF escaneado, protegido…), cai no gerador padronizado antigo.
+            load_base, load_compare, pdf_docx_dir = base_path, compare_path, None
+            if _is_pdf_pair(base_path, compare_path):
+                load_base, load_compare, pdf_docx_dir = self._convert_pdf_pair_to_docx(
+                    base_path, compare_path, item["warnings"]
+                )
+            # DOCX com track changes PENDENTES: aceita tudo em cópia temporária
+            # antes de extrair/comparar (inserção pendente é invisível ao
+            # extrator e as marcas antigas poluiriam o redline in-place).
+            load_base, load_compare, revisions_dir = self._accept_pending_revisions(
+                load_base, load_compare, item["warnings"]
             )
+            try:
+                base_doc = load_document(load_base)
+                compare_doc = load_document(load_compare)
+                result = compare_documents(base_doc, compare_doc)
+                if load_base != base_path or load_compare != compare_path:
+                    # Entradas passaram por cópia/conversão; caminhos exibidos
+                    # são sempre os originais do usuário.
+                    result.base_path = base_path
+                    result.compare_path = compare_path
+                result.compared_at = datetime.datetime.now().isoformat()
+                result.duration_seconds = round(time.time() - pair_started, 3)
+
+                # O redline in-place parte do DOCX revisado EFETIVO (convertido
+                # de PDF e/ou com revisões aceitas), quando houver.
+                docx_compare_path = (
+                    load_compare
+                    if load_compare != compare_path
+                    and load_compare.lower().endswith(".docx")
+                    else None
+                )
+                outputs = self._generate_outputs(
+                    result, base_path, compare_path, options, output_dir,
+                    warnings=item["warnings"],
+                    docx_compare_path=docx_compare_path,
+                )
+            finally:
+                if pdf_docx_dir is not None:
+                    shutil.rmtree(pdf_docx_dir, ignore_errors=True)
+                if revisions_dir is not None:
+                    shutil.rmtree(revisions_dir, ignore_errors=True)
             item["outputs"] = outputs
             item["stats"] = dataclasses.asdict(result.stats)
             return item, result
@@ -421,6 +468,96 @@ class JobManager:
             item["status"] = "error"
             item["error"] = str(exc)
             return item, None
+
+    def _convert_pdf_pair_to_docx(
+        self,
+        base_path: str,
+        compare_path: str,
+        warnings: List[str],
+    ) -> Tuple[str, str, Optional[str]]:
+        """Converte um par PDF em DOCX temporários com os stems originais.
+
+        Retorna ``(base_docx, compare_docx, temp_dir)`` em sucesso. Em falha,
+        registra warning e retorna os caminhos originais com ``temp_dir=None``
+        — o par segue pelo gerador de PDF padronizado (comportamento antigo).
+        """
+        temp_dir = tempfile.mkdtemp(prefix="comparedocs-pdf2docx-")
+        try:
+            convert_pdf_to_docx = self._resolve("convert_pdf_to_docx")
+            # Subpastas separadas: base e revisado costumam ter o mesmo nome.
+            base_docx = os.path.join(
+                temp_dir, "base", _sanitize_stem(base_path) + ".docx"
+            )
+            compare_docx = os.path.join(
+                temp_dir, "compare", _sanitize_stem(compare_path) + ".docx"
+            )
+            convert_pdf_to_docx(base_path, base_docx)
+            convert_pdf_to_docx(compare_path, compare_docx)
+            return base_docx, compare_docx, temp_dir
+        except Exception as exc:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            logger.warning(
+                "Conversão PDF→DOCX indisponível para '%s' x '%s' (%s); "
+                "usando gerador de PDF padronizado.",
+                os.path.basename(base_path), os.path.basename(compare_path), exc,
+            )
+            warnings.append(
+                "Não foi possível usar o pipeline fiel para este par de PDFs "
+                "(%s). O redline foi gerado com layout padronizado." % exc
+            )
+            return base_path, compare_path, None
+
+    def _accept_pending_revisions(
+        self,
+        base_path: str,
+        compare_path: str,
+        warnings: List[str],
+    ) -> Tuple[str, str, Optional[str]]:
+        """Aceita track changes pendentes dos DOCX de entrada, em cópia.
+
+        Retorna ``(load_base, load_compare, temp_dir)``. Arquivos sem revisões
+        (ou não-DOCX) passam intocados; falha na detecção/aceite mantém o
+        arquivo original e registra warning — nunca derruba o par.
+        """
+        temp_dir: Optional[str] = None
+        resolved: List[str] = []
+        for side, path in (("base", base_path), ("compare", compare_path)):
+            resolved.append(path)
+            if not path.lower().endswith(".docx") or not os.path.isfile(path):
+                continue
+            try:
+                has_tracked_revisions = self._resolve("has_tracked_revisions")
+                if not has_tracked_revisions(path):
+                    continue
+                accept_all_revisions = self._resolve("accept_all_revisions")
+                if temp_dir is None:
+                    temp_dir = tempfile.mkdtemp(prefix="comparedocs-revisions-")
+                dst = os.path.join(temp_dir, side, os.path.basename(path))
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                shutil.copy2(path, dst)
+                accept_all_revisions(dst)
+                resolved[-1] = dst
+                warnings.append(
+                    "O documento %s ('%s') tinha marcas de revisão pendentes — "
+                    "todas foram aceitas automaticamente antes da comparação "
+                    "(o arquivo original não foi alterado)."
+                    % ("base" if side == "base" else "revisado", os.path.basename(path))
+                )
+                logger.info(
+                    "Revisões pendentes aceitas (cópia) em '%s'", os.path.basename(path)
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Falha ao aceitar revisões de '%s' (%s); usando o arquivo "
+                    "original.", os.path.basename(path), exc,
+                )
+                warnings.append(
+                    "Não foi possível aceitar as marcas de revisão de '%s' (%s) — "
+                    "a comparação usou o arquivo como está."
+                    % (os.path.basename(path), exc)
+                )
+                resolved[-1] = path
+        return resolved[0], resolved[1], temp_dir
 
     def _process_xlsx_pair(
         self,
@@ -477,7 +614,11 @@ class JobManager:
         options: Dict[str, Any],
         output_dir: str,
         warnings: Optional[List[str]] = None,
+        docx_compare_path: Optional[str] = None,
     ) -> Dict[str, str]:
+        """Gera as saídas do par. ``docx_compare_path`` aponta para o DOCX
+        revisado quando os arquivos enviados não são .docx (par PDF convertido)
+        — nesse caso o par usa o pipeline fiel dos documentos Word."""
         outputs: Dict[str, str] = {}
         warnings = warnings if warnings is not None else []
         is_xlsx = _is_xlsx_pair(base_path, compare_path)
@@ -492,7 +633,8 @@ class JobManager:
             outputs["redline_xlsx"] = xlsx_path
             outputs["xlsx"] = xlsx_path
             register_output_path(xlsx_path)
-        elif _is_docx_pair(base_path, compare_path):
+        elif _is_docx_pair(base_path, compare_path) or docx_compare_path is not None:
+            source_docx = docx_compare_path if docx_compare_path is not None else compare_path
             write_redline_docx_inplace = self._resolve("write_redline_docx_inplace")
             convert_docx_to_pdf = self._resolve("convert_docx_to_pdf")
             redline_docx_name = self._resolve("redline_docx_name")
@@ -501,7 +643,7 @@ class JobManager:
             docx_path = os.path.join(
                 output_dir, redline_docx_name(base_path, compare_path)
             )
-            write_redline_docx_inplace(result, compare_path, docx_path)
+            write_redline_docx_inplace(result, source_docx, docx_path)
             outputs["docx"] = docx_path
             register_output_path(docx_path)
 

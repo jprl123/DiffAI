@@ -1,1 +1,1 @@
-"""Compare Docs — aplicativo desktop nativo (CustomTkinter)."""
+"""diffAI — aplicativo desktop nativo (CustomTkinter)."""

@@ -329,7 +329,7 @@ def extract_pdf(path: str) -> Document:
                 "O PDF '%s' parece ser digitalizado (imagem, sem camada de "
                 "texto) — a comparação de texto não funciona nele. "
                 "Converta com OCR antes de comparar (suporte a OCR está no "
-                "roadmap do Compare Docs)." % os.path.basename(str(p))
+                "roadmap do diffAI)." % os.path.basename(str(p))
             )
 
         for i, block in enumerate(blocks):

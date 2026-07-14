@@ -1,4 +1,4 @@
-"""API FastAPI do Compare-Docs — rotas + frontend estático.
+"""API FastAPI do diffAI — rotas + frontend estático.
 
 Servidor local (mesma origem para API e interface): não há CORS.
 Rodar com: ``.venv/bin/python -m app.main`` (porta fixa 8377).
@@ -26,16 +26,19 @@ logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 INDEX_HTML = os.path.join(PROJECT_ROOT, "web", "index.html")
+WEB_DIR = os.path.join(PROJECT_ROOT, "web")
+LOGO_PATH = os.path.join(WEB_DIR, "logo.png")
+LOGO_64_PATH = os.path.join(WEB_DIR, "logo-64.png")
 
-app = FastAPI(title="Compare-Docs", docs_url=None, redoc_url=None)
+app = FastAPI(title="diffAI", docs_url=None, redoc_url=None)
 manager = JobManager()
 
 _TRUE_VALUES = {"1", "true", "yes", "on", "sim", "verdadeiro"}
 
 _PLACEHOLDER_HTML = """<!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><title>Compare-Docs</title></head>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>diffAI</title></head>
 <body style="font-family: sans-serif; padding: 2rem;">
-<h1>Compare-Docs</h1>
+<h1>diffAI</h1>
 <p>A interface (web/index.html) ainda não foi instalada. A API está ativa em
 <code>/api/health</code>.</p>
 </body></html>"""
@@ -108,6 +111,22 @@ def index() -> Any:
     if os.path.isfile(INDEX_HTML):
         return FileResponse(INDEX_HTML, media_type="text/html")
     return HTMLResponse(_PLACEHOLDER_HTML, status_code=200)
+
+
+@app.get("/logo.png")
+def logo_png() -> Any:
+    path = LOGO_PATH if os.path.isfile(LOGO_PATH) else LOGO_64_PATH
+    if not os.path.isfile(path):
+        raise HTTPException(status_code=404, detail="Logo não encontrado.")
+    return FileResponse(path, media_type="image/png")
+
+
+@app.get("/logo-64.png")
+def logo_64_png() -> Any:
+    path = LOGO_64_PATH if os.path.isfile(LOGO_64_PATH) else LOGO_PATH
+    if not os.path.isfile(path):
+        raise HTTPException(status_code=404, detail="Logo não encontrado.")
+    return FileResponse(path, media_type="image/png")
 
 
 @app.get("/api/health")
@@ -257,6 +276,50 @@ async def batch_preview(request: Request) -> Dict[str, Any]:
         "unmatched_base": unmatched_base,
         "unmatched_compare": unmatched_compare,
     }
+
+
+@app.get("/api/settings")
+def settings_get() -> Dict[str, Any]:
+    """Preferências persistentes (idioma, onboarding, recursos padrão)."""
+    from app.settings import get_store
+
+    return get_store().get()
+
+
+@app.post("/api/settings")
+async def settings_update(request: Request) -> Dict[str, Any]:
+    """Mescla um patch de preferências e devolve o estado final."""
+    from app.settings import get_store
+
+    payload = await _read_json_body(request)
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="Corpo JSON deve ser um objeto.")
+    try:
+        return get_store().update(payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.post("/api/batch/suggest-compare")
+async def batch_suggest_compare(request: Request) -> Dict[str, Any]:
+    """Sugere a pasta revisada a partir da pasta base (pastas irmãs).
+
+    204 quando não há candidato confiável — a UI mantém o fluxo manual.
+    """
+    from app.batch import find_compare_dir
+
+    payload = await _read_json_body(request)
+    base_dir = str(payload.get("base_dir") or "").strip()
+    if not base_dir:
+        raise HTTPException(status_code=400, detail="Informe 'base_dir' no corpo JSON.")
+    if not os.path.isdir(base_dir):
+        raise HTTPException(
+            status_code=400, detail="Pasta base não encontrada: '%s'." % base_dir
+        )
+    suggestion = find_compare_dir(base_dir)
+    if not suggestion:
+        return JSONResponse(status_code=204, content=None)
+    return suggestion
 
 
 @app.get("/api/branding")
@@ -496,7 +559,7 @@ async def open_path(request: Request) -> Dict[str, bool]:
             raise HTTPException(
                 status_code=403,
                 detail="Este caminho não foi gerado por uma comparação do "
-                       "Compare Docs e não pode ser aberto.",
+                       "diffAI e não pode ser aberto.",
             )
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Arquivo não encontrado: '%s'." % path)

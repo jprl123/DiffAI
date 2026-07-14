@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Executor Python do Compare Docs Desktop.
+"""Executor Python do diffAI Desktop.
 
 Abre uma janela nativa com a interface web local (recomendado no macOS).
 Logs em logs/desktop.log

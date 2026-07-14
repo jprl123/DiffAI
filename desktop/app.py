@@ -1,4 +1,4 @@
-"""Interface desktop do Compare Docs."""
+"""Interface desktop do diffAI."""
 from __future__ import annotations
 
 import os
@@ -13,7 +13,6 @@ from desktop.controller import ComparisonController
 from desktop.theme import (
     FONT_BODY,
     FONT_HEADING,
-    FONT_LOGO,
     FONT_SMALL,
     FONT_TITLE,
     INNER_BG,
@@ -41,7 +40,7 @@ class CompareDocsApp(ctk.CTk):
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
 
-        self.title("Compare Docs")
+        self.title("diffAI")
         self.geometry("1120x760")
         self.minsize(960, 640)
 
@@ -113,14 +112,24 @@ class CompareDocsApp(ctk.CTk):
         self._main.grid_rowconfigure(4, weight=0)
 
     def _build_sidebar(self) -> None:
-        logo = ctk.CTkFrame(self._sidebar, fg_color=("#2563eb", "#1d4ed8"), corner_radius=12)
+        logo = ctk.CTkFrame(self._sidebar, fg_color="transparent", corner_radius=12)
         logo.pack(padx=16, pady=(24, 20), fill="x")
-        ctk.CTkLabel(logo, text="CD", font=FONT_LOGO, text_color="white").pack(
-            pady=(14, 0)
-        )
+        brand_row = ctk.CTkFrame(logo, fg_color="transparent")
+        brand_row.pack(fill="x", pady=(4, 4))
+        icon_path = os.path.join(PROJECT_ROOT, "web", "logo-64.png")
+        if os.path.isfile(icon_path):
+            from PIL import Image
+
+            icon_img = ctk.CTkImage(
+                light_image=Image.open(icon_path),
+                dark_image=Image.open(icon_path),
+                size=(36, 36),
+            )
+            ctk.CTkLabel(brand_row, text="", image=icon_img).pack(side="left", padx=(0, 10))
+            self._brand_icon = icon_img  # evita GC
         ctk.CTkLabel(
-            logo, text="Compare Docs", font=FONT_HEADING, text_color="white"
-        ).pack(pady=(0, 14))
+            brand_row, text="diffAI", font=FONT_HEADING, text_color=("gray10", "white")
+        ).pack(side="left")
 
         self._nav_single = ctk.CTkButton(
             self._sidebar,

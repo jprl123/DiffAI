@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Compare Docs</title>
+<title>diffAI</title>
+<link rel="icon" href="/logo.png" type="image/png">
 <style>
 /* ============================================================
    Tokens de tema — claro / escuro
@@ -113,9 +114,9 @@ h1, h2, h3 { letter-spacing: -0.01em; }
 .brand { display: flex; align-items: center; gap: 10px; padding: 2px 8px 18px; }
 .brand-logo {
   width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
-  background: linear-gradient(135deg, #3b82f6, #1e40af);
-  color: #fff; display: flex; align-items: center; justify-content: center;
+  overflow: hidden; display: block; box-shadow: 0 1px 3px rgba(24, 24, 27, 0.12);
 }
+.brand-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .brand-name { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; }
 
 .nav { display: flex; flex-direction: column; gap: 2px; }
@@ -276,8 +277,31 @@ h1, h2, h3 { letter-spacing: -0.01em; }
 /* ============================================================
    Opções + campos
    ============================================================ */
-.options-card { padding: 20px 24px; }
-.options-card h2 { margin-bottom: 4px; }
+.options-card { padding: 0; overflow: hidden; }
+.options-card > .options-summary {
+  list-style: none; cursor: pointer; user-select: none;
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 14px 20px; margin: 0;
+}
+.options-card > .options-summary::-webkit-details-marker { display: none; }
+.options-card > .options-summary::after {
+  content: ""; position: absolute; right: 20px; top: 50%;
+  width: 7px; height: 7px; border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted); transform: translateY(-70%) rotate(45deg);
+  transition: transform 0.15s ease;
+}
+.options-card { position: relative; }
+.options-card[open] > .options-summary::after {
+  transform: translateY(-30%) rotate(-135deg);
+}
+.options-card > .options-summary:hover { background: var(--surface-2); }
+.options-summary-title {
+  font-size: 13.5px; font-weight: 600; color: var(--text); padding-right: 24px;
+}
+.options-summary-hint {
+  font-size: 12px; color: var(--muted); line-height: 1.35; padding-right: 24px;
+}
+.options-card .options-body { padding: 0 20px 18px; }
 .options-card .options-lead { color: var(--muted); font-size: 12.5px; margin-bottom: 16px; }
 
 .options-list {
@@ -920,6 +944,26 @@ h1, h2, h3 { letter-spacing: -0.01em; }
 .modal-foot { margin-top: 14px; text-align: center; color: var(--muted); font-size: 12.5px; }
 .spin { animation: job-spin 0.7s linear infinite; display: inline-flex; }
 
+/* Tutorial guiado (spotlight + card) */
+#tutorial-host { position: fixed; inset: 0; z-index: 200; }
+.tut-spot {
+  position: fixed; border-radius: 10px; pointer-events: none;
+  box-shadow: 0 0 0 9999px rgba(10, 12, 16, 0.55);
+  transition: left .2s ease, top .2s ease, width .2s ease, height .2s ease;
+}
+.tut-card {
+  position: fixed; z-index: 201; padding: 16px 18px; border-radius: 12px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid var(--border); box-shadow: var(--shadow-modal);
+  animation: view-in 0.16s ease;
+}
+[data-theme="dark"] .tut-card { background: rgba(28, 30, 35, 0.98); }
+.tut-card .tut-step { font-size: 11px; color: var(--muted); letter-spacing: .08em; margin-bottom: 6px; }
+.tut-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.tut-card p { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 14px; }
+.tut-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.tut-nav-right { display: flex; gap: 8px; }
+
 @media (max-width: 860px) {
   .plans-grid { grid-template-columns: 1fr; }
 }
@@ -1061,27 +1105,27 @@ h1, h2, h3 { letter-spacing: -0.01em; }
   <aside class="sidebar">
     <div class="brand">
       <span class="brand-logo" aria-hidden="true">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="12" height="15" rx="2"/><path d="M9 8h11a0 0 0 0 1 0 0v11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2" opacity="0.75"/></svg>
+        <img src="/logo-64.png" alt="" width="30" height="30">
       </span>
-      <span class="brand-name">Compare Docs</span>
+      <span class="brand-name">diffAI</span>
     </div>
 
     <nav class="nav" aria-label="Navegação principal">
-      <button class="nav-item active" id="nav-compare" data-tip="Comparar" aria-current="page">
+      <button class="nav-item active" id="nav-compare" data-tip="Comparar" data-i18n-attr="data-tip:nav.compare" aria-current="page">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M8 8h13v11a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2z"/></svg>
-        <span class="nav-label">Comparar</span>
+        <span class="nav-label" data-i18n="nav.compare">Comparar</span>
       </button>
-      <button class="nav-item" id="nav-batch" data-tip="Lote">
+      <button class="nav-item" id="nav-batch" data-tip="Lote" data-i18n-attr="data-tip:nav.batch">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-        <span class="nav-label">Lote</span>
+        <span class="nav-label" data-i18n="nav.batch">Lote</span>
       </button>
-      <button class="nav-item" id="nav-history" data-tip="Histórico">
+      <button class="nav-item" id="nav-history" data-tip="Histórico" data-i18n-attr="data-tip:nav.history">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-        <span class="nav-label">Histórico</span>
+        <span class="nav-label" data-i18n="nav.history">Histórico</span>
       </button>
-      <button class="nav-item" id="nav-plans" data-tip="Planos">
+      <button class="nav-item" id="nav-plans" data-tip="Planos" data-i18n-attr="data-tip:nav.plans">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12.4V5.5a2 2 0 0 1 2-2h6.9a2 2 0 0 1 1.4.6l6.3 6.3a2 2 0 0 1 0 2.8l-6.9 6.9a2 2 0 0 1-2.8 0l-6.3-6.3a2 2 0 0 1-.6-1.4z"/><circle cx="8.3" cy="8.3" r="1.2"/></svg>
-        <span class="nav-label">Planos</span>
+        <span class="nav-label" data-i18n="nav.plans">Planos</span>
       </button>
     </nav>
 
@@ -1096,9 +1140,13 @@ h1, h2, h3 { letter-spacing: -0.01em; }
     </div>
 
     <div class="side-foot">
-      <button class="nav-item" id="btn-guide" data-tip="Guia de uso">
+      <button class="nav-item" id="btn-settings" data-tip="Configurações" data-i18n-attr="data-tip:foot.settings" aria-label="Configurações">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label" data-i18n="foot.settings">Configurações</span>
+      </button>
+      <button class="nav-item" id="btn-guide" data-tip="Guia de uso" data-i18n-attr="data-tip:foot.guide">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.4 2.33c-.7.28-.9.87-.9 1.67"/><circle cx="12" cy="16.5" r="0.5" fill="currentColor"/></svg>
-        <span class="nav-label">Guia de uso</span>
+        <span class="nav-label" data-i18n="foot.guide">Guia de uso</span>
       </button>
       <button class="nav-item" id="btn-theme" data-tip="Alternar tema" aria-label="Alternar tema claro/escuro">
         <span id="theme-icon" aria-hidden="true" style="display:flex"></span>
@@ -1118,14 +1166,14 @@ h1, h2, h3 { letter-spacing: -0.01em; }
       <!-- View: Comparar -->
       <section class="view" id="view-compare" aria-labelledby="hd-compare">
         <header class="page-head">
-          <h1 id="hd-compare">Comparar documentos</h1>
-          <p>Compare duas versões de um documento e receba um redline padronizado.</p>
+          <h1 id="hd-compare" data-i18n="compare.h1">Comparar documentos</h1>
+          <p data-i18n="compare.sub">Compare duas versões de um documento e receba um redline padronizado.</p>
         </header>
         <section class="card" id="panel-single">
-          <h2>Selecione os documentos <span class="sub">DOCX, PDF ou Excel — arraste ou clique</span></h2>
+          <h2><span data-i18n="single.selectTitle">Selecione os documentos</span> <span class="sub" data-i18n="single.selectSub">DOCX, PDF ou Excel — arraste ou clique</span></h2>
           <div class="dz-row">
             <div class="dz-col">
-              <div class="dz-title">Documento base <span class="hint">(original)</span></div>
+              <div class="dz-title"><span data-i18n="dz.base">Documento base</span> <span class="hint" data-i18n="dz.baseHint">(original)</span></div>
               <div class="dropzone" id="dz-base" tabindex="0" role="button"
                    aria-label="Documento base: arraste um arquivo .docx, .pdf ou .xlsx, ou pressione Enter para selecionar">
                 <div class="dz-body" id="dz-base-body"></div>
@@ -1138,7 +1186,7 @@ h1, h2, h3 { letter-spacing: -0.01em; }
               </button>
             </div>
             <div class="dz-col">
-              <div class="dz-title">Documento revisado <span class="hint">(atualizado)</span></div>
+              <div class="dz-title"><span data-i18n="dz.compare">Documento revisado</span> <span class="hint" data-i18n="dz.compareHint">(atualizado)</span></div>
               <div class="dropzone" id="dz-compare" tabindex="0" role="button"
                    aria-label="Documento revisado: arraste um arquivo .docx, .pdf ou .xlsx, ou pressione Enter para selecionar">
                 <div class="dz-body" id="dz-compare-body"></div>
@@ -1152,14 +1200,14 @@ h1, h2, h3 { letter-spacing: -0.01em; }
       <!-- View: Lote -->
       <section class="view" id="view-batch" aria-labelledby="hd-batch" hidden>
         <header class="page-head">
-          <h1 id="hd-batch">Comparação em lote</h1>
-          <p>Os pares são encontrados pelo nome ou pelo conteúdo, sem precisar renomear.</p>
+          <h1 id="hd-batch" data-i18n="batch.h1">Comparação em lote</h1>
+          <p data-i18n="batch.sub">Os pares são encontrados pelo nome ou pelo conteúdo, sem precisar renomear.</p>
         </header>
         <section class="card" id="panel-batch">
-          <h2>Pastas do lote <span class="sub">arraste, clique ou use o explorador</span></h2>
+          <h2><span data-i18n="batch.foldersTitle">Pastas do lote</span> <span class="sub" data-i18n="batch.foldersSub">arraste, clique ou use o explorador</span></h2>
           <div class="dz-row">
             <div class="dz-col">
-              <div class="dz-title">Pasta base <span class="hint">(originais)</span></div>
+              <div class="dz-title"><span data-i18n="batch.dirBase">Pasta base</span> <span class="hint" data-i18n="batch.dirBaseHint">(originais)</span></div>
               <div class="dropzone" id="dz-dir-base" tabindex="0" role="button"
                    aria-label="Pasta base: arraste uma pasta ou pressione Enter para selecionar">
                 <div class="dz-body" id="dz-dir-base-body"></div>
@@ -1172,7 +1220,7 @@ h1, h2, h3 { letter-spacing: -0.01em; }
               </button>
             </div>
             <div class="dz-col">
-              <div class="dz-title">Pasta revisada <span class="hint">(atualizados)</span></div>
+              <div class="dz-title"><span data-i18n="batch.dirCompare">Pasta revisada</span> <span class="hint" data-i18n="batch.dirCompareHint">(atualizados)</span></div>
               <div class="dropzone" id="dz-dir-compare" tabindex="0" role="button"
                    aria-label="Pasta revisada: arraste uma pasta ou pressione Enter para selecionar">
                 <div class="dz-body" id="dz-dir-compare-body"></div>
@@ -1186,14 +1234,17 @@ h1, h2, h3 { letter-spacing: -0.01em; }
       <!-- Fluxo compartilhado: opções, ação, running, resultado -->
       <div id="compare-flow">
         <div id="compare-setup">
-        <section class="card options-card">
-          <h2>Opções de saída</h2>
-          <p class="options-lead">Padrão: PDF redline. Ative extras só quando precisar.</p>
+        <details class="card options-card" id="options-panel">
+          <summary class="options-summary">
+            <span class="options-summary-title" data-i18n="options.title">Opções adicionais</span>
+            <span class="options-summary-hint" data-i18n="options.lead">Opcional — o PDF redline já sai ao clicar em Comparar</span>
+          </summary>
+          <div class="options-body">
           <div class="options-list">
             <div class="option-row">
               <div class="option-copy">
-                <div class="option-title">Só páginas alteradas</div>
-                <div class="option-desc">Gera um PDF adicional, recortado nas mudanças</div>
+                <div class="option-title" data-i18n="opt.changedTitle">Só páginas alteradas</div>
+                <div class="option-desc" data-i18n="opt.changedDesc">Gera um PDF adicional, recortado nas mudanças</div>
               </div>
               <label class="option-toggle" title="Exportar também só páginas alteradas">
                 <input type="checkbox" id="opt-changed-pages">
@@ -1203,8 +1254,8 @@ h1, h2, h3 { letter-spacing: -0.01em; }
             </div>
             <div class="option-row">
               <div class="option-copy">
-                <div class="option-title">DOCX editável</div>
-                <div class="option-desc">Redline no formato Word, com marcas aplicadas</div>
+                <div class="option-title" data-i18n="opt.docxTitle">DOCX editável</div>
+                <div class="option-desc" data-i18n="opt.docxDesc">Redline no formato Word, com marcas aplicadas</div>
               </div>
               <label class="option-toggle" title="Gerar DOCX editável">
                 <input type="checkbox" id="opt-docx">
@@ -1214,8 +1265,8 @@ h1, h2, h3 { letter-spacing: -0.01em; }
             </div>
             <div class="option-row">
               <div class="option-copy">
-                <div class="option-title">Resumo executivo (1 página)</div>
-                <div class="option-desc">PDF de uma página com o essencial das mudanças</div>
+                <div class="option-title" data-i18n="opt.execTitle">Resumo executivo (1 página)</div>
+                <div class="option-desc" data-i18n="opt.execDesc">PDF de uma página com o essencial das mudanças</div>
               </div>
               <label class="option-toggle" title="Gerar resumo executivo de 1 página">
                 <input type="checkbox" id="opt-exec-summary">
@@ -1225,8 +1276,8 @@ h1, h2, h3 { letter-spacing: -0.01em; }
             </div>
             <div class="option-row">
               <div class="option-copy">
-                <div class="option-title">Relatório analítico</div>
-                <div class="option-desc">Resumo das mudanças em HTML, Excel ou JSON</div>
+                <div class="option-title" data-i18n="opt.reportTitle">Relatório analítico</div>
+                <div class="option-desc" data-i18n="opt.reportDesc">Resumo das mudanças em HTML, Excel ou JSON</div>
               </div>
               <label class="option-toggle" title="Relatório analítico">
                 <input type="checkbox" id="opt-report">
@@ -1236,7 +1287,7 @@ h1, h2, h3 { letter-spacing: -0.01em; }
             </div>
             <div class="option-row nested" id="report-sub" hidden>
               <div class="option-copy">
-                <div class="option-title">Formatos do relatório</div>
+                <div class="option-title" data-i18n="opt.reportFormats">Formatos do relatório</div>
               </div>
               <div class="format-chips" role="group" aria-label="Formatos do relatório">
                 <label class="format-chip"><input type="checkbox" id="opt-report-html" checked>HTML</label>
@@ -1246,30 +1297,32 @@ h1, h2, h3 { letter-spacing: -0.01em; }
             </div>
           </div>
           <details class="options-advanced">
-            <summary>Pasta de saída personalizada</summary>
+            <summary data-i18n="opt.outdirSummary">Pasta de saída personalizada</summary>
             <div class="options-advanced-body field">
-              <label for="opt-outdir">Destino dos arquivos gerados</label>
+              <label for="opt-outdir" data-i18n="opt.outdirLabel">Destino dos arquivos gerados</label>
               <div class="outdir-row">
                 <input type="text" id="opt-outdir" placeholder="Padrão: pasta output/ do app"
+                       data-i18n-attr="placeholder:opt.outdirPlaceholder"
                        autocomplete="off" spellcheck="false">
-                <button type="button" class="btn" id="btn-pick-outdir" title="Selecionar pasta no explorador">Selecionar…</button>
+                <button type="button" class="btn" id="btn-pick-outdir" title="Selecionar pasta no explorador" data-i18n="opt.outdirPick">Selecionar…</button>
               </div>
             </div>
           </details>
-        </section>
+          </div>
+        </details>
 
         <div id="batch-preview-host" hidden></div>
 
         <div class="compare-actions" id="compare-actions">
-          <button class="btn-primary compare-cta" id="btn-compare" disabled>Comparar</button>
-          <span class="note" id="compare-note">Selecione o documento base e o revisado para começar.</span>
+          <button class="btn-primary compare-cta" id="btn-compare" disabled data-i18n="action.compare">Comparar</button>
+          <span class="note" id="compare-note" data-i18n="action.noteInitial">Selecione o documento base e o revisado para começar.</span>
         </div>
         </div><!-- /compare-setup -->
 
         <section id="job-running" class="job-stage job-running" hidden aria-live="polite">
           <div class="job-running-inner">
             <div class="job-spinner" aria-hidden="true"></div>
-            <h2 id="job-running-title">Comparando documentos…</h2>
+            <h2 id="job-running-title" data-i18n="job.comparing">Comparando documentos…</h2>
             <p class="job-running-sub" id="job-running-sub"></p>
             <div class="job-running-track" role="progressbar" id="job-running-bar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
               <div class="job-running-fill indeterminate" id="job-running-fill"></div>
@@ -1284,7 +1337,7 @@ h1, h2, h3 { letter-spacing: -0.01em; }
               <div class="result-toolbar-start">
                 <button type="button" class="btn" id="btn-new-compare">← Nova</button>
                 <div class="done-title" id="job-done-title-wrap">
-                  <h2 id="job-done-title">Comparação concluída</h2>
+                  <h2 id="job-done-title" data-i18n="job.doneTitle">Comparação concluída</h2>
                   <p id="job-done-sub"></p>
                 </div>
               </div>
@@ -1302,20 +1355,20 @@ h1, h2, h3 { letter-spacing: -0.01em; }
       <!-- View: Histórico -->
       <section class="view" id="view-history" aria-labelledby="hd-history" hidden>
         <header class="page-head">
-          <h1 id="hd-history">Histórico</h1>
-          <p>Todas as comparações feitas neste computador. <b>Duplo clique</b> para ver o documento com marcas inline.</p>
+          <h1 id="hd-history" data-i18n="history.h1">Histórico</h1>
+          <p data-i18n-html="history.sub">Todas as comparações feitas neste computador. <b>Duplo clique</b> para ver o documento com marcas inline.</p>
         </header>
         <div class="hist-toolbar">
           <div class="search-box">
             <span class="sicon" aria-hidden="true">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>
             </span>
-            <input type="search" id="hist-search" placeholder="Buscar por nome de arquivo…" aria-label="Buscar no histórico por nome de arquivo">
+            <input type="search" id="hist-search" placeholder="Buscar por nome de arquivo…" data-i18n-attr="placeholder:history.searchPlaceholder" aria-label="Buscar no histórico por nome de arquivo">
           </div>
           <div class="chip-row" role="group" aria-label="Filtrar histórico por status">
-            <button class="chip active" id="hist-filter-all" aria-pressed="true">Todos</button>
-            <button class="chip" id="hist-filter-ok" aria-pressed="false">OK</button>
-            <button class="chip" id="hist-filter-error" aria-pressed="false">Erros</button>
+            <button class="chip active" id="hist-filter-all" aria-pressed="true" data-i18n="history.filterAll">Todos</button>
+            <button class="chip" id="hist-filter-ok" aria-pressed="false" data-i18n="history.filterOk">OK</button>
+            <button class="chip" id="hist-filter-error" aria-pressed="false" data-i18n="history.filterError">Erros</button>
           </div>
           <div class="hist-clear-area" id="hist-clear-area"></div>
         </div>
@@ -1324,29 +1377,29 @@ h1, h2, h3 { letter-spacing: -0.01em; }
           <div class="big-ico" aria-hidden="true">
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
           </div>
-          <h3>Nenhuma comparação ainda</h3>
-          <p>Quando você comparar documentos, o resultado aparecerá aqui.</p>
-          <button class="btn-primary" id="btn-hist-first">Fazer a primeira comparação</button>
+          <h3 data-i18n="history.emptyTitle">Nenhuma comparação ainda</h3>
+          <p data-i18n="history.emptyText">Quando você comparar documentos, o resultado aparecerá aqui.</p>
+          <button class="btn-primary" id="btn-hist-first" data-i18n="history.emptyCta">Fazer a primeira comparação</button>
         </div>
       </section>
 
       <!-- View: Planos -->
       <section class="view" id="view-plans" aria-labelledby="hd-plans" hidden>
         <header class="page-head">
-          <h1 id="hd-plans">Planos e assinatura</h1>
-          <p>A avaliação gratuita já vem com tudo liberado. Escolha um plano para continuar depois dela.</p>
+          <h1 id="hd-plans" data-i18n="plans.h1">Planos e assinatura</h1>
+          <p data-i18n="plans.sub">A avaliação gratuita já vem com tudo liberado. Escolha um plano para continuar depois dela.</p>
         </header>
         <div class="plans-grid" id="plans-grid"></div>
-        <p class="plans-activate-line">Já tem uma chave de licença?
-          <button type="button" class="link-btn" id="link-plans-activate">Ativar agora</button>
+        <p class="plans-activate-line"><span data-i18n="plans.activateLine">Já tem uma chave de licença?</span>
+          <button type="button" class="link-btn" id="link-plans-activate" data-i18n="plans.activateBtn">Ativar agora</button>
         </p>
       </section>
 
       <!-- View: Conta -->
       <section class="view" id="view-account" aria-labelledby="hd-account" hidden>
         <header class="page-head">
-          <h1 id="hd-account">Conta</h1>
-          <p>Sua licença, avaliação e dispositivo neste computador.</p>
+          <h1 id="hd-account" data-i18n="account.h1">Conta</h1>
+          <p data-i18n="account.sub">Sua licença, avaliação e dispositivo neste computador.</p>
         </header>
         <div id="account-body"></div>
       </section>
@@ -1362,11 +1415,34 @@ h1, h2, h3 { letter-spacing: -0.01em; }
 <div class="modal-backdrop" id="guide-modal" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="guide-title">
     <div class="modal-head">
-      <h2 id="guide-title">Guia de uso</h2>
+      <h2 id="guide-title" data-i18n="foot.guide">Guia de uso</h2>
       <button class="icon-btn" id="btn-guide-close" aria-label="Fechar guia">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
     </div>
+    <div id="guide-body-en" hidden>
+      <p class="muted">Compare two document versions and get a standardized redline PDF with a change summary.</p>
+      <p>For a guided walkthrough of the main buttons, open <b>Settings → Replay tutorial</b>.</p>
+      <h3>Single compare</h3>
+      <ol>
+        <li>Drop (or click to choose) the <b>Base document</b> — the original.</li>
+        <li>Drop the <b>Revised document</b> — the updated version.</li>
+        <li>Wrong order? Use the <b>swap</b> button between the two areas.</li>
+        <li>Adjust output options and click <b>Compare</b>. Extras never block the main redline.</li>
+      </ol>
+      <h3>Batch (folders)</h3>
+      <ol>
+        <li>Drop folders or click to open the <b>file explorer</b>.</li>
+        <li>Pick the folder with <b>originals</b> and the folder with <b>revised</b> files.</li>
+        <li>Pairs are matched by file name or content (no AI).</li>
+        <li>Click <b>View pairs</b>, then <b>Process</b>.</li>
+      </ol>
+      <h3>History</h3>
+      <p>Every comparison stays in <b>History</b>, even after you close the app.</p>
+      <h3>License</h3>
+      <p>The free trial lasts 14 days or 25 comparisons. Activate a key under <b>Plans</b> / <b>Account</b>.</p>
+    </div>
+    <div id="guide-body-pt">
     <p class="muted">Compare duas versões de um documento e receba um PDF redline padronizado, com resumo das mudanças.</p>
 
     <h3>Comparar (arquivo único)</h3>
@@ -1405,7 +1481,7 @@ h1, h2, h3 { letter-spacing: -0.01em; }
     Use os filtros do painel “Ver mudanças” para focar só no substantivo.</p>
 
     <h3>Licença e planos</h3>
-    <p>O Compare Docs começa em <b>avaliação gratuita</b>: 14 dias ou 25 comparações, o que
+    <p>O diffAI começa em <b>avaliação gratuita</b>: 14 dias ou 25 comparações, o que
     terminar primeiro. Para continuar depois, assine na aba <b>Planos</b> e use
     <b>Ativar licença</b> com o e-mail da compra e a chave recebida. O bloco de conta na
     barra lateral mostra o plano atual e abre a aba <b>Conta</b>, com os detalhes da
@@ -1417,6 +1493,7 @@ h1, h2, h3 { letter-spacing: -0.01em; }
       <li><span class="kbd">Enter</span> / <span class="kbd">Espaço</span> — abre o seletor de arquivos na área de soltar focada</li>
       <li><span class="kbd">Tab</span> — navega entre os controles</li>
     </ul>
+    </div>
   </div>
 </div>
 
@@ -1424,35 +1501,35 @@ h1, h2, h3 { letter-spacing: -0.01em; }
 <div class="modal-backdrop" id="activate-modal" hidden>
   <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="activate-title">
     <div class="modal-head">
-      <h2 id="activate-title">Ativar licença</h2>
+      <h2 id="activate-title" data-i18n="activate.title">Ativar licença</h2>
       <button class="icon-btn" id="btn-activate-close" aria-label="Fechar ativação">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
     </div>
-    <p class="muted">Use o e-mail da compra e a chave recebida por e-mail.</p>
+    <p class="muted" data-i18n="activate.sub">Use o e-mail da compra e a chave recebida por e-mail.</p>
     <form id="activate-form" novalidate>
       <div class="field">
-        <label for="act-email">E-mail</label>
-        <input type="email" id="act-email" autocomplete="email" spellcheck="false" placeholder="voce@empresa.com.br">
+        <label for="act-email" data-i18n="activate.email">E-mail</label>
+        <input type="email" id="act-email" autocomplete="email" spellcheck="false" placeholder="voce@empresa.com.br" data-i18n-attr="placeholder:activate.emailPlaceholder">
       </div>
       <div class="field">
-        <label for="act-key">Chave de licença</label>
+        <label for="act-key" data-i18n="activate.key">Chave de licença</label>
         <input type="text" id="act-key" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CDOC-XXXX-XXXX-XXXX-XXXX">
       </div>
       <div class="modal-error" id="act-error" role="alert" hidden></div>
       <div class="modal-actions">
-        <button type="submit" class="btn-primary" id="btn-act-submit">Ativar</button>
+        <button type="submit" class="btn-primary" id="btn-act-submit" data-i18n="activate.submit">Ativar</button>
       </div>
     </form>
-    <p class="modal-foot">Não tem uma chave?
-      <button type="button" class="link-btn" id="link-act-plans">Ver planos</button>
+    <p class="modal-foot"><span data-i18n="activate.noKey">Não tem uma chave?</span>
+      <button type="button" class="link-btn" id="link-act-plans" data-i18n="activate.seePlans">Ver planos</button>
     </p>
   </div>
 </div>
 <script>
 "use strict";
 /* ============================================================
-   Compare Docs — frontend (vanilla JS, zero dependências)
+   diffAI — frontend (vanilla JS, zero dependências)
    ============================================================ */
 
 var state = {
@@ -1508,61 +1585,62 @@ var state = {
 
 /* ------------------------------------------------------------
    Constantes de domínio (espelham app/models.py)
+   Labels via t() — refreshDomainLabels() roda após o engine i18n.
    ------------------------------------------------------------ */
-var TYPE_LABELS = {
-  insert: "Inserção",
-  delete: "Exclusão",
-  modify: "Modificação",
-  move: "Movimentação",
-  move_modify: "Mov. + modificação",
-  equal: "Sem alteração"
-};
-var CAT_LABELS = {
-  content: "Conteúdo",
-  formatting: "Formatação",
-  noise_date: "Data (rotineira)",
-  noise_version: "Versão (rotineira)",
-  noise_pagenum: "Nº de página (rotineira)",
-  noise_whitespace: "Espaçamento (rotineira)",
-  noise_punct: "Pontuação/caixa (rotineira)",
-  table: "Tabela",
-  image: "Imagem",
-  metadata: "Metadados (rotineira)"
-};
-var CAT_GROUPS = [
-  { key: "content", label: "Conteúdo", cats: ["content"] },
-  { key: "formatting", label: "Formatação", cats: ["formatting"] },
-  { key: "noise", label: "Rotineiras", cats: ["noise_date", "noise_version", "noise_pagenum", "noise_whitespace", "noise_punct", "metadata"] },
-  { key: "table", label: "Tabelas", cats: ["table"] },
-  { key: "image", label: "Imagens", cats: ["image"] }
-];
-var TYPE_GROUPS = [
-  { key: "insert", label: "Inserção", types: ["insert"] },
-  { key: "delete", label: "Exclusão", types: ["delete"] },
-  { key: "modify", label: "Modificação", types: ["modify"] },
-  { key: "move", label: "Movimentação", types: ["move", "move_modify"] }
-];
-var OUTPUT_LABELS = [
-  { keys: ["pdf", "redline_pdf"], label: "Abrir PDF" },
-  { keys: ["changed_pages_pdf", "pdf_changed_pages", "changed_pages"], label: "Abrir PDF (págs. alteradas)" },
-  { keys: ["docx", "redline_docx"], label: "Abrir DOCX" },
-  { keys: ["exec_summary"], label: "Abrir resumo" },
-  { keys: ["html", "report_html"], label: "Abrir relatório (HTML)" },
-  { keys: ["redline_xlsx", "xlsx"], label: "Abrir Excel redline" },
-  { keys: ["report_xlsx"], label: "Abrir relatório (Excel)" },
-  { keys: ["json", "report_json"], label: "Abrir relatório (JSON)" }
-];
-/* Ordem de preferência para "Abrir" no histórico */
-var HIST_OUTPUT_ORDER = [
-  { key: "pdf", label: "PDF" },
-  { key: "changed_pages_pdf", label: "PDF (págs. alteradas)" },
-  { key: "docx", label: "DOCX" },
-  { key: "exec_summary", label: "Resumo" },
-  { key: "redline_xlsx", label: "Excel redline" },
-  { key: "html", label: "Relatório HTML" },
-  { key: "xlsx", label: "Relatório Excel" },
-  { key: "json", label: "Relatório JSON" }
-];
+var CAT_GROUPS = [];
+var TYPE_GROUPS = [];
+var OUTPUT_LABELS = [];
+var HIST_OUTPUT_ORDER = [];
+var TYPE_LABELS = {};
+var CAT_LABELS = {};
+
+function refreshDomainLabels() {
+  if (typeof t !== "function") return;
+  CAT_GROUPS = [
+    { key: "content", label: t("cat.content"), cats: ["content"] },
+    { key: "formatting", label: t("cat.formatting"), cats: ["formatting"] },
+    { key: "noise", label: t("cat.noise"), cats: ["noise_date", "noise_version", "noise_pagenum", "noise_whitespace", "noise_punct", "metadata"] },
+    { key: "table", label: t("cat.tables"), cats: ["table"] },
+    { key: "image", label: t("cat.images"), cats: ["image"] }
+  ];
+  TYPE_GROUPS = [
+    { key: "insert", label: t("type.insert"), types: ["insert"] },
+    { key: "delete", label: t("type.delete"), types: ["delete"] },
+    { key: "modify", label: t("type.modify"), types: ["modify"] },
+    { key: "move", label: t("type.move"), types: ["move", "move_modify"] }
+  ];
+  OUTPUT_LABELS = [
+    { keys: ["pdf", "redline_pdf"], label: t("out.openPdf") },
+    { keys: ["changed_pages_pdf", "pdf_changed_pages", "changed_pages"], label: t("out.openPdfChanged") },
+    { keys: ["docx", "redline_docx"], label: t("out.openDocx") },
+    { keys: ["exec_summary"], label: t("out.openSummary") },
+    { keys: ["html", "report_html"], label: t("out.openHtml") },
+    { keys: ["redline_xlsx", "xlsx"], label: t("out.openXlsxRedline") },
+    { keys: ["report_xlsx"], label: t("out.openXlsxReport") },
+    { keys: ["json", "report_json"], label: t("out.openJson") }
+  ];
+  HIST_OUTPUT_ORDER = [
+    { key: "pdf", label: "PDF" },
+    { key: "changed_pages_pdf", label: t("out.pdfChangedShort") },
+    { key: "docx", label: "DOCX" },
+    { key: "exec_summary", label: t("out.summaryShort") },
+    { key: "redline_xlsx", label: t("out.xlsxRedlineShort") },
+    { key: "html", label: t("out.htmlShort") },
+    { key: "xlsx", label: t("out.xlsxReportShort") },
+    { key: "json", label: t("out.jsonShort") }
+  ];
+  TYPE_LABELS = {
+    insert: t("type.insert"), delete: t("type.delete"), modify: t("type.modify"),
+    move: t("type.move"), move_modify: t("type.moveModify"), equal: t("type.equal")
+  };
+  CAT_LABELS = {
+    content: t("cat.content"), formatting: t("cat.formatting"),
+    noise_date: t("cat.noiseDate"), noise_version: t("cat.noiseVersion"),
+    noise_pagenum: t("cat.noisePagenum"), noise_whitespace: t("cat.noiseWhitespace"),
+    noise_punct: t("cat.noisePunct"), table: t("cat.table"), image: t("cat.image"),
+    metadata: t("cat.metadata")
+  };
+}
 
 /* ------------------------------------------------------------
    Ícones SVG (traço 1.5, estilo outline)
@@ -1677,7 +1755,7 @@ function applyTheme() {
   var icon = $("theme-icon");
   icon.textContent = "";
   icon.appendChild(svgIcon(state.theme === "dark" ? "sun" : "moon", 16));
-  $("theme-label").textContent = state.theme === "dark" ? "Tema claro" : "Tema escuro";
+  $("theme-label").textContent = state.theme === "dark" ? t("foot.themeLight") : t("foot.themeDark");
 }
 
 function toggleTheme() {
@@ -1796,9 +1874,9 @@ function renderDropzone(side) {
     var eIco = el("div", { class: "dz-ico" }); eIco.appendChild(svgIcon("warn", 28));
     body.appendChild(el("div", { class: "dz-empty" },
       eIco,
-      el("p", { text: "Arquivo não aceito" }),
+      el("p", { text: t("dz.rejected") }),
       el("div", { class: "dz-error-msg", text: error }),
-      el("small", { text: "Tente novamente com .docx, .pdf ou .xlsx" })
+      el("small", { text: t("dz.rejectedHint") })
     ));
     return;
   }
@@ -1806,8 +1884,8 @@ function renderDropzone(side) {
     var ico = el("div", { class: "dz-ico" }); ico.appendChild(svgIcon("upload", 28));
     body.appendChild(el("div", { class: "dz-empty" },
       ico,
-      el("p", { text: "Arraste o arquivo aqui" }),
-      el("small", { text: "ou clique para selecionar (.docx, .pdf, .xlsx)" })
+      el("p", { text: t("dz.empty") }),
+      el("small", { text: t("dz.emptyHint") })
     ));
     return;
   }
@@ -1816,7 +1894,7 @@ function renderDropzone(side) {
   var fileIco = el("div", { class: "file-ico " + icoClass, "aria-hidden": "true" });
   fileIco.appendChild(svgIcon(iconForExt(ext), 18));
   var removeBtn = el("button", {
-    class: "dz-remove", "aria-label": "Remover arquivo " + file.name, title: "Remover",
+    class: "dz-remove", "aria-label": t("dz.removeFile") + " " + file.name, title: t("dz.remove"),
     onclick: function (ev) { ev.stopPropagation(); setFile(side, null); }
   });
   removeBtn.appendChild(svgIcon("x", 12));
@@ -1832,7 +1910,7 @@ function renderDropzone(side) {
 
 function setFile(side, file) {
   if (file && !isValidDocFile(file)) {
-    state.single.errors[side] = "Formato não suportado: use .docx, .pdf ou .xlsx.";
+    state.single.errors[side] = t("dz.badFormat");
     if (side === "base") state.single.baseFile = null; else state.single.compareFile = null;
   } else {
     state.single.errors[side] = null;
@@ -1888,6 +1966,35 @@ function setDirPath(side, path) {
   clearBatchPreview();
   renderFolderDropzone(side);
   updateCompareButton();
+  /* Base definida e revisada vazia → tenta descobrir a pasta irmã sozinho. */
+  if (side === "base" && path && !getDirPath("compare")) {
+    suggestCompareDir(path);
+  }
+}
+
+var _suggestSeq = 0;
+function suggestCompareDir(basePath) {
+  _suggestSeq += 1;
+  var seq = _suggestSeq;
+  fetch("/api/batch/suggest-compare", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ base_dir: basePath })
+  }).then(function (res) {
+    if (res.status !== 200) return null; /* 204 = sem candidato confiável */
+    return res.json();
+  }).then(function (data) {
+    if (!data || !data.path) return;
+    /* O usuário pode ter mexido nas pastas durante a chamada. */
+    if (seq !== _suggestSeq) return;
+    if (getDirPath("compare") || getDirPath("base") !== basePath) return;
+    setDirPath("compare", data.path);
+    toast(
+      t("folder.suggested") + " " + basenameDir(data.path) +
+      " (" + (data.reason || t("folder.sibling")) + ")" + t("folder.suggestedSuffix"),
+      "success"
+    );
+  }).catch(function () { /* silencioso — sugestão é melhor-esforço */ });
 }
 
 function basenameDir(path) {
@@ -1924,7 +2031,7 @@ function pathFromFolderDrop(ev) {
   if (dt.items && dt.items.length === 1 && dt.items[0].webkitGetAsEntry) {
     var entry = dt.items[0].webkitGetAsEntry();
     if (entry && entry.isDirectory && entry.fullPath) {
-      toast("Arraste a pasta no app desktop para usar o caminho automaticamente.", "error");
+      toast(t("folder.dragDesktop"), "error");
     }
   }
   return null;
@@ -1944,9 +2051,9 @@ function renderFolderDropzone(side) {
     var eIco = el("div", { class: "dz-ico" }); eIco.appendChild(svgIcon("warn", 28));
     body.appendChild(el("div", { class: "dz-empty" },
       eIco,
-      el("p", { text: "Pasta inválida" }),
+      el("p", { text: t("folder.invalid") }),
       el("div", { class: "dz-error-msg", text: error }),
-      el("small", { text: "Selecione uma pasta existente no explorador" })
+      el("small", { text: t("folder.invalidHint") })
     ));
     return;
   }
@@ -1954,15 +2061,15 @@ function renderFolderDropzone(side) {
     var ico = el("div", { class: "dz-ico" }); ico.appendChild(svgIcon("folder", 28));
     body.appendChild(el("div", { class: "dz-empty" },
       ico,
-      el("p", { text: "Arraste a pasta aqui" }),
-      el("small", { text: "ou clique para abrir o explorador de arquivos" })
+      el("p", { text: t("folder.empty") }),
+      el("small", { text: t("folder.emptyHint") })
     ));
     return;
   }
   var fIco = el("div", { class: "file-ico folder", "aria-hidden": "true" });
   fIco.appendChild(svgIcon("folder", 18));
   var removeBtn = el("button", {
-    class: "dz-remove", "aria-label": "Remover pasta " + basenameDir(path), title: "Remover",
+    class: "dz-remove", "aria-label": t("folder.removeDir") + " " + basenameDir(path), title: t("dz.remove"),
     onclick: function (ev) { ev.stopPropagation(); setDirPath(side, ""); }
   });
   removeBtn.appendChild(svgIcon("x", 12));
@@ -1987,7 +2094,7 @@ function pickFolderNative(initialDir, prompt) {
       if (res.status === 204) return null;
       if (!res.ok) {
         return res.json().catch(function () { return {}; }).then(function (data) {
-          throw new Error(extractErrorMsg(data) || "Não foi possível abrir o explorador de arquivos.");
+          throw new Error(extractErrorMsg(data) || t("folder.explorerFail"));
         });
       }
       return res.json();
@@ -2003,7 +2110,7 @@ function pickFolderNative(initialDir, prompt) {
 }
 
 function browseFolder(side) {
-  pickFolderNative(getDirPath(side), side === "base" ? "Pasta base (originais)" : "Pasta revisada")
+  pickFolderNative(getDirPath(side), side === "base" ? t("folder.pickBase") : t("folder.pickCompare"))
     .then(function (path) {
       if (path) {
         state.batch.errors[side] = null;
@@ -2011,7 +2118,7 @@ function browseFolder(side) {
       }
     })
     .catch(function (err) {
-      toast(err.message || "Erro ao abrir o explorador de arquivos.", "error");
+      toast(err.message || t("folder.explorerError"), "error");
     });
 }
 
@@ -2041,7 +2148,7 @@ function setupFolderDropzone(side) {
       setDirPath(side, path);
       return;
     }
-    toast("Não foi possível usar essa pasta. Clique para abrir o explorador.", "error");
+    toast(t("toast.folderError"), "error");
   });
 }
 
@@ -2105,9 +2212,9 @@ function updateCompareButton() {
   btn.textContent = "";
   if (state.activeTab === "single") {
     ready = !!(state.single.baseFile && state.single.compareFile);
-    btn.appendChild(document.createTextNode("Comparar"));
-    note.textContent = running ? "Comparação em andamento…"
-      : ready ? "Pronto para comparar." : "Selecione o documento base e o revisado para começar.";
+    btn.appendChild(document.createTextNode(t("action.compare")));
+    note.textContent = running ? t("action.noteRunning")
+      : ready ? t("action.noteReady") : t("action.noteInitial");
     btn.disabled = !ready || running;
   } else {
     ready = $("dir-base").value.trim() !== "" && $("dir-compare").value.trim() !== "";
@@ -2115,13 +2222,13 @@ function updateCompareButton() {
       var sp = el("span", { class: "spin", "aria-hidden": "true" });
       sp.appendChild(svgIcon("spinner", 14));
       btn.appendChild(sp);
-      btn.appendChild(document.createTextNode("Carregando pares…"));
+      btn.appendChild(document.createTextNode(t("action.loadingPairs")));
     } else {
-      btn.appendChild(document.createTextNode("Ver pares"));
+      btn.appendChild(document.createTextNode(t("action.viewPairs")));
     }
-    note.textContent = running ? "Comparação em andamento…"
-      : state.batch.previewLoading ? "Analisando as duas pastas…"
-      : ready ? "Veja a prévia dos pares antes de processar o lote." : "Selecione as duas pastas para começar.";
+    note.textContent = running ? t("action.noteRunning")
+      : state.batch.previewLoading ? t("action.noteAnalyzing")
+      : ready ? t("action.notePreview") : t("action.noteSelectFolders");
     btn.disabled = !ready || running || state.batch.previewLoading;
   }
   renderBatchPreview();
@@ -2137,9 +2244,11 @@ function startCompare() {
     return;
   }
   var options = collectOptions();
+  /* Opções são ADITIVAS — nunca bloqueiam o redline principal (item 6). Se o
+     relatório foi marcado sem formato, avisa e segue sem ele. */
   if ($("opt-report").checked && options.reports.length === 0) {
-    toast("Selecione ao menos um formato de relatório (HTML, Excel ou JSON).", "error");
-    return;
+    toast(t("toast.reportNoFormat"), "info");
+    options.reports = [];
   }
   submitSingle(options);
 }
@@ -2191,7 +2300,7 @@ function loadBatchPreview() {
   }).then(function (res) {
     if (!res.ok) {
       return res.json().catch(function () { return {}; }).then(function (data) {
-        throw new Error(extractErrorMsg(data) || "Não foi possível gerar a prévia dos pares (HTTP " + res.status + ").");
+        throw new Error(extractErrorMsg(data) || (t("preview.failHttp") + " (HTTP " + res.status + ")."));
       });
     }
     return res.json();
@@ -2208,16 +2317,16 @@ function loadBatchPreview() {
     if (seq !== state.batch.previewSeq) return;
     state.batch.previewLoading = false;
     updateCompareButton();
-    toast(err.message || "Erro de rede ao gerar a prévia dos pares.", "error");
+    toast(err.message || t("toast.previewNet"), "error");
   });
 }
 
 function buildMethodBadge(method) {
   var m = String(method || "nome");
   var cls = "m-nome";
-  var tip = "pareado pelo nome do arquivo";
+  var tip = t("pair.byName");
   if (m === "similaridade") { cls = "m-similaridade"; tip = "pareado por similaridade do nome"; }
-  else if (m === "conteúdo" || m === "conteudo") { cls = "m-conteudo"; tip = "pareado pelo texto do documento"; }
+  else if (m === "conteúdo" || m === "conteudo" || m === "content") { cls = "m-conteudo"; tip = t("pair.byContent"); }
   return el("span", { class: "method-badge " + cls, title: tip, text: m });
 }
 
@@ -2267,12 +2376,12 @@ function renderBatchPreview() {
   var ub = preview.unmatched_base || [];
   var uc = preview.unmatched_compare || [];
   var card = el("section", { class: "card batch-preview-card" });
-  var h2 = el("h2", {}, "Prévia dos pares");
+  var h2 = el("h2", {}, t("preview.title"));
   var unmatchedCount = ub.length + uc.length;
   h2.appendChild(el("span", {
     class: "sub",
-    text: pairs.length + (pairs.length === 1 ? " par" : " pares") +
-      (unmatchedCount ? " · " + unmatchedCount + " sem correspondência" : "")
+    text: pairs.length + " " + (pairs.length === 1 ? t("preview.pair") : t("preview.pairs")) +
+      (unmatchedCount ? " · " + unmatchedCount + " " + t("preview.unmatched") : "")
   }));
   card.appendChild(h2);
 
@@ -2281,17 +2390,14 @@ function renderBatchPreview() {
     pairs.forEach(function (p) { list.appendChild(buildPairRow(p)); });
     card.appendChild(list);
   } else {
-    card.appendChild(el("div", {
-      class: "changes-empty",
-      text: "Nenhum arquivo pareou entre as duas pastas. Verifique se os nomes são semelhantes nos dois lados ou se as pastas estão corretas."
-    }));
+    card.appendChild(el("div", { class: "changes-empty", text: t("preview.none") }));
   }
 
   if (ub.length || uc.length) {
     var box = el("div", { class: "unmatched-box" });
-    box.appendChild(el("h3", { text: "Sem correspondência" }));
-    if (ub.length) box.appendChild(buildUnmatchedLine("Pasta base", ub));
-    if (uc.length) box.appendChild(buildUnmatchedLine("Pasta revisada", uc));
+    box.appendChild(el("h3", { text: t("preview.unmatchedTitle") }));
+    if (ub.length) box.appendChild(buildUnmatchedLine(t("batch.dirBase"), ub));
+    if (uc.length) box.appendChild(buildUnmatchedLine(t("batch.dirCompare"), uc));
     card.appendChild(box);
   }
 
@@ -2300,12 +2406,12 @@ function renderBatchPreview() {
     foot.appendChild(el("button", {
       class: "btn-primary", type: "button",
       onclick: processBatchPreview
-    }, "Processar " + pairs.length + (pairs.length === 1 ? " par" : " pares")));
+    }, t("preview.process") + " " + pairs.length + " " + (pairs.length === 1 ? t("preview.pair") : t("preview.pairs"))));
   }
   foot.appendChild(el("button", {
     class: "btn", type: "button",
     onclick: function () { clearBatchPreview(); updateCompareButton(); }
-  }, "Cancelar"));
+  }, t("common.cancel")));
   card.appendChild(foot);
   host.appendChild(card);
 }
@@ -2316,7 +2422,7 @@ function postJob(url, init) {
   state.job.startedAt = Date.now();
   updateCompareButton();
   setJobPhase("running");
-  $("job-running-title").textContent = "Enviando…";
+  $("job-running-title").textContent = t("job.sending");
   $("job-running-sub").textContent = "";
   $("job-running-count").textContent = "";
   $("job-running-fill").classList.add("indeterminate");
@@ -2326,8 +2432,8 @@ function postJob(url, init) {
     if (!res.ok) {
       return res.json().catch(function () { return {}; }).then(function (data) {
         var err = new Error(extractErrorMsg(data) || (res.status === 402
-          ? "Comparações bloqueadas — ative uma licença para continuar."
-          : "Falha ao iniciar a comparação (HTTP " + res.status + ")."));
+          ? t("toast.compareBlocked")
+          : t("toast.batchNet") + " (HTTP " + res.status + ")."));
         if (res.status === 402) err.licenseBlocked = true;
         throw err;
       });
@@ -2337,13 +2443,13 @@ function postJob(url, init) {
     if (!data || !data.job_id) throw new Error("Resposta inesperada do servidor: job_id ausente.");
     state.job.id = data.job_id;
     state.job.pollFailures = 0;
-    $("job-running-title").textContent = "Comparando documentos…";
+    $("job-running-title").textContent = t("job.comparing");
     schedulePoll();
   }).catch(function (err) {
     state.job.status = null;
     setJobPhase("idle");
     updateCompareButton();
-    toast(err.message || "Erro de rede ao iniciar a comparação.", "error");
+    toast(err.message || t("toast.batchNet"), "error");
     if (err.licenseBlocked) {
       refreshLicense();
       openActivateModal();
@@ -2416,7 +2522,7 @@ function buildPreviewLegend(className) {
   return el("div", { class: cls },
     el("span", {}, el("span", { class: "mark-ins", text: "inserido" })),
     el("span", {}, el("span", { class: "mark-del", text: "removido" })),
-    el("span", {}, el("span", { class: "mark-fmt", text: "formatação" })),
+    el("span", {}, el("span", { class: "mark-fmt", text: t("mark.formatting") })),
     el("span", { text: "↦ movido" })
   );
 }
@@ -2557,7 +2663,7 @@ function buildDocPreviewPanel(data, viewerKey) {
   wrap.appendChild(head);
 
   if (!blocks.length) {
-    wrap.appendChild(el("div", { class: "doc-preview-empty", text: "Visualização inline disponível para DOCX e PDF. Abra o PDF ou Excel redline gerado." }));
+    wrap.appendChild(el("div", { class: "doc-preview-empty", text: t("result.docEmpty") }));
     return wrap;
   }
 
@@ -2625,12 +2731,12 @@ function renderDetailTabBody(viewerKey, tab, bodyEl, ctx) {
   if (tab === "visual") {
     var viewer = state.viewers[key];
     if (!viewer || !viewer.data) {
-      bodyEl.appendChild(el("div", { class: "hist-detail-loading", text: "Carregando documento…" }));
+      bodyEl.appendChild(el("div", { class: "hist-detail-loading", text: t("load.doc") }));
       ctx.load().then(function () {
         if (bodyEl.parentNode) renderDetailTabBody(viewerKey, "visual", bodyEl, ctx);
       }).catch(function (err) {
         bodyEl.textContent = "";
-        bodyEl.appendChild(el("div", { class: "changes-empty", text: err.message || "Erro ao carregar." }));
+        bodyEl.appendChild(el("div", { class: "changes-empty", text: err.message || t("load.error") }));
       });
       return;
     }
@@ -2639,12 +2745,12 @@ function renderDetailTabBody(viewerKey, tab, bodyEl, ctx) {
   }
   if (tab === "list") {
     if (!state.viewers[key] || !state.viewers[key].data) {
-      bodyEl.appendChild(el("div", { class: "hist-detail-loading", text: "Carregando mudanças…" }));
+      bodyEl.appendChild(el("div", { class: "hist-detail-loading", text: t("load.changes") }));
       ctx.load().then(function () {
         if (bodyEl.parentNode) renderDetailTabBody(viewerKey, "list", bodyEl, ctx);
       }).catch(function (err) {
         bodyEl.textContent = "";
-        bodyEl.appendChild(el("div", { class: "changes-empty", text: err.message || "Erro ao carregar." }));
+        bodyEl.appendChild(el("div", { class: "changes-empty", text: err.message || t("load.error") }));
       });
       return;
     }
@@ -2665,25 +2771,25 @@ function renderDetailTabBody(viewerKey, tab, bodyEl, ctx) {
       bodyEl.appendChild(buildInsightsPanel(state.insights[key]));
       return;
     }
-    bodyEl.appendChild(el("div", { class: "hist-detail-loading", text: "Gerando análise…" }));
+    bodyEl.appendChild(el("div", { class: "hist-detail-loading", text: t("load.insights") }));
     ctx.loadInsights().then(function (data) {
       state.insights[key] = data;
       if (bodyEl.parentNode) renderDetailTabBody(viewerKey, "ai", bodyEl, ctx);
     }).catch(function (err) {
       bodyEl.textContent = "";
-      bodyEl.appendChild(el("div", { class: "changes-empty", text: err.message || "Erro na análise IA." }));
+      bodyEl.appendChild(el("div", { class: "changes-empty", text: err.message || t("load.insightsError") }));
     });
   }
 }
 
 function buildDetailPanel(viewerKey, ctx) {
   var panel = el("div", { class: "result-detail-panel" });
-  var tabs = el("div", { class: "detail-tabs", role: "tablist", "aria-label": "Modo de visualização" });
+  var tabs = el("div", { class: "detail-tabs", role: "tablist", "aria-label": t("aria.viewMode") });
   var body = el("div", { class: "detail-tab-body" });
   var tabDefs = [
-    { id: "visual", label: "Documento" },
-    { id: "list", label: "Lista" },
-    { id: "ai", label: "Análise IA" }
+    { id: "visual", label: t("result.tabDoc") },
+    { id: "list", label: t("result.tabList") },
+    { id: "ai", label: t("result.tabAI") }
   ];
   var activeTab = "visual";
   tabDefs.forEach(function (td) {
@@ -2751,7 +2857,7 @@ function pollJob() {
     if (state.job.pollFailures >= 6) {
       state.job.status = null;
       setJobPhase("idle");
-      $("job-running-title").textContent = "Conexão perdida";
+      $("job-running-title").textContent = t("job.connLost");
       $("job-running-fill").classList.remove("indeterminate");
       updateCompareButton();
       toast("Não foi possível acompanhar o andamento: " + err.message, "error");
@@ -2777,7 +2883,7 @@ function renderProgress(job) {
     : "";
   $("job-running-sub").textContent = p.current ? p.current : "";
   if (job.status === "running") {
-    $("job-running-title").textContent = total > 1 ? "Processando lote…" : "Comparando documentos…";
+    $("job-running-title").textContent = total > 1 ? t("job.batchProcessing") : t("job.comparing");
   }
 }
 
@@ -2791,7 +2897,7 @@ function finishJob(job) {
   $("job-running-bar").setAttribute("aria-valuenow", "100");
   if (job.status === "error" && (!job.items || job.items.length === 0)) {
     setJobPhase("idle");
-    toast(extractErrorMsg(job) || "A comparação falhou. Verifique os arquivos e tente novamente.", "error");
+    toast(extractErrorMsg(job) || t("toast.jobFailed"), "error");
     state.job.status = null;
     updateCompareButton();
     return;
@@ -2815,7 +2921,7 @@ function resultLoadCtx(index) {
         return fetch("/api/jobs/" + encodeURIComponent(jobId) + "/result/" + index).then(function (res) {
           if (!res.ok) {
             return res.json().catch(function () { return {}; }).then(function (data) {
-              throw new Error(extractErrorMsg(data) || "Não foi possível carregar o resultado.");
+              throw new Error(extractErrorMsg(data) || t("job.loadResultFail"));
             });
           }
           return res.json();
@@ -2826,7 +2932,7 @@ function resultLoadCtx(index) {
       return fetch("/api/jobs/" + encodeURIComponent(jobId) + "/result/" + index + "/insights").then(function (res) {
         if (!res.ok) {
           return res.json().catch(function () { return {}; }).then(function (data) {
-            throw new Error(extractErrorMsg(data) || "Não foi possível gerar a análise IA.");
+            throw new Error(extractErrorMsg(data) || t("job.loadInsightsFail"));
           });
         }
         return res.json();
@@ -2869,25 +2975,25 @@ function buildOutputActions(outputs, container) {
 function buildStatsPills(stats, container) {
   container.appendChild(el("span", { class: "job-stat-pill" },
     el("span", { class: "dot content", "aria-hidden": "true" }),
-    document.createTextNode((stats.content_changes != null ? stats.content_changes : "–") + " conteúdo")));
+    document.createTextNode((stats.content_changes != null ? stats.content_changes : "–") + " " + t("stat.content"))));
   container.appendChild(el("span", { class: "job-stat-pill" },
     el("span", { class: "dot noise", "aria-hidden": "true" }),
-    document.createTextNode((stats.noise_changes != null ? stats.noise_changes : "–") + " rotineiras")));
+    document.createTextNode((stats.noise_changes != null ? stats.noise_changes : "–") + " " + t("stat.noise"))));
   container.appendChild(el("span", { class: "job-stat-pill" },
     el("span", { class: "dot formatting", "aria-hidden": "true" }),
-    document.createTextNode((stats.formatting_changes != null ? stats.formatting_changes : "–") + " formatação")));
+    document.createTextNode((stats.formatting_changes != null ? stats.formatting_changes : "–") + " " + t("stat.formatting"))));
 }
 
 function buildStatsInline(stats, container) {
   container.appendChild(el("span", { class: "stat" },
     el("span", { class: "dot content", "aria-hidden": "true" }),
-    document.createTextNode(String(stats.content_changes != null ? stats.content_changes : "–") + " conteúdo")));
+    document.createTextNode(String(stats.content_changes != null ? stats.content_changes : "–") + " " + t("stat.content"))));
   container.appendChild(el("span", { class: "stat" },
     el("span", { class: "dot noise", "aria-hidden": "true" }),
-    document.createTextNode(String(stats.noise_changes != null ? stats.noise_changes : "–") + " rotineiras")));
+    document.createTextNode(String(stats.noise_changes != null ? stats.noise_changes : "–") + " " + t("stat.noise"))));
   container.appendChild(el("span", { class: "stat" },
     el("span", { class: "dot formatting", "aria-hidden": "true" }),
-    document.createTextNode(String(stats.formatting_changes != null ? stats.formatting_changes : "–") + " formatação")));
+    document.createTextNode(String(stats.formatting_changes != null ? stats.formatting_changes : "–") + " " + t("stat.formatting"))));
 }
 
 function populateJobDoneToolbar(item) {
@@ -2911,7 +3017,7 @@ function renderJobDoneHero(item, index) {
   });
 
   var panelHost = el("div", { class: "job-done-panel" });
-  panelHost.appendChild(el("div", { class: "hist-detail-loading", text: "Carregando preview do documento…" }));
+  panelHost.appendChild(el("div", { class: "hist-detail-loading", text: t("load.preview") }));
   wrap.appendChild(panelHost);
 
   resultLoadCtx(index).load().then(function () {
@@ -2919,7 +3025,7 @@ function renderJobDoneHero(item, index) {
     panelHost.appendChild(buildDetailPanel(index, resultLoadCtx(index)));
   }).catch(function (err) {
     panelHost.textContent = "";
-    panelHost.appendChild(el("div", { class: "changes-empty", text: err.message || "Erro ao carregar preview." }));
+    panelHost.appendChild(el("div", { class: "changes-empty", text: err.message || t("load.previewError") }));
   });
 
   return wrap;
@@ -2974,8 +3080,8 @@ function renderJobDone(job) {
   var seconds = typeof s.seconds === "number" ? s.seconds : (state.job.startedAt ? (Date.now() - state.job.startedAt) / 1000 : 0);
 
   if (items.length === 0) {
-    $("job-done-title").textContent = "Nenhum resultado";
-    $("job-done-sub").textContent = "Verifique as pastas informadas.";
+    $("job-done-title").textContent = t("job.noResult");
+    $("job-done-sub").textContent = t("job.checkFolders");
     return;
   }
 
@@ -2985,18 +3091,18 @@ function renderJobDone(job) {
   if (items.length === 1) {
     var one = items[0];
     if (one.status === "ok") {
-      $("job-done-title").textContent = basename((one.pair && one.pair[0]) || "Documento");
-      $("job-done-sub").textContent = "Comparado com " + basename((one.pair && one.pair[1]) || "revisado") + " · " + formatSeconds(seconds);
+      $("job-done-title").textContent = basename((one.pair && one.pair[0]) || t("job.docFallback"));
+      $("job-done-sub").textContent = t("job.comparedWith") + " " + basename((one.pair && one.pair[1]) || t("job.revisedFallback")) + " · " + formatSeconds(seconds);
       populateJobDoneToolbar(one);
       body.appendChild(renderJobDoneHero(one, 0));
     } else {
-      $("job-done-title").textContent = "Comparação falhou";
+      $("job-done-title").textContent = t("job.failedTitle");
       $("job-done-sub").textContent = pairLabel(one);
       body.appendChild(el("div", { class: "card result-card failed" },
-        el("div", { class: "result-error-msg", text: one.error || "Falha desconhecida ao comparar este par." })));
+        el("div", { class: "result-error-msg", text: one.error || t("result.unknownFail") })));
     }
   } else {
-    $("job-done-title").textContent = items.length + " documentos processados";
+    $("job-done-title").textContent = items.length + " " + t("job.docsProcessed");
     $("job-done-sub").textContent = formatSeconds(seconds);
     body.appendChild(renderJobDoneBatch(job, items));
   }
@@ -3006,7 +3112,7 @@ function renderJobDone(job) {
   if (items.length > 1) {
     var ok = typeof s.ok === "number" ? s.ok : okItems.length;
     var failed = typeof s.failed === "number" ? s.failed : items.length - ok;
-    sumNode.appendChild(el("span", { class: "s-ok", text: ok + " concluída" + (ok === 1 ? "" : "s") }));
+    sumNode.appendChild(el("span", { class: "s-ok", text: ok + " " + (ok === 1 ? t("job.doneOk") : t("job.doneOkPlural")) }));
     sumNode.appendChild(el("span", { class: "sep", "aria-hidden": "true", text: "·" }));
     sumNode.appendChild(el("span", { class: "s-fail", text: failed + " falha" + (failed === 1 ? "" : "s") }));
     sumNode.appendChild(el("span", { class: "sep", "aria-hidden": "true", text: "·" }));
@@ -3023,8 +3129,8 @@ function renderResults(job) {
 
 function pairLabel(item) {
   var pair = item.pair || [];
-  var b = basename(pair[0]) || "documento base";
-  var c = basename(pair[1]) || "documento revisado";
+  var b = basename(pair[0]) || t("job.baseFallback");
+  var c = basename(pair[1]) || t("job.compareFallback");
   return b + "  vs  " + c;
 }
 
@@ -3036,14 +3142,14 @@ function openPath(path) {
   }).then(function (res) {
     if (!res.ok) {
       if (res.status === 404) {
-        throw new Error("Arquivo não encontrado — pode ter sido movido ou apagado.");
+        throw new Error(t("job.fileMissing"));
       }
       return res.json().catch(function () { return {}; }).then(function (data) {
-        throw new Error(extractErrorMsg(data) || "Não foi possível abrir: " + basename(path));
+        throw new Error(extractErrorMsg(data) || (t("job.openFail") + " " + basename(path)));
       });
     }
   }).catch(function (err) {
-    toast(err.message || "Erro de rede ao abrir o arquivo.", "error");
+    toast(err.message || t("toast.openNet"), "error");
   });
 }
 
@@ -3056,7 +3162,7 @@ function buildInsightsPanel(data) {
   var spark = el("span", { class: "ai-spark" });
   spark.appendChild(svgIcon("spark", 15));
   head.appendChild(spark);
-  head.appendChild(el("h3", {}, data.mode_label || "Análise IA"));
+  head.appendChild(el("h3", {}, data.mode_label || t("ai.title")));
   head.appendChild(el("span", { class: "ai-mode" },
     data.mode === "ai_enhanced" ? "Generativa" : "100% local"));
   panel.appendChild(head);
@@ -3079,13 +3185,13 @@ function buildInsightsPanel(data) {
     panel.appendChild(rl);
   }
   if (data.recommendations && data.recommendations.length) {
-    panel.appendChild(el("div", { class: "ai-section-title" }, "Recomendações"));
+    panel.appendChild(el("div", { class: "ai-section-title" }, t("ai.recommendations")));
     var rec = el("ul", { class: "ai-list" });
     data.recommendations.forEach(function (r) { rec.appendChild(el("li", {}, r)); });
     panel.appendChild(rec);
   }
   panel.appendChild(el("p", { class: "ai-privacy" },
-    data.privacy || "Nenhum dado foi enviado à nuvem."));
+    data.privacy || t("ai.privacy")));
   return panel;
 }
 
@@ -3248,18 +3354,18 @@ function buildSideBySidePanel(viewer) {
       toggle.classList.toggle("active", viewer.sbsOnly);
       toggle.setAttribute("aria-pressed", viewer.sbsOnly ? "true" : "false");
     }
-  }, "Só mudanças");
+  }, t("sbs.onlyChanges"));
   wrap.appendChild(el("div", { class: "sbs-toolbar" }, toggle));
 
   if (!blocks.length) {
-    wrap.appendChild(el("div", { class: "changes-empty", text: "Visão lado a lado indisponível para este documento. Use a Lista ou abra o PDF gerado." }));
+    wrap.appendChild(el("div", { class: "changes-empty", text: t("result.sbsUnavailable") }));
     return wrap;
   }
 
   var scroll = el("div", { class: "sbs-scroll" });
   scroll.appendChild(el("div", { class: "sbs-head", "aria-hidden": "true" },
-    el("div", { class: "sbs-head-col", text: "Base" }),
-    el("div", { class: "sbs-head-col", text: "Revisado" })
+    el("div", { class: "sbs-head-col", text: t("sbs.base") }),
+    el("div", { class: "sbs-head-col", text: t("sbs.revised") })
   ));
 
   var n = blocks.length;
@@ -3305,7 +3411,7 @@ function buildChangesPanel(viewerKey) {
 
   /* Seletor de modo: Lista | Lado a lado */
   var modeBtns = {};
-  var modeRow = el("div", { class: "mode-switch", role: "tablist", "aria-label": "Modo de exibição das mudanças" });
+  var modeRow = el("div", { class: "mode-switch", role: "tablist", "aria-label": t("aria.modeChanges") });
   var listWrap = el("div", { class: "changes-mode-list" });
   var sbsWrap = el("div", { class: "changes-mode-sbs" }, null);
   var sbsBuilt = false;
@@ -3322,7 +3428,7 @@ function buildChangesPanel(viewerKey) {
       sbsWrap.appendChild(buildSideBySidePanel(viewer));
     }
   }
-  [{ id: "list", label: "Lista" }, { id: "sbs", label: "Lado a lado" }].forEach(function (md) {
+  [{ id: "list", label: t("mode.list") }, { id: "sbs", label: t("mode.sbs") }].forEach(function (md) {
     var b = el("button", {
       class: "mode-btn", type: "button", role: "tab", "aria-selected": "false",
       onclick: function () { setMode(md.id); }
@@ -3340,12 +3446,12 @@ function buildChangesPanel(viewerKey) {
   });
 
   var toolbar = el("div", { class: "changes-toolbar" });
-  toolbar.appendChild(buildChipRow("Categoria:", CAT_GROUPS, catCounts, viewer.cats, function () { renderChangeList(viewerKey, panel); }));
-  toolbar.appendChild(buildChipRow("Tipo:", TYPE_GROUPS, typeCounts, viewer.types, function () { renderChangeList(viewerKey, panel); }));
+  toolbar.appendChild(buildChipRow(t("filter.category"), CAT_GROUPS, catCounts, viewer.cats, function () { renderChangeList(viewerKey, panel); }));
+  toolbar.appendChild(buildChipRow(t("filter.type"), TYPE_GROUPS, typeCounts, viewer.types, function () { renderChangeList(viewerKey, panel); }));
 
   var searchInput = el("input", {
-    type: "search", placeholder: "Buscar no texto das mudanças…",
-    "aria-label": "Buscar no texto das mudanças",
+    type: "search", placeholder: t("changes.searchPlaceholder"),
+    "aria-label": t("changes.searchPlaceholder"),
     oninput: function (ev) { viewer.search = ev.target.value; renderChangeList(viewerKey, panel); }
   });
   var sicon = el("span", { class: "sicon" });
@@ -3390,12 +3496,12 @@ function renderChangeList(viewerKey, panel) {
   var changes = (viewer && viewer.data && viewer.data.changes) || [];
 
   if (changes.length === 0) {
-    listNode.appendChild(el("div", { class: "changes-empty", text: "Nenhuma mudança detectada entre os dois documentos." }));
+    listNode.appendChild(el("div", { class: "changes-empty", text: t("changes.none") }));
     return;
   }
   var filtered = changes.filter(function (c) { return changeMatches(viewer, c); });
   if (filtered.length === 0) {
-    listNode.appendChild(el("div", { class: "changes-empty", text: "Nenhuma mudança corresponde aos filtros selecionados." }));
+    listNode.appendChild(el("div", { class: "changes-empty", text: t("changes.noFilter") }));
     return;
   }
   filtered.slice(0, RENDER_CAP).forEach(function (change) {
@@ -3404,7 +3510,7 @@ function renderChangeList(viewerKey, panel) {
   if (filtered.length > RENDER_CAP) {
     listNode.appendChild(el("div", {
       class: "changes-truncated",
-      text: "Exibindo " + RENDER_CAP + " de " + filtered.length + " mudanças — refine os filtros ou a busca para ver as demais."
+      text: t("changes.capPrefix") + " " + RENDER_CAP + " " + t("common.of") + " " + filtered.length + " " + t("changes.capSuffix")
     }));
   }
 }
@@ -3423,7 +3529,7 @@ function buildChangeItem(change) {
   }
   var page = change.page_compare != null ? change.page_compare : change.page_base;
   if (page != null) {
-    meta.appendChild(el("span", { class: "page-tag", text: "pág. " + page }));
+    meta.appendChild(el("span", { class: "page-tag", text: t("page.tag") + " " + page }));
   }
   item.appendChild(meta);
 
@@ -3464,13 +3570,13 @@ function loadHistory(silent) {
 
 function historyDayLabel(iso) {
   var d = new Date(iso);
-  if (isNaN(d.getTime())) return "Data desconhecida";
+  if (isNaN(d.getTime())) return t("history.dateUnknown");
   var now = new Date();
   var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   var day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
   var diff = Math.round((today - day) / 86400000);
-  if (diff === 0) return "Hoje";
-  if (diff === 1) return "Ontem";
+  if (diff === 0) return t("history.today");
+  if (diff === 1) return t("history.yesterday");
   return pad2(d.getDate()) + "/" + pad2(d.getMonth() + 1) + "/" + d.getFullYear();
 }
 
@@ -3534,12 +3640,12 @@ function renderHistoryToolbarClear() {
     area.appendChild(el("button", {
       class: "btn",
       onclick: function () { state.history.confirming = false; renderHistoryToolbarClear(); }
-    }, "Cancelar"));
+    }, t("common.cancel")));
   } else {
     area.appendChild(el("button", {
       class: "btn",
       onclick: function () { state.history.confirming = true; renderHistoryToolbarClear(); }
-    }, "Limpar histórico"));
+    }, t("history.clear")));
   }
 }
 
@@ -3559,7 +3665,7 @@ function renderHistory() {
 
   var filtered = all.filter(historyEntryMatches);
   if (filtered.length === 0) {
-    listNode.appendChild(el("div", { class: "hist-none", text: "Nenhuma comparação corresponde à busca ou ao filtro." }));
+    listNode.appendChild(el("div", { class: "hist-none", text: t("hist.noMatch") }));
     return;
   }
 
@@ -3621,7 +3727,7 @@ function historyDetailCtx(entry) {
         return fetch("/api/history/" + encodeURIComponent(entry.id) + "/result").then(function (res) {
           if (!res.ok) {
             return res.json().catch(function () { return {}; }).then(function (data) {
-              throw new Error(extractErrorMsg(data) || "Não foi possível carregar as mudanças.");
+              throw new Error(extractErrorMsg(data) || t("hist.loadChangesFail"));
             });
           }
           return res.json();
@@ -3632,7 +3738,7 @@ function historyDetailCtx(entry) {
       return fetch("/api/history/" + encodeURIComponent(entry.id) + "/insights").then(function (res) {
         if (!res.ok) {
           return res.json().catch(function () { return {}; }).then(function (data) {
-            throw new Error(extractErrorMsg(data) || "Não foi possível gerar a análise IA.");
+            throw new Error(extractErrorMsg(data) || t("job.loadInsightsFail"));
           });
         }
         return res.json();
@@ -3674,7 +3780,7 @@ function toggleHistoryDetail(entry, card) {
   card.classList.add("expanded");
   state.history.expandedId = entry.id;
   var detail = el("div", { class: "hist-detail" });
-  detail.appendChild(el("div", { class: "hist-detail-loading", text: "Carregando documento…" }));
+  detail.appendChild(el("div", { class: "hist-detail-loading", text: t("load.doc") }));
   card.appendChild(detail);
 
   var viewerKey = historyViewerKey(entry.id);
@@ -3688,7 +3794,7 @@ function toggleHistoryDetail(entry, card) {
   }).catch(function (err) {
     if (detail.parentNode) {
       detail.textContent = "";
-      detail.appendChild(el("div", { class: "changes-empty", text: err.message || "Erro ao carregar." }));
+      detail.appendChild(el("div", { class: "changes-empty", text: err.message || t("load.error") }));
     }
   });
 }
@@ -3696,7 +3802,7 @@ function toggleHistoryDetail(entry, card) {
 function buildHistoryRow(e) {
   var card = el("div", { class: "hist-card" + (state.history.expandedId === e.id ? " expanded" : "") });
   var row = el("div", { class: "hist-row", tabindex: "0", role: "button",
-    "aria-label": "Duplo clique para ver mudanças: " + historyEntryTitle(e) });
+    "aria-label": t("hist.dblClick") + " " + historyEntryTitle(e) });
 
   var ext = fileExt(e.base_name || e.compare_name || "");
   var ico = el("div", { class: "hist-ico", "aria-hidden": "true" });
@@ -3743,7 +3849,7 @@ function buildHistoryRow(e) {
   }
 
   actions.appendChild(el("button", {
-    class: "icon-btn btn-danger", title: "Remover do histórico", "aria-label": "Remover do histórico",
+    class: "icon-btn btn-danger", title: t("hist.removeTitle"), "aria-label": t("hist.removeTitle"),
     onclick: function (ev) { ev.stopPropagation(); removeHistoryEntry(e, card); }
   }, "✕"));
   row.appendChild(actions);
@@ -3763,7 +3869,7 @@ function buildHistoryRow(e) {
 
   if (state.history.expandedId === e.id && e.status === "ok") {
     var detail = el("div", { class: "hist-detail" });
-    detail.appendChild(el("div", { class: "hist-detail-loading", text: "Carregando documento…" }));
+    detail.appendChild(el("div", { class: "hist-detail-loading", text: t("load.doc") }));
     card.appendChild(detail);
     var viewerKey = historyViewerKey(e.id);
     if (state.viewers[viewerKey] && state.viewers[viewerKey].data) {
@@ -3790,7 +3896,7 @@ function removeHistoryEntry(e, card) {
   fetch("/api/history/" + encodeURIComponent(e.id), { method: "DELETE" }).then(function (res) {
     if (!res.ok && res.status !== 404) {
       return res.json().catch(function () { return {}; }).then(function (data) {
-        throw new Error(extractErrorMsg(data) || "Não foi possível remover a entrada (HTTP " + res.status + ").");
+        throw new Error(extractErrorMsg(data) || (t("hist.removeFail") + " (HTTP " + res.status + ")."));
       });
     }
     state.history.entries = state.history.entries.filter(function (x) { return x.id !== e.id; });
@@ -3808,7 +3914,7 @@ function removeHistoryEntry(e, card) {
     });
     setTimeout(function () { renderHistory(); }, 380);
   }).catch(function (err) {
-    toast(err.message || "Erro de rede ao remover do histórico.", "error");
+    toast(err.message || t("toast.histRemoveNet"), "error");
   });
 }
 
@@ -3816,16 +3922,16 @@ function clearHistory() {
   fetch("/api/history", { method: "DELETE" }).then(function (res) {
     if (!res.ok) {
       return res.json().catch(function () { return {}; }).then(function (data) {
-        throw new Error(extractErrorMsg(data) || "Não foi possível limpar o histórico (HTTP " + res.status + ").");
+        throw new Error(extractErrorMsg(data) || (t("hist.clearFail") + " (HTTP " + res.status + ")."));
       });
     }
     state.history.entries = [];
     state.history.expandedId = null;
     renderHistory();
-    toast("Histórico limpo.", "success");
+    toast(t("toast.histCleared"), "success");
   }).catch(function (err) {
     renderHistoryToolbarClear();
-    toast(err.message || "Erro de rede ao limpar o histórico.", "error");
+    toast(err.message || t("toast.histClearNet"), "error");
   });
 }
 
@@ -3834,11 +3940,11 @@ function clearHistory() {
    ------------------------------------------------------------ */
 var TRIAL_TOTAL_DAYS = 14;
 var TRIAL_TOTAL_COMPARISONS = 25;
-var PLAN_NAMES = { pro: "Pro", team: "Equipe", trial: "Avaliação" };
+var PLAN_NAME_KEYS = { pro: "plan.pro", team: "plan.team", trial: "plan.trial", perpetual: "acct.perpetual" };
 
 function planDisplayName(planId) {
   if (!planId) return "—";
-  if (PLAN_NAMES[planId]) return PLAN_NAMES[planId];
+  if (PLAN_NAME_KEYS[planId]) return t(PLAN_NAME_KEYS[planId]);
   var plans = state.license.plans || [];
   for (var i = 0; i < plans.length; i++) {
     if (plans[i].id === planId) return plans[i].name;
@@ -3866,12 +3972,14 @@ function relTime(iso) {
   if (isNaN(d.getTime())) return "—";
   var diff = Math.max(0, Date.now() - d.getTime());
   var min = Math.round(diff / 60000);
-  if (min < 1) return "agora mesmo";
-  if (min < 60) return "há " + min + " min";
+  var pt = I18N.lang === "pt";
+  if (min < 1) return t("rel.now");
+  if (min < 60) return pt ? "há " + min + " min" : min + " min ago";
   var h = Math.round(min / 60);
-  if (h < 24) return "há " + h + " h";
+  if (h < 24) return pt ? "há " + h + " h" : h + " h ago";
   var days = Math.round(h / 24);
-  return days === 1 ? "há 1 dia" : "há " + days + " dias";
+  if (pt) return days === 1 ? "há 1 dia" : "há " + days + " dias";
+  return days === 1 ? "1 day ago" : days + " days ago";
 }
 
 function refreshLicense() {
@@ -3910,7 +4018,7 @@ function ensurePlans() {
 
 function openMailto(subject) {
   ensurePlans().catch(function () { return null; }).then(function () {
-    var to = state.license.salesEmail || "vendas@comparedocs.app";
+    var to = state.license.salesEmail || "vendas@diffai.app";
     var a = document.createElement("a");
     a.href = "mailto:" + to + "?subject=" + encodeURIComponent(subject);
     a.rel = "noopener";
@@ -3930,9 +4038,9 @@ function renderSideAccount() {
   if (!st) {
     avatar.className = "acct-avatar neutral";
     avatar.appendChild(svgIcon("user", 14));
-    line1.textContent = "Avaliação gratuita";
+    line1.textContent = t("side.trialFree");
     pill.className = "plan-pill";
-    pill.textContent = "Avaliação";
+    pill.textContent = t("side.trial");
     return;
   }
   if (st.state === "active" || st.state === "expired") {
@@ -3948,22 +4056,22 @@ function renderSideAccount() {
       avatar.className = "acct-avatar neutral";
       avatar.textContent = initialsFromEmail(email);
       pill.className = "plan-pill danger";
-      pill.textContent = "Expirada";
+      pill.textContent = t("side.expired");
     }
     return;
   }
   avatar.className = "acct-avatar neutral";
   avatar.appendChild(svgIcon("user", 14));
   if (st.state === "locked") {
-    line1.textContent = "Bloqueado";
-    line1.title = "Avaliação encerrada";
+    line1.textContent = t("side.locked");
+    line1.title = t("side.trialEndedTitle");
     pill.className = "plan-pill danger";
-    pill.textContent = "Expirada";
+    pill.textContent = t("side.expired");
   } else {
-    line1.textContent = "Avaliação gratuita";
-    line1.title = "Avaliação gratuita";
+    line1.textContent = t("side.trialFree");
+    line1.title = t("side.trialFree");
     pill.className = "plan-pill";
-    pill.textContent = "Avaliação";
+    pill.textContent = t("side.trial");
   }
 }
 
@@ -3977,13 +4085,11 @@ function renderLicenseBanner() {
 
   if (st.state === "locked" || st.state === "expired") {
     banner.classList.add(st.state === "locked" ? "warn" : "danger");
-    var strongMsg = st.state === "locked"
-      ? "Avaliação encerrada — ative uma licença para continuar comparando."
-      : "Licença expirada — renove a assinatura ou ative uma nova chave.";
+    var strongMsg = st.state === "locked" ? t("banner.lockedMsg") : t("banner.expiredMsg");
     banner.appendChild(el("span", { class: "lb-text" }, el("b", { text: strongMsg })));
     banner.appendChild(el("span", { class: "lb-actions" },
-      el("button", { class: "btn-primary", onclick: function () { openActivateModal(); } }, "Ativar licença"),
-      el("button", { class: "btn", onclick: function () { showView("plans"); } }, "Ver planos")
+      el("button", { class: "btn-primary", onclick: function () { openActivateModal(); } }, t("acct.activateLicense")),
+      el("button", { class: "btn", onclick: function () { showView("plans"); } }, t("acct.seePlans"))
     ));
     banner.hidden = false;
     return;
@@ -3994,11 +4100,11 @@ function renderLicenseBanner() {
     var comps = st.trial.comparisons_left;
     if (days <= 3 || comps <= 5) {
       var txt = el("span", { class: "lb-text" },
-        el("b", { text: "Sua avaliação termina em breve" }),
-        " — " + days + (days === 1 ? " dia" : " dias") + " · " +
-        comps + (comps === 1 ? " comparação restante" : " comparações restantes"));
+        el("b", { text: t("banner.trialEndingSoon") }),
+        " — " + days + " " + (days === 1 ? t("banner.day") : t("banner.days")) + " · " +
+        comps + " " + (comps === 1 ? t("banner.compLeft") : t("banner.compsLeft")));
       banner.appendChild(txt);
-      banner.appendChild(el("button", { class: "link-btn", onclick: function () { openActivateModal(); } }, "Ativar agora"));
+      banner.appendChild(el("button", { class: "link-btn", onclick: function () { openActivateModal(); } }, t("plans.activateBtn")));
       banner.hidden = false;
       return;
     }
@@ -4019,9 +4125,9 @@ function buildPlanCard(plan) {
   var card = el("div", { class: "plan-card" + (plan.highlight ? " highlight" : "") });
   var current = isCurrentPlan(plan);
   if (current) {
-    card.appendChild(el("span", { class: "plan-flag current", text: "Seu plano" }));
+    card.appendChild(el("span", { class: "plan-flag current", text: t("plan.yourPlan") }));
   } else if (plan.highlight) {
-    card.appendChild(el("span", { class: "plan-flag", text: "Recomendado" }));
+    card.appendChild(el("span", { class: "plan-flag", text: t("plan.recommended") }));
   }
   card.appendChild(el("div", { class: "plan-name", text: plan.name || "" }));
   card.appendChild(el("div", { class: "plan-price-row" },
@@ -4040,7 +4146,7 @@ function buildPlanCard(plan) {
   if (current) {
     cta = el("button", { class: "btn plan-cta", type: "button", disabled: "disabled" }, "Plano atual");
   } else if (plan.id === "trial") {
-    cta = el("button", { class: "btn plan-cta", type: "button", disabled: "disabled" }, plan.cta || "Começa automaticamente");
+    cta = el("button", { class: "btn plan-cta", type: "button", disabled: "disabled" }, plan.cta || t("plan.autoStart"));
   } else if (plan.checkout_url) {
     cta = el("button", {
       class: (plan.highlight ? "btn-primary" : "btn") + " plan-cta", type: "button",
@@ -4049,7 +4155,7 @@ function buildPlanCard(plan) {
   } else {
     cta = el("button", {
       class: (plan.highlight ? "btn-primary" : "btn") + " plan-cta", type: "button",
-      onclick: function () { openMailto("Plano " + (plan.name || "") + " — Compare Docs"); }
+      onclick: function () { openMailto("Plano " + (plan.name || "") + " — diffAI"); }
     }, plan.cta || "Falar com vendas");
   }
   card.appendChild(cta);
@@ -4059,18 +4165,18 @@ function buildPlanCard(plan) {
 function renderPlansView() {
   var grid = $("plans-grid");
   grid.textContent = "";
-  grid.appendChild(el("div", { class: "hist-detail-loading", text: "Carregando planos…" }));
+  grid.appendChild(el("div", { class: "hist-detail-loading", text: t("plans.loading") }));
   ensurePlans().then(function (plans) {
     if (state.view !== "plans") return;
     grid.textContent = "";
     if (!plans.length) {
-      grid.appendChild(el("div", { class: "changes-empty", text: "Nenhum plano disponível no momento." }));
+      grid.appendChild(el("div", { class: "changes-empty", text: t("plans.none") }));
       return;
     }
     plans.forEach(function (plan) { grid.appendChild(buildPlanCard(plan)); });
   }).catch(function () {
     grid.textContent = "";
-    grid.appendChild(el("div", { class: "changes-empty", text: "Não foi possível carregar os planos. Verifique a conexão e tente novamente." }));
+    grid.appendChild(el("div", { class: "changes-empty", text: t("plans.loadError") }));
   });
 }
 
@@ -4086,23 +4192,23 @@ function renderDeactivateActions(host) {
   host.textContent = "";
   host.appendChild(el("button", {
     class: "btn",
-    onclick: function () { openMailto("Assinatura Compare Docs — gerenciar"); }
-  }, "Gerenciar assinatura"));
+    onclick: function () { openMailto("Assinatura diffAI — gerenciar"); }
+  }, t("acct.manageSub")));
   if (state.license.deactConfirm) {
-    host.appendChild(el("span", { class: "acct-confirm-txt", text: "Desativar a licença neste dispositivo?" }));
+    host.appendChild(el("span", { class: "acct-confirm-txt", text: t("acct.deactConfirmQ") }));
     host.appendChild(el("button", {
       class: "btn btn-danger",
       onclick: function () { state.license.deactConfirm = false; doDeactivate(); }
-    }, "Confirmar"));
+    }, t("common.confirm")));
     host.appendChild(el("button", {
       class: "btn",
       onclick: function () { state.license.deactConfirm = false; renderDeactivateActions(host); }
-    }, "Cancelar"));
+    }, t("common.cancel")));
   } else {
     host.appendChild(el("button", {
       class: "btn btn-danger",
       onclick: function () { state.license.deactConfirm = true; renderDeactivateActions(host); }
-    }, "Desativar neste dispositivo"));
+    }, t("acct.deactivateHere")));
   }
 }
 
@@ -4110,27 +4216,29 @@ function doDeactivate() {
   fetch("/api/license/deactivate", { method: "POST" }).then(function (res) {
     if (!res.ok) {
       return res.json().catch(function () { return {}; }).then(function (data) {
-        throw new Error(extractErrorMsg(data) || "Não foi possível desativar a licença (HTTP " + res.status + ").");
+        throw new Error(extractErrorMsg(data) || t("toast.deactivateError") + " (HTTP " + res.status + ").");
       });
     }
     return res.json();
   }).then(function (st) {
-    toast("Licença desativada neste dispositivo.", "success");
+    toast(t("toast.deactivated"), "success");
     applyLicenseStatus(st);
   }).catch(function (err) {
-    toast(err.message || "Erro de rede ao desativar a licença.", "error");
+    toast(err.message || t("toast.deactivateNet"), "error");
     if (state.view === "account") renderAccountView();
   });
 }
 
-function buildTrialMeter(label, left, total) {
+function buildTrialMeter(label, left, total, isDays) {
   var safeLeft = Math.max(0, Math.min(left != null ? left : 0, total));
   var pct = total > 0 ? Math.round((safeLeft / total) * 100) : 0;
-  var low = label.indexOf("Dias") === 0 ? safeLeft <= 3 : safeLeft <= 5;
+  /* limiar "baixo" por tipo (dias ≤3, comparações ≤5) — não depende do texto,
+     que muda com o idioma. */
+  var low = isDays ? safeLeft <= 3 : safeLeft <= 5;
   var meter = el("div", { class: "trial-meter" },
     el("div", { class: "tm-head" },
       el("span", { text: label }),
-      el("span", { class: "tm-num", text: safeLeft + " de " + total })
+      el("span", { class: "tm-num", text: safeLeft + " " + t("common.of") + " " + total })
     ),
     el("div", { class: "tm-track" },
       el("div", { class: "tm-fill" + (low ? " low" : ""), style: "width:" + pct + "%" })
@@ -4144,17 +4252,17 @@ function renderAccountView() {
   var st = state.license.status;
   body.textContent = "";
   if (!st) {
-    body.appendChild(el("div", { class: "hist-detail-loading", text: "Carregando informações da licença…" }));
+    body.appendChild(el("div", { class: "hist-detail-loading", text: t("acct.licLoading") }));
   } else if (st.state === "active") {
     var card = el("section", { class: "card" });
-    card.appendChild(el("h2", { text: "Licença" }));
+    card.appendChild(el("h2", { text: t("acct.license") }));
     var rows = el("div", { class: "lic-rows" });
-    rows.appendChild(buildLicRow("E-mail", st.email));
-    rows.appendChild(buildLicRow("Plano", planDisplayName(st.plan)));
-    rows.appendChild(buildLicRow("Chave", st.key_hint, true));
-    rows.appendChild(buildLicRow("Válida até", st.expires_at ? (formatDateBR(st.expires_at) || "—") : "Perpétua"));
-    rows.appendChild(buildLicRow("Dispositivo", st.device_name));
-    rows.appendChild(buildLicRow("Última validação", relTime(st.last_validated_at)));
+    rows.appendChild(buildLicRow(t("acct.email"), st.email));
+    rows.appendChild(buildLicRow(t("acct.plan"), planDisplayName(st.plan)));
+    rows.appendChild(buildLicRow(t("acct.key"), st.key_hint, true));
+    rows.appendChild(buildLicRow(t("acct.validUntil"), st.expires_at ? (formatDateBR(st.expires_at) || "—") : t("acct.perpetual")));
+    rows.appendChild(buildLicRow(t("acct.device"), st.device_name));
+    rows.appendChild(buildLicRow(t("acct.lastValidation"), relTime(st.last_validated_at)));
     card.appendChild(rows);
     var actions = el("div", { class: "acct-actions" });
     renderDeactivateActions(actions);
@@ -4163,26 +4271,24 @@ function renderAccountView() {
   } else if (st.state === "trial") {
     var trial = st.trial || {};
     var tCard = el("section", { class: "card" });
-    tCard.appendChild(el("h2", { text: "Avaliação gratuita" }));
-    tCard.appendChild(buildTrialMeter("Dias restantes", trial.days_left, TRIAL_TOTAL_DAYS));
-    tCard.appendChild(buildTrialMeter("Comparações restantes", trial.comparisons_left, TRIAL_TOTAL_COMPARISONS));
-    tCard.appendChild(el("p", { class: "acct-note", text: "A avaliação termina quando os dias ou as comparações acabarem — o que ocorrer primeiro." }));
+    tCard.appendChild(el("h2", { text: t("acct.trialTitle") }));
+    tCard.appendChild(buildTrialMeter(t("acct.daysLeft"), trial.days_left, TRIAL_TOTAL_DAYS, true));
+    tCard.appendChild(buildTrialMeter(t("acct.comparisonsLeft"), trial.comparisons_left, TRIAL_TOTAL_COMPARISONS, false));
+    tCard.appendChild(el("p", { class: "acct-note", text: t("acct.trialNote") }));
     var tActions = el("div", { class: "acct-actions" });
-    tActions.appendChild(el("button", { class: "btn-primary", onclick: function () { openActivateModal(); } }, "Ativar licença"));
-    tActions.appendChild(el("button", { class: "btn", onclick: function () { showView("plans"); } }, "Ver planos"));
+    tActions.appendChild(el("button", { class: "btn-primary", onclick: function () { openActivateModal(); } }, t("acct.activateLicense")));
+    tActions.appendChild(el("button", { class: "btn", onclick: function () { showView("plans"); } }, t("acct.seePlans")));
     tCard.appendChild(tActions);
     body.appendChild(tCard);
   } else {
     /* locked | expired */
     var isLocked = st.state === "locked";
     var wCard = el("section", { class: "card " + (isLocked ? "card-warn" : "card-danger") });
-    wCard.appendChild(el("h2", { text: isLocked ? "Avaliação encerrada" : "Licença expirada" }));
-    wCard.appendChild(el("p", { class: "acct-note", text: isLocked
-      ? "O período de avaliação gratuita chegou ao fim. Ative uma licença para voltar a comparar documentos."
-      : "Sua licença venceu. Renove a assinatura ou ative uma nova chave para continuar." }));
+    wCard.appendChild(el("h2", { text: isLocked ? t("acct.trialEnded") : t("acct.licExpired") }));
+    wCard.appendChild(el("p", { class: "acct-note", text: isLocked ? t("acct.lockedNote") : t("acct.expiredNote") }));
     var wActions = el("div", { class: "acct-actions" });
-    wActions.appendChild(el("button", { class: "btn-primary", onclick: function () { openActivateModal(); } }, "Ativar licença"));
-    wActions.appendChild(el("button", { class: "btn", onclick: function () { showView("plans"); } }, "Ver planos"));
+    wActions.appendChild(el("button", { class: "btn-primary", onclick: function () { openActivateModal(); } }, t("acct.activateLicense")));
+    wActions.appendChild(el("button", { class: "btn", onclick: function () { showView("plans"); } }, t("acct.seePlans")));
     wCard.appendChild(wActions);
     body.appendChild(wCard);
   }
@@ -4208,7 +4314,7 @@ function loadBranding() {
   }).catch(function () {
     state.branding.loading = false;
     if (!state.branding.data) {
-      state.branding.error = "Não foi possível carregar as informações de marca.";
+      state.branding.error = t("brand.loadError");
     }
     if (state.view === "account") renderAccountView();
   });
@@ -4219,12 +4325,12 @@ function uploadBrandingLogo(file) {
   var type = String(file.type || "").toLowerCase();
   var extOk = /\.(png|jpe?g)$/i.test(String(file.name || ""));
   if (type !== "image/png" && type !== "image/jpeg" && !extOk) {
-    state.branding.error = "Formato não suportado: envie um logo em PNG ou JPEG.";
+    state.branding.error = t("brand.errFormat");
     if (state.view === "account") renderAccountView();
     return;
   }
   if (file.size > 1024 * 1024) {
-    state.branding.error = "O logo deve ter no máximo 1 MB.";
+    state.branding.error = t("brand.errSize");
     if (state.view === "account") renderAccountView();
     return;
   }
@@ -4236,18 +4342,18 @@ function uploadBrandingLogo(file) {
   fetch("/api/branding/logo", { method: "POST", body: fd }).then(function (res) {
     if (!res.ok) {
       return res.json().catch(function () { return {}; }).then(function (data) {
-        throw new Error(extractErrorMsg(data) || "Não foi possível enviar o logo (HTTP " + res.status + ").");
+        throw new Error(extractErrorMsg(data) || (t("brand.uploadFail") + " (HTTP " + res.status + ")."));
       });
     }
     return res.json();
   }).then(function (data) {
     state.branding.uploading = false;
     state.branding.data = data || state.branding.data;
-    toast("Logo enviado — será aplicado aos PDFs e relatórios.", "success");
+    toast(t("toast.logoUploaded"), "success");
     if (state.view === "account") renderAccountView();
   }).catch(function (err) {
     state.branding.uploading = false;
-    state.branding.error = err.message || "Erro de rede ao enviar o logo.";
+    state.branding.error = err.message || t("brand.netUpload");
     if (state.view === "account") renderAccountView();
   });
 }
@@ -4256,47 +4362,45 @@ function removeBrandingLogo() {
   fetch("/api/branding/logo", { method: "DELETE" }).then(function (res) {
     if (!res.ok) {
       return res.json().catch(function () { return {}; }).then(function (data) {
-        throw new Error(extractErrorMsg(data) || "Não foi possível remover o logo (HTTP " + res.status + ").");
+        throw new Error(extractErrorMsg(data) || (t("brand.removeFail") + " (HTTP " + res.status + ")."));
       });
     }
     return res.json();
   }).then(function (data) {
     state.branding.data = data || state.branding.data;
     state.branding.error = null;
-    toast("Logo removido dos relatórios.", "success");
+    toast(t("toast.logoRemoved"), "success");
     if (state.view === "account") renderAccountView();
   }).catch(function (err) {
-    state.branding.error = err.message || "Erro de rede ao remover o logo.";
+    state.branding.error = err.message || t("brand.netRemove");
     if (state.view === "account") renderAccountView();
   });
 }
 
 function buildBrandingCard() {
   var card = el("section", { class: "card" });
-  var h = el("h2", {}, "Marca do escritório");
+  var h = el("h2", {}, t("brand.title"));
   card.appendChild(h);
 
   var br = state.branding;
   if (!br.data && br.loading) {
-    card.appendChild(el("div", { class: "hist-detail-loading", text: "Carregando informações de marca…" }));
+    card.appendChild(el("div", { class: "hist-detail-loading", text: t("brand.loading") }));
     return card;
   }
   if (!br.data) {
-    card.appendChild(el("p", { class: "acct-note", text: br.error || "Não foi possível carregar as informações de marca." }));
-    card.appendChild(el("button", { class: "btn", type: "button", onclick: function () { loadBranding(); } }, "Tentar novamente"));
+    card.appendChild(el("p", { class: "acct-note", text: br.error || t("brand.loadError") }));
+    card.appendChild(el("button", { class: "btn", type: "button", onclick: function () { loadBranding(); } }, t("brand.retry")));
     return card;
   }
 
   if (!br.data.allowed) {
-    h.appendChild(el("span", { class: "plan-pill accent", text: "Equipe" }));
-    card.appendChild(el("p", { class: "acct-note",
-      text: "Adicione o logo do seu escritório aos PDFs e relatórios — exclusivo do plano Equipe." }));
-    card.appendChild(el("button", { class: "btn", type: "button", onclick: function () { showView("plans"); } }, "Ver planos"));
+    h.appendChild(el("span", { class: "plan-pill accent", text: t("plan.team") }));
+    card.appendChild(el("p", { class: "acct-note", text: t("brand.teamOnly") }));
+    card.appendChild(el("button", { class: "btn", type: "button", onclick: function () { showView("plans"); } }, t("acct.seePlans")));
     return card;
   }
 
-  card.appendChild(el("p", { class: "acct-note",
-    text: "O logo (PNG ou JPEG, até 1 MB) é aplicado aos PDFs e relatórios gerados." }));
+  card.appendChild(el("p", { class: "acct-note", text: t("brand.desc") }));
 
   var input = el("input", { type: "file", accept: "image/png,image/jpeg,.png,.jpg,.jpeg", hidden: "hidden" });
   input.addEventListener("change", function () {
@@ -4311,38 +4415,38 @@ function buildBrandingCard() {
     var chk = el("span", { class: "branding-check", "aria-hidden": "true" });
     chk.appendChild(svgIcon("check", 14));
     status.appendChild(chk);
-    status.appendChild(el("span", { text: "Logo ativo nos relatórios" }));
+    status.appendChild(el("span", { text: t("brand.active") }));
     card.appendChild(status);
     if (br.confirmRemove) {
-      actions.appendChild(el("span", { class: "acct-confirm-txt", text: "Remover o logo dos relatórios?" }));
+      actions.appendChild(el("span", { class: "acct-confirm-txt", text: t("brand.removeConfirm") }));
       actions.appendChild(el("button", {
         class: "btn btn-danger", type: "button",
         onclick: function () { state.branding.confirmRemove = false; removeBrandingLogo(); }
-      }, "Confirmar"));
+      }, t("common.confirm")));
       actions.appendChild(el("button", {
         class: "btn", type: "button",
         onclick: function () { state.branding.confirmRemove = false; renderAccountView(); }
-      }, "Cancelar"));
+      }, t("common.cancel")));
     } else {
       var replaceBtn = el("button", {
         class: "btn", type: "button",
         onclick: function () { input.click(); }
-      }, br.uploading ? "Enviando…" : "Substituir logo");
+      }, br.uploading ? t("brand.uploading") : t("brand.replaceLogo"));
       if (br.uploading) replaceBtn.disabled = true;
       actions.appendChild(replaceBtn);
       actions.appendChild(el("button", {
         class: "btn btn-danger", type: "button",
         onclick: function () { state.branding.confirmRemove = true; renderAccountView(); }
-      }, "Remover"));
+      }, t("brand.remove")));
     }
   } else {
     var upBtn = el("button", {
       class: "btn btn-accent", type: "button",
       onclick: function () { input.click(); }
-    }, br.uploading ? "Enviando…" : "Enviar logo");
+    }, br.uploading ? t("brand.uploading") : t("brand.uploadLogo"));
     if (br.uploading) upBtn.disabled = true;
     actions.appendChild(upBtn);
-    actions.appendChild(el("span", { class: "acct-confirm-txt", text: "PNG ou JPEG, até 1 MB" }));
+    actions.appendChild(el("span", { class: "acct-confirm-txt", text: t("brand.hint") }));
   }
   card.appendChild(actions);
 
@@ -4391,13 +4495,13 @@ function submitActivate(ev) {
   var key = $("act-key").value.toUpperCase().replace(/\s+/g, "");
   $("act-key").value = key;
   if (!email || email.indexOf("@") === -1) {
-    errNode.textContent = "Informe o e-mail usado na compra da licença.";
+    errNode.textContent = t("activate.needEmail");
     errNode.hidden = false;
     $("act-email").focus();
     return;
   }
   if (!key) {
-    errNode.textContent = "Informe a chave de licença (formato CDOC-XXXX-XXXX-XXXX-XXXX).";
+    errNode.textContent = t("activate.needKey");
     errNode.hidden = false;
     $("act-key").focus();
     return;
@@ -4410,7 +4514,7 @@ function submitActivate(ev) {
   }).then(function (res) {
     if (!res.ok) {
       return res.json().catch(function () { return {}; }).then(function (data) {
-        throw new Error(extractErrorMsg(data) || "Não foi possível ativar a licença (HTTP " + res.status + ").");
+        throw new Error(extractErrorMsg(data) || (t("activate.failHttp") + " (HTTP " + res.status + ")."));
       });
     }
     return res.json();
@@ -4422,7 +4526,7 @@ function submitActivate(ev) {
     toast("Licença ativada — plano " + planDisplayName(st && st.plan) + ".", "success");
   }).catch(function (err) {
     setActivateLoading(false);
-    errNode.textContent = err.message || "Erro de rede ao ativar a licença.";
+    errNode.textContent = err.message || t("toast.activateNet");
     errNode.hidden = false;
   });
 }
@@ -4431,6 +4535,14 @@ function submitActivate(ev) {
    Modal do guia
    ------------------------------------------------------------ */
 function openGuide() {
+  var title = $("guide-title");
+  if (title) title.textContent = t("foot.guide");
+  var bodyPt = $("guide-body-pt");
+  var bodyEn = $("guide-body-en");
+  if (bodyPt && bodyEn) {
+    bodyPt.hidden = I18N.lang !== "pt";
+    bodyEn.hidden = I18N.lang === "pt";
+  }
   $("guide-modal").hidden = false;
   $("btn-guide-close").focus();
 }
@@ -4442,8 +4554,827 @@ function closeGuide() {
 /* ------------------------------------------------------------
    Inicialização
    ------------------------------------------------------------ */
+/* ------------------------------------------------------------
+   i18n (PT-BR / EN) — fundação
+   ------------------------------------------------------------
+   Fonte de verdade da preferência: ~/.comparedocs/settings.json via
+   /api/settings. localStorage é só cache p/ evitar flash no boot. Strings
+   estáticas trazem data-i18n / data-i18n-attr; o long tail de strings
+   geradas em JS (toasts, botões dinâmicos) migra para t() incrementalmente.
+   ------------------------------------------------------------ */
+var STRINGS = {
+  pt: {
+    "nav.compare": "Comparar", "nav.batch": "Lote", "nav.history": "Histórico", "nav.plans": "Planos",
+    "foot.language": "Idioma", "foot.guide": "Guia de uso", "foot.settings": "Configurações",
+    "foot.themeDark": "Tema escuro", "foot.themeLight": "Tema claro",
+    "settings.title": "Configurações", "settings.language": "Idioma",
+    "settings.defaults": "Recursos padrão",
+    "settings.defaultsHint": "O que já vem ligado ao abrir o app. Você ainda pode alterar a cada comparação.",
+    "settings.tutorial": "Tutorial", "settings.replayTutorial": "Rever tutorial",
+    "common.close": "Fechar",
+    "tut.skip": "Pular", "tut.back": "Voltar", "tut.next": "Próximo", "tut.done": "Concluir",
+    "tut.welcomeTitle": "Bem-vindo ao diffAI",
+    "tut.welcomeBody": "Em poucos passos: escolha dois ficheiros, clique em Comparar e receba o PDF redline. O resto é opcional.",
+    "tut.baseTitle": "Documento base",
+    "tut.baseBody": "Arraste aqui a versão original — DOCX, PDF ou Excel.",
+    "tut.compareTitle": "Documento revisado",
+    "tut.compareBody": "E aqui a versão atualizada. A comparação roda 100% no seu computador.",
+    "tut.swapTitle": "Inverter base e revisado",
+    "tut.swapBody": "Escolheu na ordem errada? Este botão troca os dois lados sem voltar a escolher os ficheiros.",
+    "tut.optsTitle": "Opções adicionais",
+    "tut.optsBody": "Ficam fechadas de propósito. O PDF redline já sai ao clicar em Comparar — abra isto só se quiser extras (DOCX, resumo, relatório).",
+    "tut.runTitle": "Comparar",
+    "tut.runBody": "O botão principal. Gera sempre o redline completo. Não precisa de marcar nenhuma opção antes.",
+    "tut.batchTitle": "Comparação em lote",
+    "tut.batchBody": "Compare pastas inteiras de uma vez; os pares são encontrados automaticamente pelo nome ou conteúdo.",
+    "tut.historyTitle": "Histórico",
+    "tut.historyBody": "Toda comparação fica salva aqui, mesmo depois de fechar o app. Duplo clique reabre o resultado.",
+    "tut.plansTitle": "Planos",
+    "tut.plansBody": "Veja a avaliação gratuita e ative uma chave se já comprou. Também chega pela conta na barra lateral.",
+    "tut.settingsTitle": "Configurações",
+    "tut.settingsBody": "Idioma, o que vem ligado por defeito e este tutorial — reabra-o quando quiser.",
+    "tut.guideTitle": "Guia de uso",
+    "tut.guideBody": "Texto de referência mais longo. Para um passeio rápido pelos botões, use este tutorial (também em Configurações).",
+    "compare.h1": "Comparar documentos",
+    "compare.sub": "Compare duas versões de um documento e receba um redline padronizado.",
+    "single.selectTitle": "Selecione os documentos",
+    "single.selectSub": "DOCX, PDF ou Excel — arraste ou clique",
+    "dz.base": "Documento base", "dz.baseHint": "(original)",
+    "dz.compare": "Documento revisado", "dz.compareHint": "(atualizado)",
+    "batch.h1": "Comparação em lote",
+    "batch.sub": "Os pares são encontrados pelo nome ou pelo conteúdo, sem precisar renomear.",
+    "batch.foldersTitle": "Pastas do lote", "batch.foldersSub": "arraste, clique ou use o explorador",
+    "batch.dirBase": "Pasta base", "batch.dirBaseHint": "(originais)",
+    "batch.dirCompare": "Pasta revisada", "batch.dirCompareHint": "(atualizados)",
+    "dz.empty": "Arraste o arquivo aqui",
+    "dz.emptyHint": "ou clique para selecionar (.docx, .pdf, .xlsx)",
+    "dz.rejected": "Arquivo não aceito",
+    "dz.rejectedHint": "Tente novamente com .docx, .pdf ou .xlsx",
+    "dz.remove": "Remover",
+    "folder.empty": "Arraste a pasta aqui",
+    "folder.emptyHint": "ou clique para abrir o explorador de arquivos",
+    "folder.invalid": "Pasta inválida",
+    "folder.invalidHint": "Selecione uma pasta existente no explorador",
+    "history.h1": "Histórico",
+    "history.sub": "Todas as comparações feitas neste computador. <b>Duplo clique</b> para ver o documento com marcas inline.",
+    "history.searchPlaceholder": "Buscar por nome de arquivo…",
+    "history.filterAll": "Todos", "history.filterOk": "OK", "history.filterError": "Erros",
+    "history.emptyTitle": "Nenhuma comparação ainda",
+    "history.emptyText": "Quando você comparar documentos, o resultado aparecerá aqui.",
+    "history.emptyCta": "Fazer a primeira comparação",
+    "plans.h1": "Planos e assinatura",
+    "plans.sub": "A avaliação gratuita já vem com tudo liberado. Escolha um plano para continuar depois dela.",
+    "plans.activateLine": "Já tem uma chave de licença?", "plans.activateBtn": "Ativar agora",
+    "account.h1": "Conta",
+    "account.sub": "Sua licença, avaliação e dispositivo neste computador.",
+    "common.cancel": "Cancelar",
+    "history.today": "Hoje", "history.yesterday": "Ontem", "history.dateUnknown": "Data desconhecida",
+    "history.clear": "Limpar histórico",
+    "activate.title": "Ativar licença",
+    "activate.sub": "Use o e-mail da compra e a chave recebida por e-mail.",
+    "activate.email": "E-mail", "activate.emailPlaceholder": "voce@empresa.com.br",
+    "activate.key": "Chave de licença",
+    "activate.submit": "Ativar", "activate.noKey": "Não tem uma chave?", "activate.seePlans": "Ver planos",
+    "toast.reportNoFormat": "Relatório marcado sem formato — a comparação seguiu sem ele.",
+    "common.of": "de", "common.confirm": "Confirmar",
+    "plans.loading": "Carregando planos…", "plans.none": "Nenhum plano disponível no momento.",
+    "plans.loadError": "Não foi possível carregar os planos. Verifique a conexão e tente novamente.",
+    "acct.manageSub": "Gerenciar assinatura",
+    "acct.deactConfirmQ": "Desativar a licença neste dispositivo?",
+    "acct.deactivateHere": "Desativar neste dispositivo",
+    "acct.licLoading": "Carregando informações da licença…",
+    "acct.license": "Licença", "acct.email": "E-mail", "acct.plan": "Plano", "acct.key": "Chave",
+    "acct.validUntil": "Válida até", "acct.perpetual": "Perpétua", "acct.device": "Dispositivo",
+    "acct.lastValidation": "Última validação",
+    "acct.trialTitle": "Avaliação gratuita",
+    "acct.daysLeft": "Dias restantes", "acct.comparisonsLeft": "Comparações restantes",
+    "acct.trialNote": "A avaliação termina quando os dias ou as comparações acabarem — o que ocorrer primeiro.",
+    "acct.activateLicense": "Ativar licença", "acct.seePlans": "Ver planos",
+    "acct.trialEnded": "Avaliação encerrada", "acct.licExpired": "Licença expirada",
+    "acct.lockedNote": "O período de avaliação gratuita chegou ao fim. Ative uma licença para voltar a comparar documentos.",
+    "acct.expiredNote": "Sua licença venceu. Renove a assinatura ou ative uma nova chave para continuar.",
+    "toast.deactivated": "Licença desativada neste dispositivo.",
+    "toast.deactivateError": "Não foi possível desativar a licença.",
+    "toast.deactivateNet": "Erro de rede ao desativar a licença.",
+    "preview.title": "Prévia dos pares", "preview.pair": "par", "preview.pairs": "pares",
+    "preview.unmatched": "sem correspondência", "preview.unmatchedTitle": "Sem correspondência",
+    "preview.none": "Nenhum arquivo pareou entre as duas pastas. Verifique se os nomes são semelhantes nos dois lados ou se as pastas estão corretas.",
+    "preview.process": "Processar",
+    "job.sending": "Enviando…", "job.comparing": "Comparando documentos…", "job.connLost": "Conexão perdida",
+    "job.doneTitle": "Comparação concluída", "job.failedTitle": "Comparação falhou",
+    "side.trialFree": "Avaliação gratuita", "side.trial": "Avaliação", "side.expired": "Expirada",
+    "side.locked": "Bloqueado", "side.trialEndedTitle": "Avaliação encerrada",
+    "banner.lockedMsg": "Avaliação encerrada — ative uma licença para continuar comparando.",
+    "banner.expiredMsg": "Licença expirada — renove a assinatura ou ative uma nova chave.",
+    "banner.trialEndingSoon": "Sua avaliação termina em breve",
+    "banner.day": "dia", "banner.days": "dias",
+    "banner.compLeft": "comparação restante", "banner.compsLeft": "comparações restantes",
+    "plan.yourPlan": "Seu plano", "plan.recommended": "Recomendado", "plan.autoStart": "Começa automaticamente",
+    "toast.batchNet": "Erro de rede ao iniciar a comparação.",
+    "toast.compareBlocked": "Comparações bloqueadas — ative uma licença para continuar.",
+    "toast.jobFailed": "A comparação falhou. Verifique os arquivos e tente novamente.",
+    "toast.previewNet": "Erro de rede ao gerar a prévia dos pares.",
+    "toast.folderError": "Não foi possível usar essa pasta. Clique para abrir o explorador.",
+    "toast.histCleared": "Histórico limpo.", "toast.histClearNet": "Erro de rede ao limpar o histórico.",
+    "toast.logoUploaded": "Logo enviado — será aplicado aos PDFs e relatórios.",
+    "job.batchProcessing": "Processando lote…", "job.noResult": "Nenhum resultado",
+    "job.docsProcessed": "documentos processados", "job.docFallback": "Documento",
+    "job.checkFolders": "Verifique as pastas informadas.",
+    "job.comparedWith": "Comparado com", "job.revisedFallback": "revisado",
+    "result.unknownFail": "Falha desconhecida ao comparar este par.",
+    "changes.searchPlaceholder": "Buscar no texto das mudanças…",
+    "changes.none": "Nenhuma mudança detectada entre os dois documentos.",
+    "changes.noFilter": "Nenhuma mudança corresponde aos filtros selecionados.",
+    "changes.capPrefix": "Exibindo",
+    "changes.capSuffix": "mudanças — refine os filtros ou a busca para ver as demais.",
+    "brand.uploading": "Enviando…", "brand.replaceLogo": "Substituir logo", "brand.uploadLogo": "Enviar logo",
+    "result.tabDoc": "Documento", "result.tabList": "Lista", "result.tabAI": "Análise IA",
+    "result.docEmpty": "Visualização inline disponível para DOCX e PDF. Abra o PDF ou Excel redline gerado.",
+    "result.sbsUnavailable": "Visão lado a lado indisponível para este documento. Use a Lista ou abra o PDF gerado.",
+    "stat.content": "conteúdo", "stat.noise": "rotineiras", "stat.formatting": "formatação",
+    "sbs.onlyChanges": "Só mudanças", "mode.list": "Lista", "mode.sbs": "Lado a lado",
+    "hist.noMatch": "Nenhuma comparação corresponde à busca ou ao filtro.",
+    "plan.pro": "Pro", "plan.team": "Equipe", "plan.trial": "Avaliação",
+    "rel.now": "agora mesmo",
+    "brand.title": "Marca do escritório",
+    "brand.loading": "Carregando informações de marca…",
+    "brand.loadError": "Não foi possível carregar as informações de marca.",
+    "brand.retry": "Tentar novamente",
+    "brand.teamOnly": "Adicione o logo do seu escritório aos PDFs e relatórios — exclusivo do plano Equipe.",
+    "brand.desc": "O logo (PNG ou JPEG, até 1 MB) é aplicado aos PDFs e relatórios gerados.",
+    "brand.active": "Logo ativo nos relatórios",
+    "brand.removeConfirm": "Remover o logo dos relatórios?",
+    "brand.remove": "Remover", "brand.hint": "PNG ou JPEG, até 1 MB",
+    "brand.errFormat": "Formato não suportado: envie um logo em PNG ou JPEG.",
+    "brand.errSize": "O logo deve ter no máximo 1 MB.",
+    "toast.logoRemoved": "Logo removido dos relatórios.",
+    "options.title": "Opções adicionais",
+    "options.lead": "Opcional — o PDF redline já sai ao clicar em Comparar",
+    "opt.changedTitle": "Só páginas alteradas",
+    "opt.changedDesc": "Gera um PDF adicional, recortado nas mudanças",
+    "opt.docxTitle": "DOCX editável",
+    "opt.docxDesc": "Redline no formato Word, com marcas aplicadas",
+    "opt.execTitle": "Resumo executivo (1 página)",
+    "opt.execDesc": "PDF de uma página com o essencial das mudanças",
+    "opt.reportTitle": "Relatório analítico",
+    "opt.reportDesc": "Resumo das mudanças em HTML, Excel ou JSON",
+    "opt.reportFormats": "Formatos do relatório",
+    "opt.outdirSummary": "Pasta de saída personalizada",
+    "opt.outdirLabel": "Destino dos arquivos gerados",
+    "opt.outdirPlaceholder": "Padrão: pasta output/ do app",
+    "opt.outdirPick": "Selecionar…",
+    "action.compare": "Comparar",
+    "action.viewPairs": "Ver pares",
+    "action.loadingPairs": "Carregando pares…",
+    "action.noteInitial": "Selecione o documento base e o revisado para começar.",
+    "action.noteReady": "Pronto para comparar.",
+    "action.noteRunning": "Comparação em andamento…",
+    "action.noteAnalyzing": "Analisando as duas pastas…",
+    "action.notePreview": "Veja a prévia dos pares antes de processar o lote.",
+    "action.noteSelectFolders": "Selecione as duas pastas para começar.",
+    "langModal.title": "Escolha o idioma",
+    "langModal.subtitle": "Você pode trocar depois em Configurações, na barra lateral.",
+    "type.insert": "Inserção", "type.delete": "Exclusão", "type.modify": "Modificação",
+    "type.move": "Movimentação", "type.moveModify": "Mov. + modificação", "type.equal": "Sem alteração",
+    "cat.content": "Conteúdo", "cat.formatting": "Formatação", "cat.noise": "Rotineiras",
+    "cat.tables": "Tabelas", "cat.images": "Imagens", "cat.table": "Tabela", "cat.image": "Imagem",
+    "cat.noiseDate": "Data (rotineira)", "cat.noiseVersion": "Versão (rotineira)",
+    "cat.noisePagenum": "Nº de página (rotineira)", "cat.noiseWhitespace": "Espaçamento (rotineira)",
+    "cat.noisePunct": "Pontuação/caixa (rotineira)", "cat.metadata": "Metadados (rotineira)",
+    "out.openPdf": "Abrir PDF", "out.openPdfChanged": "Abrir PDF (págs. alteradas)",
+    "out.openDocx": "Abrir DOCX", "out.openSummary": "Abrir resumo",
+    "out.openHtml": "Abrir relatório (HTML)", "out.openXlsxRedline": "Abrir Excel redline",
+    "out.openXlsxReport": "Abrir relatório (Excel)", "out.openJson": "Abrir relatório (JSON)",
+    "out.pdfChangedShort": "PDF (págs. alteradas)", "out.summaryShort": "Resumo",
+    "out.xlsxRedlineShort": "Excel redline", "out.htmlShort": "Relatório HTML",
+    "out.xlsxReportShort": "Relatório Excel", "out.jsonShort": "Relatório JSON",
+    "filter.category": "Categoria:", "filter.type": "Tipo:",
+    "aria.modeChanges": "Modo de exibição das mudanças",
+    "dz.removeFile": "Remover arquivo", "dz.badFormat": "Formato não suportado: use .docx, .pdf ou .xlsx.",
+    "folder.removeDir": "Remover pasta",
+    "folder.pickBase": "Pasta base (originais)", "folder.pickCompare": "Pasta revisada",
+    "folder.explorerError": "Erro ao abrir o explorador de arquivos.",
+    "folder.explorerFail": "Não foi possível abrir o explorador de arquivos.",
+    "folder.suggested": "Pasta revisada detectada automaticamente:",
+    "folder.sibling": "pasta irmã",
+    "folder.suggestedSuffix": ". Troque se não for essa.",
+    "folder.dragDesktop": "Arraste a pasta no app desktop para usar o caminho automaticamente.",
+    "pair.byContent": "pareado pelo texto do documento",
+    "pair.byName": "pareado pelo nome do arquivo",
+    "mark.formatting": "formatação",
+    "load.doc": "Carregando documento…", "load.changes": "Carregando mudanças…",
+    "load.insights": "Gerando análise…", "load.preview": "Carregando preview do documento…",
+    "load.error": "Erro ao carregar.", "load.insightsError": "Erro na análise IA.",
+    "load.previewError": "Erro ao carregar preview.",
+    "aria.viewMode": "Modo de visualização",
+    "job.docsOf": "documento", "job.docsOfPlural": "documentos",
+    "job.loadResultFail": "Não foi possível carregar o resultado.",
+    "job.loadInsightsFail": "Não foi possível gerar a análise IA.",
+    "job.doneOk": "concluída", "job.doneOkPlural": "concluídas",
+    "job.baseFallback": "documento base", "job.compareFallback": "documento revisado",
+    "job.fileMissing": "Arquivo não encontrado — pode ter sido movido ou apagado.",
+    "job.openFail": "Não foi possível abrir:",
+    "toast.openNet": "Erro de rede ao abrir o arquivo.",
+    "ai.title": "Análise IA", "ai.recommendations": "Recomendações",
+    "ai.privacy": "Nenhum dado foi enviado à nuvem.",
+    "sbs.revised": "Revisado", "sbs.base": "Base",
+    "page.tag": "pág.",
+    "hist.removeTitle": "Remover do histórico",
+    "hist.dblClick": "Duplo clique para ver mudanças:",
+    "hist.removeFail": "Não foi possível remover a entrada",
+    "hist.clearFail": "Não foi possível limpar o histórico",
+    "toast.histRemoveNet": "Erro de rede ao remover do histórico.",
+    "toast.activateNet": "Erro de rede ao ativar a licença.",
+    "activate.needEmail": "Informe o e-mail usado na compra da licença.",
+    "activate.needKey": "Informe a chave de licença (formato CDOC-XXXX-XXXX-XXXX-XXXX).",
+    "activate.failHttp": "Não foi possível ativar a licença",
+    "brand.uploadFail": "Não foi possível enviar o logo",
+    "brand.netUpload": "Erro de rede ao enviar o logo.",
+    "brand.netRemove": "Erro de rede ao remover o logo.",
+    "brand.removeFail": "Não foi possível remover o logo",
+    "hist.loadChangesFail": "Não foi possível carregar as mudanças.",
+    "preview.failHttp": "Não foi possível gerar a prévia dos pares",
+    "sbs.markFmt": "formatação"
+  },
+  en: {
+    "nav.compare": "Compare", "nav.batch": "Batch", "nav.history": "History", "nav.plans": "Plans",
+    "foot.language": "Language", "foot.guide": "User guide", "foot.settings": "Settings",
+    "foot.themeDark": "Dark theme", "foot.themeLight": "Light theme",
+    "settings.title": "Settings", "settings.language": "Language",
+    "settings.defaults": "Default features",
+    "settings.defaultsHint": "What's enabled when you open the app. You can still change it per comparison.",
+    "settings.tutorial": "Tutorial", "settings.replayTutorial": "Replay tutorial",
+    "common.close": "Close",
+    "tut.skip": "Skip", "tut.back": "Back", "tut.next": "Next", "tut.done": "Done",
+    "tut.welcomeTitle": "Welcome to diffAI",
+    "tut.welcomeBody": "In short: pick two files, click Compare, get the redline PDF. Everything else is optional.",
+    "tut.baseTitle": "Base document",
+    "tut.baseBody": "Drop the original version here — DOCX, PDF or Excel.",
+    "tut.compareTitle": "Revised document",
+    "tut.compareBody": "And the updated version here. Comparison runs 100% on your computer.",
+    "tut.swapTitle": "Swap base and revised",
+    "tut.swapBody": "Picked them in the wrong order? This button swaps both sides without re-selecting files.",
+    "tut.optsTitle": "Additional options",
+    "tut.optsBody": "Collapsed on purpose. The redline PDF is always generated when you click Compare — open this only for extras (DOCX, summary, report).",
+    "tut.runTitle": "Compare",
+    "tut.runBody": "The main button. Always generates the full redline. You don't need to turn anything on first.",
+    "tut.batchTitle": "Batch comparison",
+    "tut.batchBody": "Compare whole folders at once; pairs are matched automatically by name or content.",
+    "tut.historyTitle": "History",
+    "tut.historyBody": "Every comparison is saved here, even after you close the app. Double-click to reopen a result.",
+    "tut.plansTitle": "Plans",
+    "tut.plansBody": "See the free trial and activate a key if you already purchased. You can also use the account card in the sidebar.",
+    "tut.settingsTitle": "Settings",
+    "tut.settingsBody": "Language, default features and this tutorial — replay it whenever you want.",
+    "tut.guideTitle": "User guide",
+    "tut.guideBody": "Longer reference text. For a quick tour of the buttons, use this tutorial (also in Settings).",
+    "compare.h1": "Compare documents",
+    "compare.sub": "Compare two versions of a document and get a standardized redline.",
+    "single.selectTitle": "Select the documents",
+    "single.selectSub": "DOCX, PDF or Excel — drag or click",
+    "dz.base": "Base document", "dz.baseHint": "(original)",
+    "dz.compare": "Revised document", "dz.compareHint": "(updated)",
+    "batch.h1": "Batch comparison",
+    "batch.sub": "Pairs are matched by name or content — no renaming required.",
+    "batch.foldersTitle": "Batch folders", "batch.foldersSub": "drag, click or use the file explorer",
+    "batch.dirBase": "Base folder", "batch.dirBaseHint": "(originals)",
+    "batch.dirCompare": "Revised folder", "batch.dirCompareHint": "(updated)",
+    "dz.empty": "Drag the file here",
+    "dz.emptyHint": "or click to select (.docx, .pdf, .xlsx)",
+    "dz.rejected": "File not accepted",
+    "dz.rejectedHint": "Try again with .docx, .pdf or .xlsx",
+    "dz.remove": "Remove",
+    "folder.empty": "Drag the folder here",
+    "folder.emptyHint": "or click to open the file explorer",
+    "folder.invalid": "Invalid folder",
+    "folder.invalidHint": "Select an existing folder in the explorer",
+    "history.h1": "History",
+    "history.sub": "All comparisons made on this computer. <b>Double-click</b> to view the document with inline marks.",
+    "history.searchPlaceholder": "Search by file name…",
+    "history.filterAll": "All", "history.filterOk": "OK", "history.filterError": "Errors",
+    "history.emptyTitle": "No comparisons yet",
+    "history.emptyText": "When you compare documents, the result will show up here.",
+    "history.emptyCta": "Run your first comparison",
+    "plans.h1": "Plans & subscription",
+    "plans.sub": "The free trial comes with everything unlocked. Pick a plan to continue after it.",
+    "plans.activateLine": "Already have a license key?", "plans.activateBtn": "Activate now",
+    "account.h1": "Account",
+    "account.sub": "Your license, trial and device on this computer.",
+    "common.cancel": "Cancel",
+    "history.today": "Today", "history.yesterday": "Yesterday", "history.dateUnknown": "Unknown date",
+    "history.clear": "Clear history",
+    "activate.title": "Activate license",
+    "activate.sub": "Use the purchase e-mail and the key you received by e-mail.",
+    "activate.email": "E-mail", "activate.emailPlaceholder": "you@company.com",
+    "activate.key": "License key",
+    "activate.submit": "Activate", "activate.noKey": "Don't have a key?", "activate.seePlans": "See plans",
+    "toast.reportNoFormat": "Report enabled without a format — the comparison ran without it.",
+    "common.of": "of", "common.confirm": "Confirm",
+    "plans.loading": "Loading plans…", "plans.none": "No plans available right now.",
+    "plans.loadError": "Couldn't load the plans. Check your connection and try again.",
+    "acct.manageSub": "Manage subscription",
+    "acct.deactConfirmQ": "Deactivate the license on this device?",
+    "acct.deactivateHere": "Deactivate on this device",
+    "acct.licLoading": "Loading license information…",
+    "acct.license": "License", "acct.email": "E-mail", "acct.plan": "Plan", "acct.key": "Key",
+    "acct.validUntil": "Valid until", "acct.perpetual": "Perpetual", "acct.device": "Device",
+    "acct.lastValidation": "Last validation",
+    "acct.trialTitle": "Free trial",
+    "acct.daysLeft": "Days left", "acct.comparisonsLeft": "Comparisons left",
+    "acct.trialNote": "The trial ends when days or comparisons run out — whichever comes first.",
+    "acct.activateLicense": "Activate license", "acct.seePlans": "See plans",
+    "acct.trialEnded": "Trial ended", "acct.licExpired": "License expired",
+    "acct.lockedNote": "The free trial period has ended. Activate a license to compare documents again.",
+    "acct.expiredNote": "Your license has expired. Renew the subscription or activate a new key to continue.",
+    "toast.deactivated": "License deactivated on this device.",
+    "toast.deactivateError": "Couldn't deactivate the license.",
+    "toast.deactivateNet": "Network error while deactivating the license.",
+    "preview.title": "Pair preview", "preview.pair": "pair", "preview.pairs": "pairs",
+    "preview.unmatched": "unmatched", "preview.unmatchedTitle": "Unmatched",
+    "preview.none": "No files matched between the two folders. Check that the names are similar on both sides or that the folders are correct.",
+    "preview.process": "Process",
+    "job.sending": "Sending…", "job.comparing": "Comparing documents…", "job.connLost": "Connection lost",
+    "job.doneTitle": "Comparison complete", "job.failedTitle": "Comparison failed",
+    "side.trialFree": "Free trial", "side.trial": "Trial", "side.expired": "Expired",
+    "side.locked": "Locked", "side.trialEndedTitle": "Trial ended",
+    "banner.lockedMsg": "Trial ended — activate a license to keep comparing.",
+    "banner.expiredMsg": "License expired — renew the subscription or activate a new key.",
+    "banner.trialEndingSoon": "Your trial is ending soon",
+    "banner.day": "day", "banner.days": "days",
+    "banner.compLeft": "comparison left", "banner.compsLeft": "comparisons left",
+    "plan.yourPlan": "Your plan", "plan.recommended": "Recommended", "plan.autoStart": "Starts automatically",
+    "toast.batchNet": "Network error while starting the comparison.",
+    "toast.compareBlocked": "Comparisons blocked — activate a license to continue.",
+    "toast.jobFailed": "The comparison failed. Check the files and try again.",
+    "toast.previewNet": "Network error while building the pair preview.",
+    "toast.folderError": "Couldn't use that folder. Click to open the explorer.",
+    "toast.histCleared": "History cleared.", "toast.histClearNet": "Network error while clearing history.",
+    "toast.logoUploaded": "Logo uploaded — it will be applied to PDFs and reports.",
+    "job.batchProcessing": "Processing batch…", "job.noResult": "No result",
+    "job.docsProcessed": "documents processed", "job.docFallback": "Document",
+    "job.checkFolders": "Check the folders you selected.",
+    "job.comparedWith": "Compared with", "job.revisedFallback": "revised",
+    "result.unknownFail": "Unknown failure comparing this pair.",
+    "changes.searchPlaceholder": "Search within the changes…",
+    "changes.none": "No changes detected between the two documents.",
+    "changes.noFilter": "No change matches the selected filters.",
+    "changes.capPrefix": "Showing",
+    "changes.capSuffix": "changes — refine the filters or search to see the rest.",
+    "brand.uploading": "Uploading…", "brand.replaceLogo": "Replace logo", "brand.uploadLogo": "Upload logo",
+    "result.tabDoc": "Document", "result.tabList": "List", "result.tabAI": "AI analysis",
+    "result.docEmpty": "Inline preview available for DOCX and PDF. Open the generated redline PDF or Excel.",
+    "result.sbsUnavailable": "Side-by-side view unavailable for this document. Use the List or open the generated PDF.",
+    "stat.content": "content", "stat.noise": "routine", "stat.formatting": "formatting",
+    "sbs.onlyChanges": "Changes only", "mode.list": "List", "mode.sbs": "Side by side",
+    "hist.noMatch": "No comparison matches the search or filter.",
+    "plan.pro": "Pro", "plan.team": "Team", "plan.trial": "Trial",
+    "rel.now": "just now",
+    "brand.title": "Firm branding",
+    "brand.loading": "Loading branding info…",
+    "brand.loadError": "Couldn't load branding info.",
+    "brand.retry": "Try again",
+    "brand.teamOnly": "Add your firm's logo to PDFs and reports — Team plan only.",
+    "brand.desc": "The logo (PNG or JPEG, up to 1 MB) is applied to generated PDFs and reports.",
+    "brand.active": "Logo active in reports",
+    "brand.removeConfirm": "Remove the logo from reports?",
+    "brand.remove": "Remove", "brand.hint": "PNG or JPEG, up to 1 MB",
+    "brand.errFormat": "Unsupported format: upload a PNG or JPEG logo.",
+    "brand.errSize": "The logo must be at most 1 MB.",
+    "toast.logoRemoved": "Logo removed from reports.",
+    "options.title": "Additional options",
+    "options.lead": "Optional — the redline PDF is created when you click Compare",
+    "opt.changedTitle": "Changed pages only",
+    "opt.changedDesc": "Also generates a PDF trimmed to the changes",
+    "opt.docxTitle": "Editable DOCX",
+    "opt.docxDesc": "Redline in Word format, with tracked marks applied",
+    "opt.execTitle": "Executive summary (1 page)",
+    "opt.execDesc": "One-page PDF with the essentials of the changes",
+    "opt.reportTitle": "Analytical report",
+    "opt.reportDesc": "Summary of the changes in HTML, Excel or JSON",
+    "opt.reportFormats": "Report formats",
+    "opt.outdirSummary": "Custom output folder",
+    "opt.outdirLabel": "Where generated files go",
+    "opt.outdirPlaceholder": "Default: the app's output/ folder",
+    "opt.outdirPick": "Choose…",
+    "action.compare": "Compare",
+    "action.viewPairs": "View pairs",
+    "action.loadingPairs": "Loading pairs…",
+    "action.noteInitial": "Select the base and revised documents to start.",
+    "action.noteReady": "Ready to compare.",
+    "action.noteRunning": "Comparison in progress…",
+    "action.noteAnalyzing": "Analyzing both folders…",
+    "action.notePreview": "Review the pairs before processing the batch.",
+    "action.noteSelectFolders": "Select both folders to start.",
+    "langModal.title": "Choose your language",
+    "langModal.subtitle": "You can change it later in Settings, in the sidebar.",
+    "type.insert": "Insertion", "type.delete": "Deletion", "type.modify": "Modification",
+    "type.move": "Move", "type.moveModify": "Move + modify", "type.equal": "Unchanged",
+    "cat.content": "Content", "cat.formatting": "Formatting", "cat.noise": "Routine",
+    "cat.tables": "Tables", "cat.images": "Images", "cat.table": "Table", "cat.image": "Image",
+    "cat.noiseDate": "Date (routine)", "cat.noiseVersion": "Version (routine)",
+    "cat.noisePagenum": "Page number (routine)", "cat.noiseWhitespace": "Whitespace (routine)",
+    "cat.noisePunct": "Punctuation/case (routine)", "cat.metadata": "Metadata (routine)",
+    "out.openPdf": "Open PDF", "out.openPdfChanged": "Open PDF (changed pages)",
+    "out.openDocx": "Open DOCX", "out.openSummary": "Open summary",
+    "out.openHtml": "Open report (HTML)", "out.openXlsxRedline": "Open redline Excel",
+    "out.openXlsxReport": "Open report (Excel)", "out.openJson": "Open report (JSON)",
+    "out.pdfChangedShort": "PDF (changed pages)", "out.summaryShort": "Summary",
+    "out.xlsxRedlineShort": "Redline Excel", "out.htmlShort": "HTML report",
+    "out.xlsxReportShort": "Excel report", "out.jsonShort": "JSON report",
+    "filter.category": "Category:", "filter.type": "Type:",
+    "aria.modeChanges": "Change display mode",
+    "dz.removeFile": "Remove file", "dz.badFormat": "Unsupported format: use .docx, .pdf or .xlsx.",
+    "folder.removeDir": "Remove folder",
+    "folder.pickBase": "Base folder (originals)", "folder.pickCompare": "Revised folder",
+    "folder.explorerError": "Error opening the file explorer.",
+    "folder.explorerFail": "Couldn't open the file explorer.",
+    "folder.suggested": "Revised folder detected automatically:",
+    "folder.sibling": "sibling folder",
+    "folder.suggestedSuffix": ". Change it if that's wrong.",
+    "folder.dragDesktop": "Drop the folder in the desktop app to use the path automatically.",
+    "pair.byContent": "matched by document text",
+    "pair.byName": "matched by file name",
+    "mark.formatting": "formatting",
+    "load.doc": "Loading document…", "load.changes": "Loading changes…",
+    "load.insights": "Generating analysis…", "load.preview": "Loading document preview…",
+    "load.error": "Couldn't load.", "load.insightsError": "AI analysis error.",
+    "load.previewError": "Couldn't load preview.",
+    "aria.viewMode": "View mode",
+    "job.docsOf": "document", "job.docsOfPlural": "documents",
+    "job.loadResultFail": "Couldn't load the result.",
+    "job.loadInsightsFail": "Couldn't generate the AI analysis.",
+    "job.doneOk": "completed", "job.doneOkPlural": "completed",
+    "job.baseFallback": "base document", "job.compareFallback": "revised document",
+    "job.fileMissing": "File not found — it may have been moved or deleted.",
+    "job.openFail": "Couldn't open:",
+    "toast.openNet": "Network error while opening the file.",
+    "ai.title": "AI analysis", "ai.recommendations": "Recommendations",
+    "ai.privacy": "No data was sent to the cloud.",
+    "sbs.revised": "Revised", "sbs.base": "Base",
+    "page.tag": "p.",
+    "hist.removeTitle": "Remove from history",
+    "hist.dblClick": "Double-click to view changes:",
+    "hist.removeFail": "Couldn't remove the entry",
+    "hist.clearFail": "Couldn't clear history",
+    "toast.histRemoveNet": "Network error while removing from history.",
+    "toast.activateNet": "Network error while activating the license.",
+    "activate.needEmail": "Enter the e-mail used to buy the license.",
+    "activate.needKey": "Enter the license key (format CDOC-XXXX-XXXX-XXXX-XXXX).",
+    "activate.failHttp": "Couldn't activate the license",
+    "brand.uploadFail": "Couldn't upload the logo",
+    "brand.netUpload": "Network error while uploading the logo.",
+    "brand.netRemove": "Network error while removing the logo.",
+    "brand.removeFail": "Couldn't remove the logo",
+    "hist.loadChangesFail": "Couldn't load the changes.",
+    "preview.failHttp": "Couldn't build the pair preview",
+    "sbs.markFmt": "formatting"
+  }
+};
+
+var I18N = { lang: "pt" };
+var LANG_STORAGE_KEY = "compare-docs-lang";
+/* Espelho em memória de ~/.comparedocs/settings.json (idioma, onboarding,
+   recursos padrão). Preenchido por initI18n; usado por Configurações. */
+var APP_SETTINGS = { language: null, onboarding_done: false, default_features: {} };
+
+function t(key) {
+  var table = STRINGS[I18N.lang] || STRINGS.pt;
+  if (table && table[key] != null) return table[key];
+  if (STRINGS.pt[key] != null) return STRINGS.pt[key];
+  return key;
+}
+
+function applyI18n(root) {
+  root = root || document;
+  refreshDomainLabels();
+  root.querySelectorAll("[data-i18n]").forEach(function (node) {
+    node.textContent = t(node.getAttribute("data-i18n"));
+  });
+  root.querySelectorAll("[data-i18n-html]").forEach(function (node) {
+    node.innerHTML = t(node.getAttribute("data-i18n-html"));
+  });
+  root.querySelectorAll("[data-i18n-attr]").forEach(function (node) {
+    /* "attr:key" (uma ou várias, separadas por ;) */
+    node.getAttribute("data-i18n-attr").split(";").forEach(function (spec) {
+      var pair = spec.split(":");
+      if (pair.length === 2) node.setAttribute(pair[0].trim(), t(pair[1].trim()));
+    });
+  });
+}
+
+function setLanguage(lang, persist) {
+  if (lang !== "pt" && lang !== "en") return;
+  I18N.lang = lang;
+  try { localStorage.setItem(LANG_STORAGE_KEY, lang); } catch (e) { /* ok */ }
+  document.documentElement.setAttribute("lang", lang === "pt" ? "pt-BR" : "en");
+  applyI18n(document);
+  applyTheme();            /* re-localiza o rótulo do tema */
+  /* Superfícies renderizadas em JS (não têm data-i18n): re-render. */
+  try {
+    renderDropzone("base"); renderDropzone("compare");
+    renderFolderDropzone("base"); renderFolderDropzone("compare");
+    updateCompareButton();
+    if (typeof renderHistory === "function") renderHistory();
+  } catch (e) { /* chamado cedo demais no boot — init cuida depois */ }
+  if (persist) {
+    fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ language: lang })
+    }).catch(function () { /* preferência é best-effort */ });
+  }
+}
+
+function openLangChooser(forced) {
+  if ($("lang-modal")) return;
+  var backdrop = el("div", { class: "modal-backdrop", id: "lang-modal" });
+  var modal = el("div", { class: "modal modal-sm", role: "dialog", "aria-modal": "true" });
+  var head = el("div", { class: "modal-head" }, el("h2", { text: t("langModal.title") }));
+  if (!forced) {
+    var x = el("button", { class: "t-close", "aria-label": "Fechar", onclick: function () { backdrop.remove(); } });
+    x.appendChild(svgIcon("x", 14));
+    head.appendChild(x);
+  }
+  var sub = el("p", { class: "muted", text: t("langModal.subtitle") });
+  var actions = el("div", { class: "modal-actions", style: "gap:10px" });
+  ["pt", "en"].forEach(function (lang) {
+    var label = lang === "pt" ? "Português (BR)" : "English";
+    actions.appendChild(el("button", {
+      class: "btn-primary", style: "flex:1;justify-content:center",
+      onclick: function () {
+        setLanguage(lang, true);
+        backdrop.remove();
+        if (forced) maybeOnboard();   /* 1ª execução: idioma → tutorial */
+      }
+    }, label));
+  });
+  modal.appendChild(head);
+  modal.appendChild(sub);
+  modal.appendChild(actions);
+  backdrop.appendChild(modal);
+  if (!forced) {
+    backdrop.addEventListener("click", function (ev) {
+      if (ev.target === backdrop) backdrop.remove();
+    });
+  }
+  document.body.appendChild(backdrop);
+}
+
+function applyDefaultFeatures(features) {
+  if (!features) return;
+  var map = {
+    changed_pages_only: "opt-changed-pages",
+    export_docx: "opt-docx",
+    exec_summary: "opt-exec-summary"
+  };
+  Object.keys(map).forEach(function (key) {
+    var elx = $(map[key]);
+    if (elx && typeof features[key] === "boolean") elx.checked = features[key];
+  });
+}
+
+function initI18n() {
+  /* Cache local para pintar já no idioma certo (sem flash). */
+  var cached = null;
+  try { cached = localStorage.getItem(LANG_STORAGE_KEY); } catch (e) { /* ok */ }
+  if (cached === "pt" || cached === "en") { I18N.lang = cached; }
+  applyI18n(document);
+
+  /* Fonte de verdade: o servidor. Decide idioma efetivo e primeira execução. */
+  fetch("/api/settings").then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (data) {
+      if (!data) return;
+      APP_SETTINGS = data;
+      applyDefaultFeatures(data.default_features);
+      if (data.language === "pt" || data.language === "en") {
+        setLanguage(data.language, false);
+        maybeOnboard();          /* idioma já escolhido → tutorial se 1ª vez */
+      } else {
+        openLangChooser(true);   /* 1ª execução: escolhe idioma e depois tutorial */
+      }
+    })
+    .catch(function () { /* offline/local: segue com o cache */ });
+}
+
+/* Dispara o tutorial guiado se ainda não foi concluído (1ª execução). */
+function maybeOnboard() {
+  if (!APP_SETTINGS.onboarding_done && typeof startTutorial === "function") {
+    startTutorial();
+  }
+}
+
+/* ------------------------------------------------------------
+   Configurações (item 3): idioma + recursos padrão + rever tutorial
+   ------------------------------------------------------------ */
+function persistDefaultFeature(featKey, value) {
+  APP_SETTINGS.default_features = APP_SETTINGS.default_features || {};
+  APP_SETTINGS.default_features[featKey] = value;
+  var patch = {}; patch[featKey] = value;
+  fetch("/api/settings", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ default_features: patch })
+  }).catch(function () { /* preferência é best-effort */ });
+  /* Reflete no toggle da tela de compare (estado da execução atual). */
+  var map = { changed_pages_only: "opt-changed-pages", export_docx: "opt-docx", exec_summary: "opt-exec-summary" };
+  var live = $(map[featKey]);
+  if (live) live.checked = value;
+}
+
+function settingsToggleRow(featKey, titleKey, descKey) {
+  var input = el("input", { type: "checkbox" });
+  input.checked = !!(APP_SETTINGS.default_features && APP_SETTINGS.default_features[featKey]);
+  input.addEventListener("change", function () { persistDefaultFeature(featKey, input.checked); });
+  var toggle = el("label", { class: "option-toggle" },
+    input,
+    el("span", { class: "track", "aria-hidden": "true" }),
+    el("span", { class: "thumb", "aria-hidden": "true" })
+  );
+  return el("div", { class: "option-row" },
+    el("div", { class: "option-copy" },
+      el("div", { class: "option-title", text: t(titleKey) }),
+      el("div", { class: "option-desc", text: t(descKey) })
+    ),
+    toggle
+  );
+}
+
+function openSettings() {
+  if ($("settings-modal")) return;
+  var backdrop = el("div", { class: "modal-backdrop", id: "settings-modal" });
+  var modal = el("div", { class: "modal modal-sm", role: "dialog", "aria-modal": "true" });
+
+  var closeBtn = el("button", { class: "icon-btn", "aria-label": t("common.close"), onclick: function () { backdrop.remove(); } });
+  closeBtn.appendChild(svgIcon("x", 13));
+  modal.appendChild(el("div", { class: "modal-head" }, el("h2", { text: t("settings.title") }), closeBtn));
+
+  /* Idioma — troca reabre o modal já no novo idioma (rótulos re-renderizam). */
+  modal.appendChild(el("h3", { text: t("settings.language") }));
+  var langRow = el("div", { class: "chip-row" });
+  [["pt", "Português (BR)"], ["en", "English"]].forEach(function (pair) {
+    langRow.appendChild(el("button", {
+      class: "chip" + (I18N.lang === pair[0] ? " active" : ""),
+      onclick: function () {
+        if (I18N.lang === pair[0]) return;
+        setLanguage(pair[0], true);
+        backdrop.remove();
+        openSettings();
+      }
+    }, pair[1]));
+  });
+  modal.appendChild(langRow);
+
+  /* Recursos padrão (todos off por padrão; aceite de revisões NÃO entra aqui). */
+  modal.appendChild(el("h3", { text: t("settings.defaults") }));
+  modal.appendChild(el("p", { class: "muted", text: t("settings.defaultsHint") }));
+  modal.appendChild(el("div", { class: "options-list" },
+    settingsToggleRow("changed_pages_only", "opt.changedTitle", "opt.changedDesc"),
+    settingsToggleRow("export_docx", "opt.docxTitle", "opt.docxDesc"),
+    settingsToggleRow("exec_summary", "opt.execTitle", "opt.execDesc")
+  ));
+
+  /* Tutorial */
+  modal.appendChild(el("h3", { text: t("settings.tutorial") }));
+  modal.appendChild(el("button", {
+    class: "btn", onclick: function () { backdrop.remove(); startTutorial(); }
+  }, t("settings.replayTutorial")));
+
+  backdrop.appendChild(modal);
+  backdrop.addEventListener("click", function (ev) { if (ev.target === backdrop) backdrop.remove(); });
+  document.body.appendChild(backdrop);
+}
+
+/* ------------------------------------------------------------
+   Tutorial guiado (item 2): spotlight + card por passo
+   ------------------------------------------------------------ */
+var TUTORIAL_STEPS = [
+  { sel: "#hd-compare", titleKey: "tut.welcomeTitle", bodyKey: "tut.welcomeBody", view: "compare" },
+  { sel: "#dz-base", titleKey: "tut.baseTitle", bodyKey: "tut.baseBody", view: "compare" },
+  { sel: "#dz-compare", titleKey: "tut.compareTitle", bodyKey: "tut.compareBody", view: "compare" },
+  { sel: "#btn-swap-single", titleKey: "tut.swapTitle", bodyKey: "tut.swapBody", view: "compare" },
+  {
+    sel: "#options-panel", titleKey: "tut.optsTitle", bodyKey: "tut.optsBody", view: "compare",
+    before: function () {
+      var panel = $("options-panel");
+      if (panel) panel.open = true;
+    },
+    after: function () {
+      var panel = $("options-panel");
+      if (panel) panel.open = false;
+    }
+  },
+  { sel: "#btn-compare", titleKey: "tut.runTitle", bodyKey: "tut.runBody", view: "compare" },
+  { sel: "#nav-batch", titleKey: "tut.batchTitle", bodyKey: "tut.batchBody" },
+  { sel: "#nav-history", titleKey: "tut.historyTitle", bodyKey: "tut.historyBody" },
+  { sel: "#nav-plans", titleKey: "tut.plansTitle", bodyKey: "tut.plansBody" },
+  { sel: "#btn-settings", titleKey: "tut.settingsTitle", bodyKey: "tut.settingsBody" },
+  { sel: "#btn-guide", titleKey: "tut.guideTitle", bodyKey: "tut.guideBody" }
+];
+var _tutIndex = 0;
+
+function startTutorial() {
+  showView("compare");   /* garante que os alvos da tela principal estão visíveis */
+  _tutIndex = 0;
+  var host = $("tutorial-host");
+  if (!host) { host = el("div", { id: "tutorial-host" }); document.body.appendChild(host); }
+  renderTutorialStep();
+}
+
+function endTutorial(markDone) {
+  var host = $("tutorial-host");
+  if (host) host.remove();
+  window.removeEventListener("resize", renderTutorialStep);
+  var panel = $("options-panel");
+  if (panel) panel.open = false;
+  if (markDone && !APP_SETTINGS.onboarding_done) {
+    APP_SETTINGS.onboarding_done = true;
+    fetch("/api/settings", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ onboarding_done: true })
+    }).catch(function () {});
+  }
+}
+
+function renderTutorialStep() {
+  var host = $("tutorial-host");
+  if (!host) return;
+  var step = TUTORIAL_STEPS[_tutIndex];
+  if (step.view) showView(step.view);
+  else if (step.sel && step.sel.indexOf("#nav-") === 0) {
+    /* deixa o spotlight na sidebar sem mudar de ecrã desnecessariamente */
+  }
+  if (typeof step.before === "function") step.before();
+  var target = document.querySelector(step.sel);
+  if (!target) {   /* alvo ausente: avança ou encerra */
+    if (_tutIndex < TUTORIAL_STEPS.length - 1) { _tutIndex++; renderTutorialStep(); }
+    else { endTutorial(true); }
+    return;
+  }
+  /* Espera um frame se acabámos de abrir o painel de opções (layout muda). */
+  var r = target.getBoundingClientRect();
+  if (r.width < 2 || r.height < 2) {
+    requestAnimationFrame(function () { renderTutorialStep(); });
+    return;
+  }
+  host.textContent = "";
+
+  var pad = 6;
+  var spot = el("div", { class: "tut-spot" });
+  spot.style.left = (r.left - pad) + "px";
+  spot.style.top = (r.top - pad) + "px";
+  spot.style.width = (r.width + pad * 2) + "px";
+  spot.style.height = (r.height + pad * 2) + "px";
+  host.appendChild(spot);
+
+  var card = el("div", { class: "tut-card" });
+  card.appendChild(el("div", { class: "tut-step", text: (_tutIndex + 1) + " / " + TUTORIAL_STEPS.length }));
+  card.appendChild(el("h3", { text: t(step.titleKey) }));
+  card.appendChild(el("p", { text: t(step.bodyKey) }));
+
+  var nav = el("div", { class: "tut-nav" });
+  nav.appendChild(el("button", { class: "link-btn", onclick: function () { endTutorial(true); } }, t("tut.skip")));
+  var right = el("div", { class: "tut-nav-right" });
+  if (_tutIndex > 0) {
+    right.appendChild(el("button", {
+      class: "btn",
+      onclick: function () {
+        if (typeof step.after === "function") step.after();
+        _tutIndex--;
+        renderTutorialStep();
+      }
+    }, t("tut.back")));
+  }
+  var last = _tutIndex === TUTORIAL_STEPS.length - 1;
+  right.appendChild(el("button", {
+    class: "btn-primary",
+    onclick: function () {
+      if (typeof step.after === "function") step.after();
+      if (last) { endTutorial(true); }
+      else { _tutIndex++; renderTutorialStep(); }
+    }
+  }, last ? t("tut.done") : t("tut.next")));
+  nav.appendChild(right);
+  card.appendChild(nav);
+  host.appendChild(card);
+
+  /* Posiciona o card perto do alvo, dentro da viewport. */
+  var cardW = 300, gap = 14, vw = window.innerWidth, vh = window.innerHeight;
+  card.style.width = cardW + "px";
+  var cardH = card.offsetHeight || 170;
+  var top;
+  if (r.bottom + gap + cardH < vh) top = r.bottom + gap;
+  else if (r.top - gap - cardH > 0) top = r.top - gap - cardH;
+  else top = Math.max(12, vh - cardH - 12);
+  var left = Math.max(12, Math.min(r.left + r.width / 2 - cardW / 2, vw - cardW - 12));
+  card.style.top = top + "px";
+  card.style.left = left + "px";
+
+  window.removeEventListener("resize", renderTutorialStep);
+  window.addEventListener("resize", renderTutorialStep);
+}
+
 function init() {
   initTheme();
+  initI18n();
   renderDropzone("base");
   renderDropzone("compare");
   setupDropzone("base");
@@ -4454,6 +5385,7 @@ function init() {
   setupFolderDropzone("compare");
 
   $("btn-theme").addEventListener("click", toggleTheme);
+  $("btn-settings").addEventListener("click", openSettings);
   $("nav-compare").addEventListener("click", function () { showView("compare"); });
   $("nav-batch").addEventListener("click", function () { showView("batch"); });
   $("nav-history").addEventListener("click", function () { showView("history"); });
@@ -4490,7 +5422,7 @@ function init() {
     pickFolderNative($("opt-outdir").value.trim(), "Pasta de saída")
       .then(function (path) { if (path) $("opt-outdir").value = path; })
       .catch(function (err) {
-        toast(err.message || "Erro ao abrir o explorador de arquivos.", "error");
+        toast(err.message || t("folder.explorerError"), "error");
       });
   });
 

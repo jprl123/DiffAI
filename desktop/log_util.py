@@ -43,7 +43,7 @@ def setup_logging() -> logging.Logger:
     sh.setFormatter(fmt)
     logger.addHandler(sh)
 
-    logger.info("=== Compare Docs Desktop — sessão %s ===", datetime.now().isoformat())
+    logger.info("=== diffAI Desktop — sessão %s ===", datetime.now().isoformat())
     logger.info("Python: %s", sys.executable)
     logger.info("Log em: %s", LOG_FILE)
 

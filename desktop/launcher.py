@@ -106,7 +106,7 @@ def _open_browser_fallback(url: str) -> None:
     logger.warning("pywebview indisponível — abrindo no navegador: %s", url)
     webbrowser.open(url)
     print("")
-    print("Compare Docs rodando em: %s" % url)
+    print("diffAI rodando em: %s" % url)
     print("Log detalhado: %s" % LOG_FILE)
     print("Pressione Ctrl+C para encerrar.")
     try:
@@ -147,7 +147,7 @@ def launch() -> None:
     try:
         import webview  # noqa: F401
 
-        _open_webview("Compare Docs", app_url)
+        _open_webview("diffAI", app_url)
     except Exception as exc:
         logger.exception("pywebview falhou: %s", exc)
         _open_browser_fallback(app_url)

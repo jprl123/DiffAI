@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useEffect, useState } from "react"
 
 const LETTERS = ["d", "i", "f", "f", "A", "I"]
@@ -54,8 +55,44 @@ export function IntroAnimation({ onDone }: { onDone: () => void }) {
         }}
       />
 
-      {/* Brand letters → diffAI */}
-      <div className="absolute inset-0 flex items-center justify-center">
+      {/* Brand mark + letters → diffAI */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
+        {(() => {
+          const isIdle = phase === "idle"
+          const isIn = phase === "in"
+          const opacity = isIdle ? 0 : isIn ? 1 : 0
+          const blur = isIdle ? 36 : isIn ? 0 : 24
+          const translateY = isIdle ? 48 : isIn ? 0 : -20
+          const transition = phase === "out"
+            ? `opacity ${LETTER_OUT_DUR}ms cubic-bezier(0.4,0,1,1),
+               filter  ${LETTER_OUT_DUR}ms cubic-bezier(0.4,0,1,1),
+               transform ${LETTER_OUT_DUR}ms cubic-bezier(0.4,0,1,1)`
+            : isIn
+            ? `opacity ${LETTER_IN_DUR}ms cubic-bezier(0.16,1,0.3,1),
+               filter  ${LETTER_IN_DUR}ms cubic-bezier(0.16,1,0.3,1),
+               transform ${LETTER_IN_DUR}ms cubic-bezier(0.16,1,0.3,1)`
+            : "none"
+          return (
+            <div
+              style={{
+                opacity,
+                filter: `blur(${blur}px)`,
+                transform: `translateY(${translateY}px)`,
+                transition,
+                willChange: "opacity, filter, transform",
+              }}
+            >
+              <Image
+                src="/icon.png"
+                alt=""
+                width={72}
+                height={72}
+                className="rounded-[18px] shadow-lg"
+                priority
+              />
+            </div>
+          )
+        })()}
         <div className="flex" style={{ gap: "0.06em" }}>
           {LETTERS.map((letter, i) => {
             const inDelay  = i * LETTER_IN_STAGGER
