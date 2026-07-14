@@ -11,22 +11,22 @@ const _courierPrime = Courier_Prime({ weight: ["400", "700"], subsets: ["latin"]
 const _ibmPlexSans = IBM_Plex_Sans({ weight: ["300", "400", "500", "600"], subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'diffAI — Redline profissional de documentos',
-  description: 'Compare versões de contratos e documentos (DOCX, PDF, Excel) e gere PDFs redline fiéis em segundos. Processamento 100% local no Mac e no Windows.',
-  keywords: ['redline', 'comparação de documentos', 'diffAI', 'comparar contratos', 'DOCX', 'PDF', 'revisão contratual'],
+  title: 'diffAI — Professional document redlines',
+  description: 'Compare versions of contracts and documents (DOCX, PDF, Excel) and get faithful redline PDFs in seconds. 100% local processing on Mac and Windows.',
+  keywords: ['redline', 'document comparison', 'diffAI', 'compare contracts', 'DOCX', 'PDF', 'contract review'],
   authors: [{ name: 'diffAI' }],
   openGraph: {
-    title: 'diffAI — Redline profissional de documentos',
-    description: 'Compare versões de contratos e gere PDFs redline fiéis em segundos, com processamento 100% local.',
+    title: 'diffAI — Professional document redlines',
+    description: 'Compare contract versions and get faithful redline PDFs in seconds, with 100% local processing.',
     type: 'website',
     url: 'https://diffai.app',
     siteName: 'diffAI',
-    locale: 'pt_BR',
+    locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'diffAI — Redline profissional de documentos',
-    description: 'Compare versões de contratos e gere PDFs redline fiéis em segundos, com processamento 100% local.',
+    title: 'diffAI — Professional document redlines',
+    description: 'Compare contract versions and get faithful redline PDFs in seconds, with 100% local processing.',
   },
   icons: {
     icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
@@ -39,7 +39,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="en">
       <body className={`font-sans antialiased`}>
         {children}
         <Analytics />

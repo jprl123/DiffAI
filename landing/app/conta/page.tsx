@@ -14,9 +14,9 @@ import {
 import { SALES_EMAIL } from "@/lib/config"
 
 function formatDate(iso: string | null) {
-  if (!iso) return "Sem expiração"
+  if (!iso) return "No expiration"
   try {
-    return new Date(iso).toLocaleDateString("pt-BR", {
+    return new Date(iso).toLocaleDateString("en-US", {
       day: "2-digit",
       month: "short",
       year: "numeric",
@@ -29,14 +29,14 @@ function formatDate(iso: string | null) {
 function planLabel(plan: string) {
   const map: Record<string, string> = {
     pro: "Pro",
-    team: "Equipe",
-    perpetual: "Perpétua",
-    trial: "Avaliação",
+    team: "Team",
+    perpetual: "Perpetual",
+    trial: "Trial",
   }
   return map[plan] || plan
 }
 
-export default function ContaPage() {
+export default function AccountPage() {
   const [email, setEmail] = useState("")
   const [key, setKey] = useState("")
   const [token, setToken] = useState<string | null>(null)
@@ -58,7 +58,7 @@ export default function ContaPage() {
     const params = new URLSearchParams(window.location.search)
     if (params.get("checkout") === "ok") {
       setCheckoutOk(true)
-      window.history.replaceState({}, "", "/conta")
+      window.history.replaceState({}, "", window.location.pathname)
     }
   }, [])
 
@@ -87,7 +87,7 @@ export default function ContaPage() {
       setToken(data.token)
       setLicense(data.license)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível entrar.")
+      setError(err instanceof Error ? err.message : "Could not sign in.")
     } finally {
       setLoading(false)
     }
@@ -109,7 +109,7 @@ export default function ContaPage() {
       setLicense(data.license)
       setPendingDevice(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha ao desativar.")
+      setError(err instanceof Error ? err.message : "Failed to deactivate.")
     } finally {
       setLoading(false)
     }
@@ -120,34 +120,34 @@ export default function ContaPage() {
       <MobileNav />
       <main className="pt-28 pb-20 px-6 md:px-12">
         <div className="max-w-xl mx-auto">
-          <p className="text-[11px] tracking-widest uppercase text-black/40 mb-3">Conta</p>
+          <p className="text-[11px] tracking-widest uppercase text-black/40 mb-3">Account</p>
           <h1
             className="text-4xl font-light tracking-tight mb-3"
             style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
           >
-            Gerenciar licença
+            Manage your license
           </h1>
           <p className="text-black/50 text-sm mb-10 leading-relaxed">
-            Entre com o e-mail da compra e a chave recebida (formato CDOC-…). Sem senha —
-            o mesmo par usado para ativar no app.
+            Sign in with the purchase e-mail and the key you received (CDOC-… format).
+            No password — the same pair you use to activate the app.
           </p>
 
           {checkoutOk && (
             <div className="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-5 text-sm text-emerald-950 leading-relaxed">
-              <p className="font-medium mb-1">Pagamento confirmado</p>
+              <p className="font-medium mb-1">Payment confirmed</p>
               <p>
-                Enviamos a chave de licença para o <strong>e-mail que você usou no
-                Stripe Checkout</strong>. Confira a caixa de entrada e o spam.
+                We sent your license key to the <strong>e-mail you used at Stripe
+                Checkout</strong>. Check your inbox and the spam folder.
               </p>
               <p className="mt-2 text-emerald-900/80">
-                Quando receber a chave, entre abaixo (e-mail + chave) ou ative no app
-                diffAI.
+                Once you have the key, sign in below (e-mail + key) or activate it in the
+                diffAI app.
               </p>
             </div>
           )}
 
           {booting ? (
-            <p className="text-sm text-black/40">Carregando…</p>
+            <p className="text-sm text-black/40">Loading…</p>
           ) : !license ? (
             <form
               onSubmit={onSubmit}
@@ -165,12 +165,12 @@ export default function ContaPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full rounded-xl border border-black/10 bg-[#F5F4F0]/50 px-4 py-3 text-sm outline-none focus:border-black/30"
-                  placeholder="voce@escritorio.com"
+                  placeholder="you@firm.com"
                 />
               </div>
               <div>
                 <label htmlFor="key" className="block text-xs tracking-wide text-black/45 mb-2">
-                  Chave de licença
+                  License key
                 </label>
                 <input
                   id="key"
@@ -192,12 +192,12 @@ export default function ContaPage() {
                 disabled={loading}
                 className="w-full rounded-xl bg-[#111] text-white text-sm py-3 hover:bg-black/80 disabled:opacity-50 transition-colors"
               >
-                {loading ? "Entrando…" : "Entrar"}
+                {loading ? "Signing in…" : "Sign in"}
               </button>
               <p className="text-xs text-black/40 text-center pt-1">
-                Ainda não tem chave?{" "}
-                <Link href="/#planos" className="underline hover:text-black/70">
-                  Ver planos
+                Don't have a key yet?{" "}
+                <Link href="/#pricing" className="underline hover:text-black/70">
+                  See pricing
                 </Link>
               </p>
             </form>
@@ -206,7 +206,7 @@ export default function ContaPage() {
               <div className="rounded-2xl border border-black/[0.07] bg-white p-8">
                 <div className="flex items-start justify-between gap-4 mb-6">
                   <div>
-                    <div className="text-xs tracking-widest uppercase text-black/40 mb-1">Plano</div>
+                    <div className="text-xs tracking-widest uppercase text-black/40 mb-1">Plan</div>
                     <div
                       className="text-2xl font-light"
                       style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
@@ -219,7 +219,7 @@ export default function ContaPage() {
                     onClick={logout}
                     className="text-xs text-black/45 hover:text-black underline"
                   >
-                    Sair
+                    Sign out
                   </button>
                 </div>
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
@@ -228,15 +228,15 @@ export default function ContaPage() {
                     <dd>{license.email}</dd>
                   </div>
                   <div>
-                    <dt className="text-black/40 text-xs mb-1">Chave</dt>
+                    <dt className="text-black/40 text-xs mb-1">Key</dt>
                     <dd className="font-mono tracking-wide">{license.key_hint}</dd>
                   </div>
                   <div>
-                    <dt className="text-black/40 text-xs mb-1">Validade</dt>
+                    <dt className="text-black/40 text-xs mb-1">Valid until</dt>
                     <dd>{formatDate(license.expires_at)}</dd>
                   </div>
                   <div>
-                    <dt className="text-black/40 text-xs mb-1">Dispositivos</dt>
+                    <dt className="text-black/40 text-xs mb-1">Devices</dt>
                     <dd>
                       {license.devices.length} / {license.max_devices}
                     </dd>
@@ -249,10 +249,10 @@ export default function ContaPage() {
                   className="text-lg font-light mb-4"
                   style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
                 >
-                  Dispositivos ativos
+                  Active devices
                 </h2>
                 {license.devices.length === 0 ? (
-                  <p className="text-sm text-black/45">Nenhum dispositivo ativado ainda.</p>
+                  <p className="text-sm text-black/45">No device activated yet.</p>
                 ) : (
                   <ul className="space-y-3">
                     {license.devices.map((d) => (
@@ -261,9 +261,9 @@ export default function ContaPage() {
                         className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-black/[0.06] px-4 py-3"
                       >
                         <div>
-                          <div className="text-sm font-medium">{d.device_name || "Dispositivo"}</div>
+                          <div className="text-sm font-medium">{d.device_name || "Device"}</div>
                           <div className="text-xs text-black/40 mt-0.5">
-                            Ativado {formatDate(d.activated_at)} · visto {formatDate(d.last_seen)}
+                            Activated {formatDate(d.activated_at)} · last seen {formatDate(d.last_seen)}
                           </div>
                         </div>
                         {pendingDevice === d.device ? (
@@ -274,14 +274,14 @@ export default function ContaPage() {
                               onClick={() => deactivate(d.device)}
                               className="text-xs px-3 py-2 rounded-lg bg-red-700 text-white hover:bg-red-800 disabled:opacity-50"
                             >
-                              Confirmar
+                              Confirm
                             </button>
                             <button
                               type="button"
                               onClick={() => setPendingDevice(null)}
                               className="text-xs px-3 py-2 rounded-lg border border-black/10 text-black/55"
                             >
-                              Cancelar
+                              Cancel
                             </button>
                           </div>
                         ) : (
@@ -290,7 +290,7 @@ export default function ContaPage() {
                             onClick={() => setPendingDevice(d.device)}
                             className="text-xs px-3 py-2 rounded-lg border border-black/10 text-black/55 hover:border-black/25 hover:text-black"
                           >
-                            Desativar
+                            Deactivate
                           </button>
                         )}
                       </li>
@@ -298,8 +298,8 @@ export default function ContaPage() {
                   </ul>
                 )}
                 <p className="text-xs text-black/40 mt-5 leading-relaxed">
-                  Desativar libera uma vaga. No próximo uso, o app pede ativação de novo nesse
-                  Mac.
+                  Deactivating frees up a slot. Next time the app runs on that machine, it
+                  will ask for activation again.
                 </p>
               </div>
 
@@ -310,7 +310,7 @@ export default function ContaPage() {
               )}
 
               <p className="text-xs text-black/40 text-center">
-                Precisa de ajuda?{" "}
+                Need help?{" "}
                 <a href={`mailto:${SALES_EMAIL}`} className="underline hover:text-black/70">
                   {SALES_EMAIL}
                 </a>

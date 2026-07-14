@@ -51,16 +51,16 @@ function PlatformLink({
   }
   return (
     <a
-      href="#baixar"
+      href="#download"
       className={platformBtn(variant, primary)}
-      title="Instalador ainda não publicado — veja a seção Baixar"
+      title="Installer not published yet — see the Download section"
     >
       {soonLabel || label}
     </a>
   )
 }
 
-/** Botões compactos (hero / nav / CTA escuro). */
+/** Compact buttons (hero / nav / dark CTA). */
 export function DownloadButtons({
   variant = "hero",
   className = "",
@@ -73,16 +73,16 @@ export function DownloadButtons({
       <PlatformLink
         label="macOS"
         url={DOWNLOAD_URL_MAC}
-        readyLabel="Baixar para Mac"
-        soonLabel="Baixar para Mac"
+        readyLabel="Download for Mac"
+        soonLabel="Download for Mac"
         variant={variant}
         primary
       />
       <PlatformLink
         label="Windows"
         url={DOWNLOAD_URL_WINDOWS}
-        readyLabel="Baixar para Windows"
-        soonLabel="Baixar para Windows"
+        readyLabel="Download for Windows"
+        soonLabel="Download for Windows"
         variant={variant}
         primary={false}
       />
@@ -90,24 +90,26 @@ export function DownloadButtons({
   )
 }
 
-/** Seção #baixar — estado real de cada plataforma. */
+/** #download section — real status per platform. */
 export function DownloadSection() {
   const macReady = isDownloadReady(DOWNLOAD_URL_MAC)
   const winReady = isDownloadReady(DOWNLOAD_URL_WINDOWS)
 
   return (
-    <section id="baixar" className="py-28 px-6 md:px-12 lg:px-20 scroll-mt-24">
+    <section id="download" className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06] scroll-mt-24">
+      {/* Legacy anchor — old links may still point to /#baixar */}
+      <span id="baixar" className="block relative -top-24" aria-hidden="true" />
       <div className="max-w-3xl mx-auto">
-        <p className="text-[11px] tracking-widest uppercase text-black/40 mb-3">Baixar</p>
+        <p className="text-[11px] tracking-widest uppercase text-black/40 mb-3">Download</p>
         <h2
           className="text-4xl md:text-5xl font-light tracking-tight mb-4"
           style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
         >
-          Instale no Mac ou no Windows.
+          Install on Mac or Windows.
         </h2>
         <p className="text-black/50 mb-10 max-w-xl leading-relaxed">
-          O app roda localmente. A internet só entra para ativar a licença e
-          gerenciar dispositivos em Conta.
+          The app runs locally. The internet is only used to activate your license and
+          manage devices in Account.
         </p>
 
         <div className="grid sm:grid-cols-2 gap-4">
@@ -121,22 +123,22 @@ export function DownloadSection() {
             </h3>
             <p className="text-sm text-black/50 mb-6 flex-1">
               {macReady
-                ? "Baixe o .zip, abra e arraste o diffAI.app para Aplicativos."
-                : "Build Mac em preparação. Avise-nos e mandamos o link assim que sair."}
+                ? "Download the .zip, open it and drag diffAI.app into Applications. If macOS says the app is damaged, run in Terminal: xattr -cr /Applications/diffAI.app"
+                : "The Mac build is being prepared. Leave your e-mail and we'll send the link as soon as it ships."}
             </p>
             {macReady ? (
               <a
                 href={DOWNLOAD_URL_MAC}
                 className={`${baseBtn} bg-[#111] text-white hover:bg-black/80`}
               >
-                Baixar .zip
+                Download .zip
               </a>
             ) : (
               <a
-                href={`mailto:${SALES_EMAIL}?subject=Aviso%20quando%20o%20diffAI%20Mac%20estiver%20pronto`}
+                href={`mailto:${SALES_EMAIL}?subject=Notify%20me%20when%20diffAI%20for%20Mac%20is%20ready`}
                 className={`${baseBtn} border border-black/15 text-black/70 hover:border-black/30`}
               >
-                Avise-me no e-mail
+                Notify me by e-mail
               </a>
             )}
           </div>
@@ -151,22 +153,22 @@ export function DownloadSection() {
             </h3>
             <p className="text-sm text-black/50 mb-6 flex-1">
               {winReady
-                ? "Download do instalador (.exe)."
-                : "Build Windows em preparação. Mesmo app, mesma licença — só o instalador muda."}
+                ? "Download the installer (.exe)."
+                : "The Windows build is being prepared. Same app, same license — only the installer differs."}
             </p>
             {winReady ? (
               <a
                 href={DOWNLOAD_URL_WINDOWS}
                 className={`${baseBtn} bg-[#111] text-white hover:bg-black/80`}
               >
-                Baixar .exe
+                Download .exe
               </a>
             ) : (
               <a
-                href={`mailto:${SALES_EMAIL}?subject=Aviso%20quando%20o%20diffAI%20Windows%20estiver%20pronto`}
+                href={`mailto:${SALES_EMAIL}?subject=Notify%20me%20when%20diffAI%20for%20Windows%20is%20ready`}
                 className={`${baseBtn} border border-black/15 text-black/70 hover:border-black/30`}
               >
-                Avise-me no e-mail
+                Notify me by e-mail
               </a>
             )}
           </div>

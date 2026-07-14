@@ -5,10 +5,10 @@ import Link from "next/link"
 import { BRAND } from "@/lib/config"
 
 const NAV_LINKS = [
-  { label: "Produto", href: "/#produto" },
-  { label: "Planos", href: "/#planos" },
-  { label: "Baixar", href: "/#baixar" },
-  { label: "Privacidade", href: "/#privacidade" },
+  { label: "Product", href: "/#product" },
+  { label: "Changes", href: "/#changes" },
+  { label: "Pricing", href: "/#pricing" },
+  { label: "Privacy", href: "/#privacy" },
 ]
 
 const NAV_STYLE = {
@@ -50,23 +50,23 @@ export function MobileNav() {
               href="/conta"
               className="text-[11px] text-black/60 hover:text-black transition-colors duration-200 tracking-wide"
             >
-              Conta
+              Account
             </Link>
           </div>
 
           <div className="flex items-center gap-2">
             <a
-              href="#baixar"
+              href="#download"
               className="text-[11px] px-4 py-2 rounded-xl bg-[#111] text-white hover:bg-black/80 transition-all duration-200 tracking-wide hidden md:block"
               style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
             >
-              Baixar
+              Download
             </a>
 
             <button
               onClick={() => setOpen((v) => !v)}
               className="md:hidden flex flex-col justify-center items-center w-8 h-8 gap-[5px] rounded-lg hover:bg-black/[0.04] transition-colors"
-              aria-label={open ? "Fechar menu" : "Abrir menu"}
+              aria-label={open ? "Close menu" : "Open menu"}
             >
               <span
                 className="block h-px bg-black/60 transition-all duration-300 origin-center"
@@ -119,16 +119,16 @@ export function MobileNav() {
               className="px-4 py-3 text-sm text-black/60 hover:text-black hover:bg-black/[0.03] rounded-xl transition-colors tracking-wide"
               style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
             >
-              Conta
+              Account
             </Link>
             <div className="mt-1 px-2 pb-1">
               <a
-                href="#baixar"
+                href="#download"
                 onClick={close}
                 className="block w-full text-center text-[11px] px-4 py-2.5 rounded-xl bg-[#111] text-white tracking-wide"
                 style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
               >
-                Baixar Mac / Windows
+                Download for Mac / Windows
               </a>
             </div>
           </div>
