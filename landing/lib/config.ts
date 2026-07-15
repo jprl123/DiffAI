@@ -2,7 +2,7 @@
 // (ver .env.example). Enquanto o instalador não existir, o botão abre #baixar
 // com status "em breve" em vez de um link morto.
 
-export const BRAND = "diffAI"
+export const BRAND = "DiffAI"
 export const BRAND_DOMAIN = "diffai.app"
 
 // Sem barra no final — evita //v1/... (404) quando a env vem com /

@@ -11,21 +11,21 @@ const _courierPrime = Courier_Prime({ weight: ["400", "700"], subsets: ["latin"]
 const _ibmPlexSans = IBM_Plex_Sans({ weight: ["300", "400", "500", "600"], subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'diffAI — Professional document redlines',
+  title: 'DiffAI — Professional document redlines',
   description: 'Compare versions of contracts and documents (DOCX, PDF, Excel) and get faithful redline PDFs in seconds. 100% local processing on Mac and Windows.',
-  keywords: ['redline', 'document comparison', 'diffAI', 'compare contracts', 'DOCX', 'PDF', 'contract review'],
-  authors: [{ name: 'diffAI' }],
+  keywords: ['redline', 'document comparison', 'DiffAI', 'compare contracts', 'DOCX', 'PDF', 'contract review'],
+  authors: [{ name: 'DiffAI' }],
   openGraph: {
-    title: 'diffAI — Professional document redlines',
+    title: 'DiffAI — Professional document redlines',
     description: 'Compare contract versions and get faithful redline PDFs in seconds, with 100% local processing.',
     type: 'website',
     url: 'https://diffai.app',
-    siteName: 'diffAI',
+    siteName: 'DiffAI',
     locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'diffAI — Professional document redlines',
+    title: 'DiffAI — Professional document redlines',
     description: 'Compare contract versions and get faithful redline PDFs in seconds, with 100% local processing.',
   },
 }

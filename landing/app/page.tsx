@@ -380,7 +380,7 @@ export default function HomePage() {
                 </div>
                 <ImageSlot
                   src={SITE_IMAGES.productHero}
-                  alt="diffAI app showing a redline"
+                  alt="DiffAI app showing a redline"
                   label="product screenshot — redline view"
                   className="w-full h-48 md:h-56"
                   imgClassName="w-full h-full object-cover object-top rounded-xl border border-black/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.10)]"

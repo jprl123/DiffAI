@@ -103,7 +103,7 @@ def compare_documents(base: Document, compare: Document) -> ComparisonResult:
             result.changes.append(change)
 
     result.render_blocks = render_blocks
-    result.stats = _build_stats(result.changes, compare.blocks)
+    result.stats = _build_stats(result.changes, compare.blocks, render_blocks)
     result.preview_layout = _preview_layout_from_doc(compare, base)
     return result
 
@@ -672,20 +672,77 @@ def _diff_table_pair(
     return rb, change, change_id + 1
 
 
-def _build_stats(changes: List[Change], compare_blocks: List[Block]) -> Stats:
+def _count_fragment_runs(fragments: List["Fragment"]) -> Tuple[int, int]:
+    """Conta TRECHOS CONTÍNUOS de inserção e de exclusão numa lista de
+    fragmentos. Uma sequência consecutiva de fragmentos "insert" conta 1
+    inserção; idem para "delete". "equal"/"format" quebram o trecho.
+
+    Ex.: [equal, delete, insert, equal, insert] → (2 inserções, 1 exclusão).
+    """
+    ins = dele = 0
+    prev = ""
+    for frag in fragments or ():
+        op = getattr(frag, "op", "equal")
+        if op == "insert" and prev != "insert":
+            ins += 1
+        elif op == "delete" and prev != "delete":
+            dele += 1
+        prev = op
+    return ins, dele
+
+
+def _count_block_runs(block: "RenderBlock") -> Tuple[int, int]:
+    """Trechos contínuos de inserção/exclusão de UM bloco renderizado.
+
+    - Tabela: linha inteira nova/removida conta 1; nas demais linhas, conta
+      os trechos dentro de cada célula (valor de célula alterado = 1 del + 1
+      ins).
+    - Parágrafo/título/imagem: conta os trechos nos fragmentos; se o bloco
+      não tem fragmentos nem linhas (ex.: imagem só com marcador), usa o tipo
+      do bloco (INSERT/DELETE) como 1 trecho.
+    """
+    ins = dele = 0
+    if block.rows:
+        for idx, row in enumerate(block.rows):
+            rop = block.row_ops[idx] if idx < len(block.row_ops) else "equal"
+            if rop == "insert":
+                ins += 1
+                continue
+            if rop == "delete":
+                dele += 1
+                continue
+            for cell in row:  # cada célula é uma lista de fragmentos
+                ci, cd = _count_fragment_runs(cell)
+                ins += ci
+                dele += cd
+        return ins, dele
+
+    if block.fragments:
+        return _count_fragment_runs(block.fragments)
+
+    # Bloco sem texto marcável (ex.: imagem): usa o tipo do bloco.
+    if block.change_type == ChangeType.INSERT:
+        return 1, 0
+    if block.change_type == ChangeType.DELETE:
+        return 0, 1
+    return 0, 0
+
+
+def _build_stats(
+    changes: List[Change],
+    compare_blocks: List[Block],
+    render_blocks: Optional[List["RenderBlock"]] = None,
+) -> Stats:
     stats = Stats()
     by_category: Dict[str, int] = {}
 
+    # Categorias, movimentações, modificações e páginas: por Change (bloco).
     changed_pages: set = set()
     for change in changes:
         cat_key = change.category.value
         by_category[cat_key] = by_category.get(cat_key, 0) + 1
 
-        if change.change_type == ChangeType.INSERT:
-            stats.insertions += 1
-        elif change.change_type == ChangeType.DELETE:
-            stats.deletions += 1
-        elif change.change_type in (ChangeType.MOVE, ChangeType.MOVE_MODIFY):
+        if change.change_type in (ChangeType.MOVE, ChangeType.MOVE_MODIFY):
             stats.moves += 1
         elif change.change_type == ChangeType.MODIFY:
             stats.modifications += 1
@@ -703,6 +760,16 @@ def _build_stats(changes: List[Change], compare_blocks: List[Block]) -> Stats:
 
         if change.page_compare is not None:
             changed_pages.add(change.page_compare)
+
+    # Inserções/exclusões: TRECHOS CONTÍNUOS marcados no redline (inclui inline,
+    # células e linhas de tabela) — não só parágrafos inteiros. Blocos movidos
+    # contam só como movimentação, sem inflar ins/del.
+    for block in render_blocks or ():
+        if block.change_type in (ChangeType.MOVE, ChangeType.MOVE_MODIFY):
+            continue
+        bi, bd = _count_block_runs(block)
+        stats.insertions += bi
+        stats.deletions += bd
 
     # Total do Summary = inserções + exclusões + movimentações.
     stats.total_changes = stats.insertions + stats.deletions + stats.moves

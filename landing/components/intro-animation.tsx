@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 
-const LETTERS = ["d", "i", "f", "f", "A", "I"]
+const LETTERS = ["D", "i", "f", "f", "A", "I"]
 
 const LETTER_IN_STAGGER  = 90    // ms between each letter appearing
 const LETTER_IN_DUR      = 700   // duration of each letter appear transition
@@ -54,7 +54,7 @@ export function IntroAnimation({ onDone }: { onDone: () => void }) {
         }}
       />
 
-      {/* Brand letters → diffAI */}
+      {/* Brand letters → DiffAI */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="flex" style={{ gap: "0.06em" }}>
           {LETTERS.map((letter, i) => {

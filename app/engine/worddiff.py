@@ -34,6 +34,17 @@ _WORD_CHANGE_MAX = 0.30
 # -e -ção…) em vez de uma troca limpa de palavra.
 _CHAR_EQUAL_MIN = 3
 
+# Tokens com dígito (valores, percentuais, datas, nºs de cláusula/lei) NUNCA
+# recebem marca fina de caractere — a marcação dígito a dígito ("R$ 12.06.500"
+# "20256") é ilegível. O token antigo sai inteiro e o novo entra inteiro
+# (relatório de QA, testes 01–20). Só afeta números; texto segue a regra 30%.
+_DIGIT_RE = re.compile(r"\d")
+
+
+def _has_digit(text: str) -> bool:
+    return bool(_DIGIT_RE.search(text))
+
+
 Opcode = Tuple[str, int, int, int, int]
 
 
@@ -322,10 +333,18 @@ def _refine_replace(
 
     scored = []
     for oi, ou in enumerate(old_units):
+        o_num = _has_digit(ou.word.text)
         for ni, nu in enumerate(new_units):
-            ratio = _word_change_ratio(ou.word.text, nu.word.text)
-            if ratio <= _WORD_CHANGE_MAX:
-                scored.append((ratio, oi, ni))
+            n_num = _has_digit(nu.word.text)
+            if o_num and n_num:
+                # Dois números: pareiam por POSIÇÃO (troca inteira, sem char).
+                scored.append((0.0, oi, ni))
+            elif o_num or n_num:
+                continue  # número vs palavra: não pareia → troca inteira
+            else:
+                ratio = _word_change_ratio(ou.word.text, nu.word.text)
+                if ratio <= _WORD_CHANGE_MAX:
+                    scored.append((ratio, oi, ni))
     scored.sort(key=lambda item: (item[0], item[1], item[2]))
 
     pair_of_old: dict = {}
@@ -340,6 +359,11 @@ def _refine_replace(
         pair_of_old[oi] = ni
         pair_of_new[ni] = oi
 
+    # Nenhum par: replace inteiro na ordem convencional (delete antigo → insert
+    # novo). Devolver None deixa o fallback do worddiff_runs cuidar disso.
+    if not pair_of_new:
+        return None
+
     frags: List[Fragment] = []
     next_old = 0
     for ni, nu in enumerate(new_units):
@@ -351,7 +375,13 @@ def _refine_replace(
                     frags.extend(_unit_fragments(old_units[next_old], "delete"))
                 next_old += 1
             next_old = max(next_old, oi + 1)
-            frags.extend(_pair_char_fragments(old_units[oi], nu))
+            # Par numérico: troca INTEIRA (delete antigo + insert novo), nunca
+            # dígito a dígito. Texto: marca fina pela regra dos 30%.
+            if _has_digit(old_units[oi].word.text) or _has_digit(nu.word.text):
+                frags.extend(_unit_fragments(old_units[oi], "delete"))
+                frags.extend(_unit_fragments(nu, "insert"))
+            else:
+                frags.extend(_pair_char_fragments(old_units[oi], nu))
         else:
             frags.extend(_unit_fragments(nu, "insert"))
     while next_old < len(old_units):

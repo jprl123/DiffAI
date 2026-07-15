@@ -141,7 +141,7 @@ export default function AccountPage() {
               </p>
               <p className="mt-2 text-emerald-900/80">
                 Once you have the key, sign in below (e-mail + key) or activate it in the
-                diffAI app.
+                DiffAI app.
               </p>
             </div>
           )}

@@ -13,6 +13,7 @@ padronizado, registrando warning no item.
 """
 from __future__ import annotations
 
+import copy
 import logging
 import os
 
@@ -55,6 +56,118 @@ def _ensure_text_layer(pdf_path: str) -> None:
     raise PdfConversionError(
         "PDF sem camada de texto (provavelmente escaneado): '%s'." % name
     )
+
+
+def _is_pseudo_table(tbl) -> bool:
+    """True se a tabela é, na verdade, um parágrafo corrido que o pdf2docx
+    envolveu em grade (uma palavra por célula).
+
+    Sinais: (a) uma única linha (qualquer largura), ou (b) muitas colunas
+    (≥5) com a maioria das células de uma só palavra — parágrafo que quebrou
+    em N linhas visuais vira tabela N×M. Tabelas REAIS destes contratos têm
+    poucas colunas (2–4) com cabeçalho + dados, então não disparam (b).
+    """
+    n_rows = len(tbl.rows)
+    if n_rows == 1:
+        return True
+    n_cols = len(tbl.columns)
+    if n_cols < 5:
+        return False
+    cells = [c.text.strip() for row in tbl.rows for c in row.cells]
+    nonempty = [txt for txt in cells if txt]
+    if not nonempty:
+        return False
+    single_word = sum(1 for txt in nonempty if " " not in txt)
+    return (single_word / len(nonempty)) >= 0.6
+
+
+def _flatten_pseudo_tables(docx_path: str) -> int:
+    """Achata pseudo-tabelas do pdf2docx em parágrafos (correção B3).
+
+    Em PDF nativo, o pdf2docx frequentemente envolve parágrafos corridos em
+    TABELAS com uma palavra por célula (ex.: "CONSIDERANDO | que | a |
+    CONTRATANTE | …"). Renderizadas, quebram a visualização (vãos enormes,
+    palavras partidas) e degradam o alinhamento do diff — e prendem trechos
+    do texto que deveriam ser comparados como prosa (contribui para B1).
+    Detectadas por ``_is_pseudo_table``, são desmontadas de volta a um
+    parágrafo, na ordem de leitura (linha a linha), preservando os runs.
+
+    Retorna quantas tabelas foram achatadas. Nunca levanta — falha aqui não
+    deve derrubar a conversão.
+    """
+    from docx import Document
+    from docx.oxml.ns import qn
+
+    try:
+        doc = Document(docx_path)
+    except Exception as exc:
+        logger.warning("Não foi possível reabrir '%s' p/ achatar tabelas (%s).",
+                       os.path.basename(docx_path), exc)
+        return 0
+
+    body = doc.element.body
+    flattened = 0
+    for tbl in list(doc.tables):
+        tbl_el = tbl._element
+        # Só tabelas de nível superior (evita mexer em tabelas aninhadas).
+        if tbl_el.getparent() is not body:
+            continue
+        if not _is_pseudo_table(tbl):
+            continue  # tabelas reais (grade de campos) permanecem intactas
+
+        new_p = tbl_el.makeelement(qn("w:p"), {})
+        ppr_copied = False
+        last_text = ""
+        # Ordem de leitura: todas as linhas, célula a célula (um parágrafo que
+        # quebrou em N linhas visuais virou uma tabela de N linhas).
+        cells_in_order = [c for r in tbl.rows for c in r.cells]
+        prev_cell_text = None
+        for cell in cells_in_order:
+            cell_text = cell.text.strip()
+            # O pdf2docx às vezes duplica palavras em células vizinhas
+            # ("tiverem | tiverem"). Como só achatamos PROSA (pseudo-tabela),
+            # célula idêntica à anterior é sempre artefato — descarta.
+            if cell_text and cell_text == prev_cell_text:
+                continue
+            if cell_text:
+                prev_cell_text = cell_text
+            for para in cell.paragraphs:
+                ppr = para._p.find(qn("w:pPr"))
+                if not ppr_copied and ppr is not None:
+                    ppr_copy = copy.deepcopy(ppr)
+                    # Remove o recuo herdado da célula (posição x no PDF) — num
+                    # parágrafo normal isso vira 1ª linha deslocada. Mantém
+                    # alinhamento/espaçamento.
+                    for ind in ppr_copy.findall(qn("w:ind")):
+                        ppr_copy.remove(ind)
+                    new_p.append(ppr_copy)
+                    ppr_copied = True
+                for run in para.runs:
+                    new_p.append(copy.deepcopy(run._element))
+                    last_text = run.text or last_text
+            # Garante um espaço entre células vizinhas se ainda não houver.
+            if last_text and not last_text.endswith((" ", "\t", " ")):
+                sep = new_p.makeelement(qn("w:r"), {})
+                t = sep.makeelement(qn("w:t"), {qn("xml:space"): "preserve"})
+                t.text = " "
+                sep.append(t)
+                new_p.append(sep)
+                last_text = " "
+
+        tbl_el.addprevious(new_p)
+        tbl_el.getparent().remove(tbl_el)
+        flattened += 1
+
+    if flattened:
+        try:
+            doc.save(docx_path)
+            logger.info("Pseudo-tabelas achatadas em %s: %d",
+                        os.path.basename(docx_path), flattened)
+        except Exception as exc:
+            logger.warning("Falha ao salvar DOCX achatado '%s' (%s).",
+                           os.path.basename(docx_path), exc)
+            return 0
+    return flattened
 
 
 def convert_pdf_to_docx(pdf_path: str, docx_path: str) -> None:
@@ -103,4 +216,7 @@ def convert_pdf_to_docx(pdf_path: str, docx_path: str) -> None:
         raise PdfConversionError(
             "Conversão de '%s' não produziu DOCX válido." % os.path.basename(pdf_path)
         )
+    # Correção B3: desfaz as pseudo-tabelas (parágrafos corridos que o pdf2docx
+    # envolve em tabela) antes de o par seguir para extração/comparação.
+    _flatten_pseudo_tables(docx_path)
     logger.info("PDF convertido para DOCX: %s -> %s", pdf_path, docx_path)

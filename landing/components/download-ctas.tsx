@@ -124,7 +124,7 @@ export function DownloadSection() {
             </h3>
             <p className="text-sm text-black/50 mb-6 flex-1">
               {macReady
-                ? "Download the .zip, open it and drag diffAI.app into Applications. If macOS says the app is damaged, run in Terminal: xattr -cr /Applications/diffAI.app"
+                ? "Download the .zip, open it and drag DiffAI.app into Applications. If macOS says the app is damaged, run in Terminal: xattr -cr /Applications/DiffAI.app"
                 : "The Mac build is being prepared. Leave your e-mail and we'll send the link as soon as it ships."}
             </p>
             {macReady ? (
@@ -156,7 +156,7 @@ export function DownloadSection() {
               </>
             ) : (
               <a
-                href={`mailto:${SALES_EMAIL}?subject=Notify%20me%20when%20diffAI%20for%20Mac%20is%20ready`}
+                href={`mailto:${SALES_EMAIL}?subject=Notify%20me%20when%20DiffAI%20for%20Mac%20is%20ready`}
                 className={`${baseBtn} border border-black/15 text-black/70 hover:border-black/30`}
               >
                 Notify me by e-mail
@@ -186,7 +186,7 @@ export function DownloadSection() {
               </a>
             ) : (
               <a
-                href={`mailto:${SALES_EMAIL}?subject=Notify%20me%20when%20diffAI%20for%20Windows%20is%20ready`}
+                href={`mailto:${SALES_EMAIL}?subject=Notify%20me%20when%20DiffAI%20for%20Windows%20is%20ready`}
                 className={`${baseBtn} border border-black/15 text-black/70 hover:border-black/30`}
               >
                 Notify me by e-mail

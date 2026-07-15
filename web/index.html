@@ -1162,10 +1162,6 @@ h1, h2, h3 { letter-spacing: -0.01em; }
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
         <span class="nav-label" data-i18n="nav.history">Histórico</span>
       </button>
-      <button class="nav-item" id="nav-plans" data-tip="Planos" data-i18n-attr="data-tip:nav.plans">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12.4V5.5a2 2 0 0 1 2-2h6.9a2 2 0 0 1 1.4.6l6.3 6.3a2 2 0 0 1 0 2.8l-6.9 6.9a2 2 0 0 1-2.8 0l-6.3-6.3a2 2 0 0 1-.6-1.4z"/><circle cx="8.3" cy="8.3" r="1.2"/></svg>
-        <span class="nav-label" data-i18n="nav.plans">Planos</span>
-      </button>
     </nav>
 
     <div class="side-account-wrap">
@@ -1179,6 +1175,10 @@ h1, h2, h3 { letter-spacing: -0.01em; }
     </div>
 
     <div class="side-foot">
+      <button class="nav-item" id="nav-plans" data-tip="Planos" data-i18n-attr="data-tip:nav.plans">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12.4V5.5a2 2 0 0 1 2-2h6.9a2 2 0 0 1 1.4.6l6.3 6.3a2 2 0 0 1 0 2.8l-6.9 6.9a2 2 0 0 1-2.8 0l-6.3-6.3a2 2 0 0 1-.6-1.4z"/><circle cx="8.3" cy="8.3" r="1.2"/></svg>
+        <span class="nav-label" data-i18n="nav.plans">Planos</span>
+      </button>
       <button class="nav-item" id="btn-settings" data-tip="Configurações" data-i18n-attr="data-tip:foot.settings" aria-label="Configurações">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span class="nav-label" data-i18n="foot.settings">Configurações</span>
@@ -3926,8 +3926,8 @@ function buildHistoryRow(e) {
   row.appendChild(ico);
 
   var sub = el("div", { class: "hist-sub" });
-  var t = formatTime(e.at);
-  if (t) sub.appendChild(el("span", { text: t }));
+  var timeText = formatTime(e.at);
+  if (timeText) sub.appendChild(el("span", { text: timeText }));
   if (e.status === "ok") {
     var stats = e.stats || {};
     sub.appendChild(el("span", {},
