@@ -11,7 +11,7 @@ import difflib
 import logging
 import os
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -174,6 +174,99 @@ def _pair_by_content(
             base_name, compare_name, ratio * 100,
         )
     return result
+
+
+# Descoberta automática da pasta revisada a partir da pasta base:
+# palavras que sugerem "versão nova" no nome da pasta candidata…
+_COMPARE_DIR_HINTS = (
+    "revis", "nova", "novo", "atualizad", "final", "new", "updated",
+    "minuta", "draft", "v2", "v3",
+)
+# …e palavras que sugerem que a candidata é OUTRA pasta base (penaliza).
+_BASE_DIR_HINTS = ("base", "origin", "antig", "old", "anterior", "assinad")
+
+_SUGGEST_MAX_SIBLINGS = 40   # pastas irmãs examinadas no máximo
+_SUGGEST_MIN_SCORE = 0.2     # abaixo disso, melhor não chutar
+
+
+def find_compare_dir(base_dir: str) -> Optional[Dict[str, str]]:
+    """Sugere a pasta revisada correspondente a ``base_dir``.
+
+    Examina as pastas IRMÃS (mesmo diretório-pai) e ranqueia por:
+    cobertura de nomes (fração dos arquivos da base com stem normalizado
+    presente na candidata), dica no nome da pasta ("revisada", "nova",
+    "final"…), penalidade para nomes de pasta-base ("originais", "antiga")
+    e semelhança entre os nomes das duas pastas. 100% local e barato —
+    nenhum conteúdo de documento é lido.
+
+    Retorna ``{"path", "reason"}`` ou ``None`` quando nenhum candidato
+    passa do score mínimo (aí o usuário escolhe manualmente, como hoje).
+    """
+    if not base_dir or not os.path.isdir(base_dir):
+        return None
+    base_dir = os.path.abspath(base_dir)
+    parent = os.path.dirname(base_dir)
+    base_name = os.path.basename(base_dir)
+
+    try:
+        base_files = _list_candidate_files(base_dir)
+    except ValueError:
+        return None
+    if not base_files:
+        return None
+    base_stems = set(_index_by_stem(base_files).keys())
+
+    try:
+        entries = sorted(os.listdir(parent))
+    except OSError:
+        return None
+
+    best: Optional[Tuple[float, str, str]] = None  # (score, path, reason)
+    examined = 0
+    for name in entries:
+        if name == base_name or name.startswith("."):
+            continue
+        candidate = os.path.join(parent, name)
+        if not os.path.isdir(candidate):
+            continue
+        examined += 1
+        if examined > _SUGGEST_MAX_SIBLINGS:
+            break
+        try:
+            cand_files = _list_candidate_files(candidate)
+        except ValueError:
+            continue
+        if not cand_files:
+            continue
+
+        cand_stems = set(_index_by_stem(cand_files).keys())
+        coverage = len(base_stems & cand_stems) / len(base_stems)
+
+        low = name.casefold()
+        hint = 0.25 if any(h in low for h in _COMPARE_DIR_HINTS) else 0.0
+        anti = -0.30 if any(h in low for h in _BASE_DIR_HINTS) else 0.0
+        name_sim = 0.15 * difflib.SequenceMatcher(
+            a=base_name.casefold(), b=low, autojunk=False
+        ).ratio()
+
+        score = coverage + hint + anti + name_sim
+        if coverage >= 0.5:
+            reason = "os nomes dos arquivos batem com a pasta base"
+        elif hint > 0:
+            reason = "o nome da pasta sugere versão revisada"
+        else:
+            reason = "pasta irmã com arquivos compatíveis"
+
+        if score >= _SUGGEST_MIN_SCORE and (best is None or score > best[0]):
+            best = (score, candidate, reason)
+
+    if best is None:
+        return None
+    logger.info(
+        "Pasta revisada sugerida para '%s': '%s' (score %.2f)",
+        base_dir, best[1], best[0],
+    )
+    return {"path": best[1], "reason": best[2]}
 
 
 def pair_files_detailed(

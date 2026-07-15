@@ -3,6 +3,7 @@
 import {
   DOWNLOAD_URL_MAC,
   DOWNLOAD_URL_WINDOWS,
+  LIBREOFFICE_DOWNLOAD_URL,
   SALES_EMAIL,
   isDownloadReady,
 } from "@/lib/config"
@@ -127,12 +128,32 @@ export function DownloadSection() {
                 : "The Mac build is being prepared. Leave your e-mail and we'll send the link as soon as it ships."}
             </p>
             {macReady ? (
-              <a
-                href={DOWNLOAD_URL_MAC}
-                className={`${baseBtn} bg-[#111] text-white hover:bg-black/80`}
-              >
-                Download .zip
-              </a>
+              <>
+                <a
+                  href={DOWNLOAD_URL_MAC}
+                  className={`${baseBtn} bg-[#111] text-white hover:bg-black/80`}
+                >
+                  Download .zip
+                </a>
+                <div className="mt-5 pt-5 border-t border-black/[0.06]">
+                  <p className="text-[12px] text-black/45 leading-relaxed mb-3">
+                    <span className="text-black/60 font-medium">Note:</span> For
+                    redline PDFs that keep the original DOCX layout, also install{" "}
+                    <span className="text-black/70">LibreOffice</span> (free).
+                    Without it, the PDF uses a simplified layout; the editable
+                    DOCX redline still preserves formatting. The app will prompt
+                    you after install.
+                  </p>
+                  <a
+                    href={LIBREOFFICE_DOWNLOAD_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`${baseBtn} !py-2.5 border border-black/15 text-black/70 hover:border-black/30 hover:text-black w-full sm:w-auto`}
+                  >
+                    Download LibreOffice
+                  </a>
+                </div>
+              </>
             ) : (
               <a
                 href={`mailto:${SALES_EMAIL}?subject=Notify%20me%20when%20diffAI%20for%20Mac%20is%20ready`}

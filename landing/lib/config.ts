@@ -25,6 +25,10 @@ export const DOWNLOAD_URL_WINDOWS = (
 export const SALES_EMAIL =
   process.env.NEXT_PUBLIC_SALES_EMAIL ?? `vendas@${BRAND_DOMAIN}`
 
+/** Download oficial do LibreOffice (requerido no Mac para PDF redline fiel). */
+export const LIBREOFFICE_DOWNLOAD_URL =
+  "https://www.libreoffice.org/download/download-libreoffice/"
+
 export function isDownloadReady(url: string) {
   return Boolean(url) && !url.startsWith("#")
 }

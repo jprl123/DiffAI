@@ -430,7 +430,12 @@ class JobManager:
             try:
                 base_doc = load_document(load_base)
                 compare_doc = load_document(load_compare)
+                from app.compare_options import filter_document, filter_result
+
+                base_doc = filter_document(base_doc, options)
+                compare_doc = filter_document(compare_doc, options)
                 result = compare_documents(base_doc, compare_doc)
+                result = filter_result(result, options)
                 if load_base != base_path or load_compare != compare_path:
                     # Entradas passaram por cópia/conversão; caminhos exibidos
                     # são sempre os originais do usuário.
@@ -656,7 +661,9 @@ class JobManager:
                 warnings.append(
                     "PDF gerado com layout padronizado (a conversão fiel via "
                     "LibreOffice falhou ou o LibreOffice não está instalado). "
-                    "O DOCX redline preserva a formatação original."
+                    "Instale o LibreOffice (menu Configurações → PDF fiel) para "
+                    "PDF com o layout original. O DOCX redline já preserva a "
+                    "formatação."
                 )
                 write_redline_pdf = self._resolve("write_redline_pdf")
                 write_redline_pdf(result, pdf_path, changed_pages_only=False)

@@ -68,7 +68,11 @@ class TestEndToEnd(unittest.TestCase):
 
     def test_contract_docx_pipeline(self) -> None:
         result, base_path, revised_path = self._compare_pair(CONTRACT_NAME, CONTRACT_NAME)
-        self.assertGreaterEqual(result.stats.total_changes, 7)
+        expected_total = (
+            result.stats.insertions + result.stats.deletions + result.stats.moves
+        )
+        self.assertEqual(result.stats.total_changes, expected_total)
+        self.assertGreaterEqual(len(result.changes), 7)
         self.assertGreaterEqual(result.stats.content_changes, 4)
         self.assertGreaterEqual(result.stats.formatting_changes, 1)
         self.assertGreaterEqual(result.stats.noise_changes, 1)
@@ -108,7 +112,11 @@ class TestEndToEnd(unittest.TestCase):
 
     def test_policy_pdf_pipeline(self) -> None:
         result, _, _ = self._compare_pair(POLICY_NAME, POLICY_NAME)
-        self.assertGreaterEqual(result.stats.total_changes, 2)
+        self.assertEqual(
+            result.stats.total_changes,
+            result.stats.insertions + result.stats.deletions + result.stats.moves,
+        )
+        self.assertGreaterEqual(len(result.changes), 2)
         self.assertGreaterEqual(result.stats.content_changes, 1)
         self.assertTrue(len(result.render_blocks) > 0)
 
@@ -132,13 +140,21 @@ class TestEndToEnd(unittest.TestCase):
         self.assertEqual(len(proposal_pairs), 1)
 
         result, _, _ = self._compare_pair(PROPOSAL_BASE_NAME, "Proposta Comercial v2 final.docx")
-        self.assertGreaterEqual(result.stats.total_changes, 2)
+        self.assertEqual(
+            result.stats.total_changes,
+            result.stats.insertions + result.stats.deletions + result.stats.moves,
+        )
+        self.assertGreaterEqual(len(result.changes), 2)
         self.assertGreaterEqual(result.stats.content_changes, 2)
 
     def test_budget_xlsx_pipeline(self) -> None:
         result, base_path, revised_path = self._compare_pair(BUDGET_NAME, BUDGET_NAME)
-        self.assertGreaterEqual(result.stats.total_changes, 2)
+        self.assertEqual(
+            result.stats.total_changes,
+            result.stats.insertions + result.stats.deletions + result.stats.moves,
+        )
         self.assertGreaterEqual(result.stats.table_changes, 1)
+        self.assertGreaterEqual(len(result.changes), 1)
 
         out_dir = tempfile.mkdtemp(prefix="comparedocs-e2e-xlsx-")
         try:
@@ -193,7 +209,11 @@ class TestEndToEnd(unittest.TestCase):
         self.assertTrue(os.path.isfile(revised_path), "Fixture Rivio revisado ausente")
 
         result, _, _ = self._compare_pair_from_paths(base_path, revised_path)
-        self.assertGreaterEqual(result.stats.total_changes, 10)
+        self.assertEqual(
+            result.stats.total_changes,
+            result.stats.insertions + result.stats.deletions + result.stats.moves,
+        )
+        self.assertGreaterEqual(len(result.changes), 10)
         self.assertGreaterEqual(result.stats.content_changes, 10)
         # Ground truth verificado: o par Rivio tem 172 parágrafos idênticos
         # únicos e ZERO inversões de ordem — qualquer "movimentação" aqui é
@@ -232,7 +252,7 @@ class TestEndToEnd(unittest.TestCase):
             doc = DocxDocument(docx_path)
             texts = [p.text for p in doc.paragraphs]
             self.assertIn("Summary of Changes", texts)
-            self.assertIn("COMPARE DOCS", texts)
+            self.assertIn("DiffAI", texts)
             # A síntese vem DEPOIS do último parágrafo de conteúdo.
             summary_idx = texts.index("Summary of Changes")
             self.assertGreater(summary_idx, len(texts) // 2)
@@ -279,7 +299,14 @@ class TestEndToEnd(unittest.TestCase):
             self.assertEqual(entry["status"], "ok")
             self.assertEqual(entry["base_name"], PROPOSAL_BASE_NAME)
             self.assertIn("pdf", entry["outputs"])
-            self.assertGreaterEqual((entry["stats"] or {})["total_changes"], 1)
+            stats = entry["stats"] or {}
+            self.assertGreaterEqual(
+                int(stats.get("insertions", 0))
+                + int(stats.get("deletions", 0))
+                + int(stats.get("modifications", 0))
+                + int(stats.get("moves", 0)),
+                1,
+            )
 
             # Outra instância (novo processo/sessão) lê o mesmo arquivo e
             # reconhece os caminhos gerados — base do /api/open pós-restart.
@@ -476,6 +503,43 @@ class TestEndToEnd(unittest.TestCase):
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
+    def test_find_compare_dir_suggests_sibling(self) -> None:
+        """Pasta base definida → o app sugere a pasta irmã revisada sozinho."""
+        from docx import Document as DocxDocument
+
+        from app.batch import find_compare_dir
+
+        tmp = tempfile.mkdtemp(prefix="comparedocs-e2e-suggest-")
+        try:
+            base_dir = os.path.join(tmp, "Contratos originais")
+            rev_dir = os.path.join(tmp, "Contratos revisados")
+            other_dir = os.path.join(tmp, "Notas fiscais")
+            for d in (base_dir, rev_dir, other_dir):
+                os.makedirs(d)
+
+            def make(path: str) -> None:
+                doc = DocxDocument()
+                doc.add_paragraph("Cláusula única de teste.")
+                doc.save(path)
+
+            make(os.path.join(base_dir, "Contrato Alfa.docx"))
+            make(os.path.join(base_dir, "Contrato Beta.docx"))
+            make(os.path.join(rev_dir, "Contrato Alfa v2.docx"))
+            make(os.path.join(rev_dir, "Contrato Beta final.docx"))
+            make(os.path.join(other_dir, "NF-1234.docx"))
+
+            suggestion = find_compare_dir(base_dir)
+            self.assertIsNotNone(suggestion)
+            self.assertEqual(suggestion["path"], rev_dir)
+
+            # Sem candidato plausível → None (sem chute).
+            lonely = os.path.join(tmp, "sozinho", "base")
+            os.makedirs(lonely)
+            make(os.path.join(lonely, "Doc.docx"))
+            self.assertIsNone(find_compare_dir(lonely))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
     def test_batch_pairing_by_content(self) -> None:
         """Arquivos com nomes SEM relação pareiam pelo conteúdo do texto."""
         from docx import Document as DocxDocument
@@ -519,6 +583,95 @@ class TestEndToEnd(unittest.TestCase):
             self.assertEqual(unmatched_base, ["despesas.docx"])
             self.assertEqual(unmatched_compare, [])
         finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_pdf_pair_uses_word_pipeline(self) -> None:
+        """Par PDF x PDF converte para DOCX e sai pelo pipeline fiel dos
+        documentos Word (redline in-place + PDF via LibreOffice) — decisão do
+        usuário 2026-07-13: fim do layout padronizado com cabeçalho
+        'Comparação de Documentos' para PDFs nato-digitais."""
+        import time
+
+        import fitz
+
+        manager = _isolated_manager()
+        base_path = os.path.join(BASE_DIR, POLICY_NAME)
+        revised_path = os.path.join(REVISED_DIR, POLICY_NAME)
+        out_dir = tempfile.mkdtemp(prefix="comparedocs-e2e-pdfpair-")
+        try:
+            job_id = manager.create_job(
+                [(base_path, revised_path)], {"output_dir": out_dir}
+            )
+            deadline = time.time() + 120.0
+            job = None
+            while time.time() < deadline:
+                job = manager.get_job(job_id)
+                if job and job.get("status") in ("done", "error"):
+                    break
+                time.sleep(0.2)
+
+            self.assertIsNotNone(job)
+            self.assertEqual(job["status"], "done")
+            item = job["items"][0]
+            self.assertEqual(item["status"], "ok")
+            # Pipeline fiel sempre entrega DOCX editável + PDF.
+            self.assertIn("docx", item["outputs"])
+            self.assertIn("pdf", item["outputs"])
+            self.assertTrue(os.path.isfile(item["outputs"]["docx"]))
+            self.assertTrue(os.path.isfile(item["outputs"]["pdf"]))
+            self.assertEqual(item["warnings"], [])
+
+            # O PDF fiel NÃO tem o cabeçalho do gerador padronizado antigo.
+            doc = fitz.open(item["outputs"]["pdf"])
+            first_page = doc[0].get_text()
+            doc.close()
+            self.assertNotIn("Comparação de Documentos", first_page)
+            self.assertNotIn("Legenda", first_page)
+        finally:
+            shutil.rmtree(out_dir, ignore_errors=True)
+
+    def test_pdf_pair_falls_back_when_conversion_fails(self) -> None:
+        """Se a conversão PDF→DOCX falhar (ex.: pdf2docx ausente), o par volta
+        ao gerador padronizado com warning — nunca erro."""
+        import time
+
+        from app.history import HistoryStore
+
+        def _broken_conversion(pdf_path: str, docx_path: str) -> None:
+            raise ValueError("conversão indisponível (teste)")
+
+        tmp = tempfile.mkdtemp(prefix="comparedocs-test-history-")
+        manager = JobManager(
+            pipeline={"convert_pdf_to_docx": _broken_conversion},
+            history_store=HistoryStore(path=os.path.join(tmp, "h.json")),
+        )
+        base_path = os.path.join(BASE_DIR, POLICY_NAME)
+        revised_path = os.path.join(REVISED_DIR, POLICY_NAME)
+        out_dir = tempfile.mkdtemp(prefix="comparedocs-e2e-pdffb-")
+        try:
+            job_id = manager.create_job(
+                [(base_path, revised_path)], {"output_dir": out_dir}
+            )
+            deadline = time.time() + 60.0
+            job = None
+            while time.time() < deadline:
+                job = manager.get_job(job_id)
+                if job and job.get("status") in ("done", "error"):
+                    break
+                time.sleep(0.2)
+
+            self.assertIsNotNone(job)
+            self.assertEqual(job["status"], "done")
+            item = job["items"][0]
+            self.assertEqual(item["status"], "ok")
+            self.assertIn("pdf", item["outputs"])
+            self.assertNotIn("docx", item["outputs"])
+            self.assertTrue(
+                any("padronizado" in w for w in item["warnings"]),
+                "warning de fallback ausente: %r" % item["warnings"],
+            )
+        finally:
+            shutil.rmtree(out_dir, ignore_errors=True)
             shutil.rmtree(tmp, ignore_errors=True)
 
     def test_job_manager_integration(self) -> None:

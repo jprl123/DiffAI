@@ -302,6 +302,11 @@ h1, h2, h3 { letter-spacing: -0.01em; }
   font-size: 12px; color: var(--muted); line-height: 1.35; padding-right: 24px;
 }
 .options-card .options-body { padding: 0 20px 18px; }
+.options-divider {
+  font-size: 11px; font-weight: 650; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted); margin: 14px 0 4px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
 .options-card .options-lead { color: var(--muted); font-size: 12.5px; margin-bottom: 16px; }
 
 .options-list {
@@ -871,6 +876,14 @@ h1, h2, h3 { letter-spacing: -0.01em; }
 .license-banner .lb-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .license-banner.warn { border-color: var(--warn); border-left-width: 3px; background: var(--warn-soft); }
 .license-banner.danger { border-color: var(--danger); border-left-width: 3px; background: var(--danger-soft); }
+.license-banner.info {
+  border-color: var(--border-strong); border-left-color: var(--accent);
+  border-left-width: 3px; background: var(--surface);
+}
+
+.lo-status-ok { color: var(--ok, #15803d); font-size: 13px; }
+.lo-status-warn { color: var(--warn); font-size: 13px; }
+.lo-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 
 .plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: stretch; }
 .plan-card {
@@ -928,6 +941,32 @@ h1, h2, h3 { letter-spacing: -0.01em; }
 .trial-meter .tm-fill.low { background: var(--warn); }
 
 .modal-sm { max-width: 420px; }
+.modal-md { max-width: 520px; }
+.setup-section { margin-top: 18px; }
+.setup-section h3 {
+  font-size: 13px; font-weight: 650; margin: 0 0 10px;
+  letter-spacing: -0.01em;
+}
+.setup-checks { display: flex; flex-direction: column; gap: 2px; }
+.setup-check {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 6px; border-radius: 8px; cursor: pointer;
+}
+.setup-check:hover { background: var(--surface-2); }
+.setup-check input { margin-top: 3px; accent-color: var(--accent); flex-shrink: 0; }
+.setup-check .setup-copy { display: flex; flex-direction: column; gap: 2px; }
+.setup-check .setup-title { font-size: 13.5px; font-weight: 550; color: var(--text); }
+.setup-check .setup-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
+.lang-choice-row { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.lang-choice-btn {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 14px 16px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--surface);
+  font-size: 14.5px; font-weight: 600; color: var(--text); text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.lang-choice-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+.lang-choice-btn .lang-sub { font-size: 12px; font-weight: 500; color: var(--muted); }
 .modal .field { margin-top: 14px; }
 .modal .field input[type="text"], .modal .field input[type="email"] {
   width: 100%; padding: 8px 12px; border-radius: 8px;
@@ -1162,6 +1201,8 @@ h1, h2, h3 { letter-spacing: -0.01em; }
 
       <!-- Banner global de licença -->
       <div class="license-banner" id="license-banner" hidden></div>
+      <!-- Aviso LibreOffice (PDF fiel) -->
+      <div class="license-banner info" id="libreoffice-banner" hidden></div>
 
       <!-- View: Comparar -->
       <section class="view" id="view-compare" aria-labelledby="hd-compare">
@@ -1240,6 +1281,75 @@ h1, h2, h3 { letter-spacing: -0.01em; }
             <span class="options-summary-hint" data-i18n="options.lead">Opcional — o PDF redline já sai ao clicar em Comparar</span>
           </summary>
           <div class="options-body">
+          <div class="options-list" id="compare-options-list">
+            <div class="option-row">
+              <div class="option-copy">
+                <div class="option-title" data-i18n="cmp.movesTitle">Detectar texto movido</div>
+                <div class="option-desc" data-i18n="cmp.movesDesc">Marca blocos relocados em verde, em vez de exclusão + inserção</div>
+              </div>
+              <label class="option-toggle">
+                <input type="checkbox" id="opt-detect-moves" checked>
+                <span class="track" aria-hidden="true"></span>
+                <span class="thumb" aria-hidden="true"></span>
+              </label>
+            </div>
+            <div class="option-row">
+              <div class="option-copy">
+                <div class="option-title" data-i18n="cmp.fmtTitle">Mudanças de formatação</div>
+                <div class="option-desc" data-i18n="cmp.fmtDesc">Negrito, itálico, sublinhado e estilo (sem mudança de texto)</div>
+              </div>
+              <label class="option-toggle">
+                <input type="checkbox" id="opt-include-formatting" checked>
+                <span class="track" aria-hidden="true"></span>
+                <span class="thumb" aria-hidden="true"></span>
+              </label>
+            </div>
+            <div class="option-row">
+              <div class="option-copy">
+                <div class="option-title" data-i18n="cmp.headersTitle">Cabeçalhos</div>
+                <div class="option-desc" data-i18n="cmp.headersDesc">Inclui o cabeçalho do documento na comparação</div>
+              </div>
+              <label class="option-toggle">
+                <input type="checkbox" id="opt-compare-headers" checked>
+                <span class="track" aria-hidden="true"></span>
+                <span class="thumb" aria-hidden="true"></span>
+              </label>
+            </div>
+            <div class="option-row">
+              <div class="option-copy">
+                <div class="option-title" data-i18n="cmp.footersTitle">Rodapés</div>
+                <div class="option-desc" data-i18n="cmp.footersDesc">Inclui o rodapé do documento na comparação</div>
+              </div>
+              <label class="option-toggle">
+                <input type="checkbox" id="opt-compare-footers" checked>
+                <span class="track" aria-hidden="true"></span>
+                <span class="thumb" aria-hidden="true"></span>
+              </label>
+            </div>
+            <div class="option-row">
+              <div class="option-copy">
+                <div class="option-title" data-i18n="cmp.tablesTitle">Tabelas</div>
+                <div class="option-desc" data-i18n="cmp.tablesDesc">Compara células e estrutura de tabelas</div>
+              </div>
+              <label class="option-toggle">
+                <input type="checkbox" id="opt-compare-tables" checked>
+                <span class="track" aria-hidden="true"></span>
+                <span class="thumb" aria-hidden="true"></span>
+              </label>
+            </div>
+            <div class="option-row">
+              <div class="option-copy">
+                <div class="option-title" data-i18n="cmp.imagesTitle">Imagens</div>
+                <div class="option-desc" data-i18n="cmp.imagesDesc">Detecta imagens inseridas, removidas ou trocadas</div>
+              </div>
+              <label class="option-toggle">
+                <input type="checkbox" id="opt-compare-images" checked>
+                <span class="track" aria-hidden="true"></span>
+                <span class="thumb" aria-hidden="true"></span>
+              </label>
+            </div>
+          </div>
+          <div class="options-divider" data-i18n="options.outputSection">Saídas adicionais</div>
           <div class="options-list">
             <div class="option-row">
               <div class="option-copy">
@@ -2196,6 +2306,12 @@ function collectOptions() {
     changed_pages_only: $("opt-changed-pages").checked,
     export_docx: $("opt-docx").checked,
     exec_summary: $("opt-exec-summary").checked,
+    detect_moves: $("opt-detect-moves").checked,
+    include_formatting: $("opt-include-formatting").checked,
+    compare_headers: $("opt-compare-headers").checked,
+    compare_footers: $("opt-compare-footers").checked,
+    compare_tables: $("opt-compare-tables").checked,
+    compare_images: $("opt-compare-images").checked,
     reports: reports,
     output_dir: outDir === "" ? null : outDir
   };
@@ -4112,6 +4228,77 @@ function renderLicenseBanner() {
   banner.hidden = true;
 }
 
+/* LibreOffice — status para PDF fiel */
+function refreshLibreOffice(opts) {
+  opts = opts || {};
+  return fetch("/api/system/libreoffice")
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      LIBREOFFICE_STATUS = data;
+      renderLibreOfficeBanner();
+      if (opts.onStatus) opts.onStatus(data);
+      return data;
+    })
+    .catch(function () {
+      LIBREOFFICE_STATUS = null;
+      renderLibreOfficeBanner();
+      return null;
+    });
+}
+
+function dismissLibreOfficeBanner() {
+  APP_SETTINGS.libreoffice_banner_dismissed = true;
+  renderLibreOfficeBanner();
+  fetch("/api/settings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ libreoffice_banner_dismissed: true })
+  }).catch(function () {});
+}
+
+function openLibreOfficeDownload() {
+  return fetch("/api/system/libreoffice/open-download", { method: "POST" })
+    .then(function (r) {
+      if (!r.ok) throw new Error("fail");
+      return r.json();
+    })
+    .catch(function () {
+      var url = (LIBREOFFICE_STATUS && LIBREOFFICE_STATUS.download_url) ||
+        "https://www.libreoffice.org/download/download-libreoffice/";
+      try { window.open(url, "_blank"); } catch (e) {
+        toast(t("lo.openFail"), "error");
+      }
+    });
+}
+
+function renderLibreOfficeBanner() {
+  var banner = $("libreoffice-banner");
+  if (!banner) return;
+  banner.textContent = "";
+  banner.className = "license-banner info";
+  var st = LIBREOFFICE_STATUS;
+  if (!st || st.installed || APP_SETTINGS.libreoffice_banner_dismissed) {
+    banner.hidden = true;
+    return;
+  }
+  banner.appendChild(el("span", { class: "lb-text" }, el("b", { text: t("lo.bannerMsg") })));
+  banner.appendChild(el("span", { class: "lb-actions" },
+    el("button", {
+      class: "btn-primary",
+      onclick: function () { openLibreOfficeDownload(); }
+    }, t("lo.bannerInstall")),
+    el("button", {
+      class: "btn",
+      onclick: function () { refreshLibreOffice(); }
+    }, t("settings.loCheck")),
+    el("button", {
+      class: "link-btn",
+      onclick: function () { dismissLibreOfficeBanner(); }
+    }, t("lo.bannerLater"))
+  ));
+  banner.hidden = false;
+}
+
 /* View Planos */
 function isCurrentPlan(plan) {
   var st = state.license.status;
@@ -4571,6 +4758,18 @@ var STRINGS = {
     "settings.defaults": "Recursos padrão",
     "settings.defaultsHint": "O que já vem ligado ao abrir o app. Você ainda pode alterar a cada comparação.",
     "settings.tutorial": "Tutorial", "settings.replayTutorial": "Rever tutorial",
+    "settings.loTitle": "PDF fiel (LibreOffice)",
+    "settings.loHint": "Para o PDF redline manter o layout do DOCX original, o LibreOffice precisa estar instalado. Sem ele, o PDF sai em layout padronizado; o DOCX redline continua fiel.",
+    "settings.loOk": "LibreOffice encontrado",
+    "settings.loMissing": "LibreOffice não encontrado",
+    "settings.loInstall": "Baixar LibreOffice",
+    "settings.loCheck": "Verificar de novo",
+    "settings.loChecking": "Verificando…",
+    "lo.bannerMsg": "Para PDF redline com o layout original do documento, instale o LibreOffice (gratuito).",
+    "lo.bannerInstall": "Baixar LibreOffice",
+    "lo.bannerLater": "Agora não",
+    "lo.bannerOk": "LibreOffice detectado — PDF fiel disponível.",
+    "lo.openFail": "Não foi possível abrir a página de download.",
     "common.close": "Fechar",
     "tut.skip": "Pular", "tut.back": "Voltar", "tut.next": "Próximo", "tut.done": "Concluir",
     "tut.welcomeTitle": "Bem-vindo ao diffAI",
@@ -4733,7 +4932,26 @@ var STRINGS = {
     "action.notePreview": "Veja a prévia dos pares antes de processar o lote.",
     "action.noteSelectFolders": "Selecione as duas pastas para começar.",
     "langModal.title": "Escolha o idioma",
-    "langModal.subtitle": "Você pode trocar depois em Configurações, na barra lateral.",
+    "langModal.subtitle": "Só pedimos isso na primeira vez. Depois você troca em Configurações.",
+    "setup.title": "Opções de comparação",
+    "setup.subtitle": "Escolha o que incluir na análise. Você pode mudar a qualquer momento nas opções adicionais.",
+    "setup.sectionCompare": "O que comparar",
+    "setup.done": "Continuar",
+    "cmp.movesTitle": "Detectar texto movido",
+    "cmp.movesDesc": "Marca blocos relocados em verde, em vez de exclusão + inserção",
+    "cmp.fmtTitle": "Mudanças de formatação",
+    "cmp.fmtDesc": "Negrito, itálico, sublinhado e estilo (sem mudança de texto)",
+    "cmp.headersTitle": "Cabeçalhos",
+    "cmp.headersDesc": "Inclui o cabeçalho do documento na comparação",
+    "cmp.footersTitle": "Rodapés",
+    "cmp.footersDesc": "Inclui o rodapé do documento na comparação",
+    "cmp.tablesTitle": "Tabelas",
+    "cmp.tablesDesc": "Compara células e estrutura de tabelas",
+    "cmp.imagesTitle": "Imagens",
+    "cmp.imagesDesc": "Detecta imagens inseridas, removidas ou trocadas",
+    "options.outputSection": "Saídas adicionais",
+    "settings.compare": "Comparação",
+    "settings.compareHint": "O que o motor analisa em cada par de documentos.",
     "type.insert": "Inserção", "type.delete": "Exclusão", "type.modify": "Modificação",
     "type.move": "Movimentação", "type.moveModify": "Mov. + modificação", "type.equal": "Sem alteração",
     "cat.content": "Conteúdo", "cat.formatting": "Formatação", "cat.noise": "Rotineiras",
@@ -4804,6 +5022,18 @@ var STRINGS = {
     "settings.defaults": "Default features",
     "settings.defaultsHint": "What's enabled when you open the app. You can still change it per comparison.",
     "settings.tutorial": "Tutorial", "settings.replayTutorial": "Replay tutorial",
+    "settings.loTitle": "Faithful PDF (LibreOffice)",
+    "settings.loHint": "For the redline PDF to keep the original DOCX layout, LibreOffice must be installed. Without it, the PDF uses a standardized layout; the redline DOCX stays faithful.",
+    "settings.loOk": "LibreOffice found",
+    "settings.loMissing": "LibreOffice not found",
+    "settings.loInstall": "Download LibreOffice",
+    "settings.loCheck": "Check again",
+    "settings.loChecking": "Checking…",
+    "lo.bannerMsg": "For a redline PDF that keeps the original document layout, install LibreOffice (free).",
+    "lo.bannerInstall": "Download LibreOffice",
+    "lo.bannerLater": "Not now",
+    "lo.bannerOk": "LibreOffice detected — faithful PDF available.",
+    "lo.openFail": "Could not open the download page.",
     "common.close": "Close",
     "tut.skip": "Skip", "tut.back": "Back", "tut.next": "Next", "tut.done": "Done",
     "tut.welcomeTitle": "Welcome to diffAI",
@@ -4966,7 +5196,26 @@ var STRINGS = {
     "action.notePreview": "Review the pairs before processing the batch.",
     "action.noteSelectFolders": "Select both folders to start.",
     "langModal.title": "Choose your language",
-    "langModal.subtitle": "You can change it later in Settings, in the sidebar.",
+    "langModal.subtitle": "We only ask this once. You can change it later in Settings.",
+    "setup.title": "Comparison options",
+    "setup.subtitle": "Pick what to include in the analysis. You can change this anytime under additional options.",
+    "setup.sectionCompare": "What to compare",
+    "setup.done": "Continue",
+    "cmp.movesTitle": "Detect moved text",
+    "cmp.movesDesc": "Flag relocated blocks in green instead of delete + insert",
+    "cmp.fmtTitle": "Formatting changes",
+    "cmp.fmtDesc": "Bold, italic, underline and style (no text change)",
+    "cmp.headersTitle": "Headers",
+    "cmp.headersDesc": "Include document headers in the comparison",
+    "cmp.footersTitle": "Footers",
+    "cmp.footersDesc": "Include document footers in the comparison",
+    "cmp.tablesTitle": "Tables",
+    "cmp.tablesDesc": "Compare table cells and structure",
+    "cmp.imagesTitle": "Images",
+    "cmp.imagesDesc": "Detect inserted, removed or replaced images",
+    "options.outputSection": "Additional outputs",
+    "settings.compare": "Comparison",
+    "settings.compareHint": "What the engine analyzes in each document pair.",
     "type.insert": "Insertion", "type.delete": "Deletion", "type.modify": "Modification",
     "type.move": "Move", "type.moveModify": "Move + modify", "type.equal": "Unchanged",
     "cat.content": "Content", "cat.formatting": "Formatting", "cat.noise": "Routine",
@@ -5035,7 +5284,34 @@ var I18N = { lang: "pt" };
 var LANG_STORAGE_KEY = "compare-docs-lang";
 /* Espelho em memória de ~/.comparedocs/settings.json (idioma, onboarding,
    recursos padrão). Preenchido por initI18n; usado por Configurações. */
-var APP_SETTINGS = { language: null, onboarding_done: false, default_features: {} };
+var APP_SETTINGS = {
+  language: null,
+  onboarding_done: false,
+  compare_setup_done: false,
+  default_features: {},
+  compare_options: {},
+  libreoffice_banner_dismissed: false
+};
+
+var LIBREOFFICE_STATUS = null;
+
+var COMPARE_OPTION_MAP = {
+  detect_moves: "opt-detect-moves",
+  include_formatting: "opt-include-formatting",
+  compare_headers: "opt-compare-headers",
+  compare_footers: "opt-compare-footers",
+  compare_tables: "opt-compare-tables",
+  compare_images: "opt-compare-images"
+};
+
+var COMPARE_OPTION_DEFAULTS = {
+  detect_moves: true,
+  include_formatting: true,
+  compare_headers: true,
+  compare_footers: true,
+  compare_tables: true,
+  compare_images: true
+};
 
 function t(key) {
   var table = STRINGS[I18N.lang] || STRINGS.pt;
@@ -5075,6 +5351,8 @@ function setLanguage(lang, persist) {
     renderFolderDropzone("base"); renderFolderDropzone("compare");
     updateCompareButton();
     if (typeof renderHistory === "function") renderHistory();
+    if (typeof renderLibreOfficeBanner === "function") renderLibreOfficeBanner();
+    if (typeof renderLicenseBanner === "function") renderLicenseBanner();
   } catch (e) { /* chamado cedo demais no boot — init cuida depois */ }
   if (persist) {
     fetch("/api/settings", {
@@ -5096,21 +5374,26 @@ function openLangChooser(forced) {
     head.appendChild(x);
   }
   var sub = el("p", { class: "muted", text: t("langModal.subtitle") });
-  var actions = el("div", { class: "modal-actions", style: "gap:10px" });
-  ["pt", "en"].forEach(function (lang) {
-    var label = lang === "pt" ? "Português (BR)" : "English";
-    actions.appendChild(el("button", {
-      class: "btn-primary", style: "flex:1;justify-content:center",
+  var choices = el("div", { class: "lang-choice-row" });
+  [
+    { code: "pt", label: "Português (BR)", hint: "Interface e textos em português" },
+    { code: "en", label: "English", hint: "UI and copy in English" }
+  ].forEach(function (item) {
+    var btn = el("button", {
+      class: "lang-choice-btn",
       onclick: function () {
-        setLanguage(lang, true);
+        setLanguage(item.code, true);
         backdrop.remove();
-        if (forced) maybeOnboard();   /* 1ª execução: idioma → tutorial */
+        if (forced) continueFirstRun();
       }
-    }, label));
+    });
+    btn.appendChild(el("span", { text: item.label }));
+    btn.appendChild(el("span", { class: "lang-sub", text: item.hint }));
+    choices.appendChild(btn);
   });
   modal.appendChild(head);
   modal.appendChild(sub);
-  modal.appendChild(actions);
+  modal.appendChild(choices);
   backdrop.appendChild(modal);
   if (!forced) {
     backdrop.addEventListener("click", function (ev) {
@@ -5118,6 +5401,115 @@ function openLangChooser(forced) {
     });
   }
   document.body.appendChild(backdrop);
+}
+
+function applyCompareOptions(options) {
+  var src = options || COMPARE_OPTION_DEFAULTS;
+  Object.keys(COMPARE_OPTION_MAP).forEach(function (key) {
+    var elx = $(COMPARE_OPTION_MAP[key]);
+    if (!elx) return;
+    elx.checked = typeof src[key] === "boolean" ? src[key] : !!COMPARE_OPTION_DEFAULTS[key];
+  });
+}
+
+function readCompareOptionsFromUI() {
+  var out = {};
+  Object.keys(COMPARE_OPTION_MAP).forEach(function (key) {
+    var elx = $(COMPARE_OPTION_MAP[key]);
+    out[key] = elx ? !!elx.checked : !!COMPARE_OPTION_DEFAULTS[key];
+  });
+  return out;
+}
+
+function persistCompareOptions(patch, markSetupDone) {
+  APP_SETTINGS.compare_options = Object.assign(
+    {}, COMPARE_OPTION_DEFAULTS, APP_SETTINGS.compare_options || {}, patch || {}
+  );
+  var body = { compare_options: APP_SETTINGS.compare_options };
+  if (markSetupDone) {
+    APP_SETTINGS.compare_setup_done = true;
+    body.compare_setup_done = true;
+  }
+  fetch("/api/settings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  }).catch(function () { /* best-effort */ });
+}
+
+function openCompareSetup(forced) {
+  if ($("compare-setup-modal")) return;
+  applyCompareOptions(APP_SETTINGS.compare_options);
+
+  var backdrop = el("div", { class: "modal-backdrop", id: "compare-setup-modal" });
+  var modal = el("div", { class: "modal modal-md", role: "dialog", "aria-modal": "true" });
+  var head = el("div", { class: "modal-head" }, el("h2", { text: t("setup.title") }));
+  if (!forced) {
+    var x = el("button", { class: "t-close", "aria-label": t("common.close"), onclick: function () { backdrop.remove(); } });
+    x.appendChild(svgIcon("x", 14));
+    head.appendChild(x);
+  }
+  modal.appendChild(head);
+  modal.appendChild(el("p", { class: "muted", text: t("setup.subtitle") }));
+
+  var section = el("div", { class: "setup-section" });
+  section.appendChild(el("h3", { text: t("setup.sectionCompare") }));
+  var checks = el("div", { class: "setup-checks" });
+  var rows = [
+    ["detect_moves", "cmp.movesTitle", "cmp.movesDesc"],
+    ["include_formatting", "cmp.fmtTitle", "cmp.fmtDesc"],
+    ["compare_headers", "cmp.headersTitle", "cmp.headersDesc"],
+    ["compare_footers", "cmp.footersTitle", "cmp.footersDesc"],
+    ["compare_tables", "cmp.tablesTitle", "cmp.tablesDesc"],
+    ["compare_images", "cmp.imagesTitle", "cmp.imagesDesc"]
+  ];
+  var draft = Object.assign({}, COMPARE_OPTION_DEFAULTS, APP_SETTINGS.compare_options || {});
+  rows.forEach(function (row) {
+    var key = row[0];
+    var input = el("input", { type: "checkbox" });
+    input.checked = !!draft[key];
+    input.addEventListener("change", function () { draft[key] = input.checked; });
+    var label = el("label", { class: "setup-check" },
+      input,
+      el("div", { class: "setup-copy" },
+        el("div", { class: "setup-title", text: t(row[1]) }),
+        el("div", { class: "setup-desc", text: t(row[2]) })
+      )
+    );
+    checks.appendChild(label);
+  });
+  section.appendChild(checks);
+  modal.appendChild(section);
+
+  var actions = el("div", { class: "modal-actions", style: "margin-top:18px;justify-content:flex-end" });
+  actions.appendChild(el("button", {
+    class: "btn-primary",
+    onclick: function () {
+      applyCompareOptions(draft);
+      persistCompareOptions(draft, true);
+      backdrop.remove();
+    }
+  }, t("setup.done")));
+  modal.appendChild(actions);
+
+  backdrop.appendChild(modal);
+  if (!forced) {
+    backdrop.addEventListener("click", function (ev) {
+      if (ev.target === backdrop) backdrop.remove();
+    });
+  }
+  document.body.appendChild(backdrop);
+}
+
+function continueFirstRun() {
+  /* Ordem: idioma → tutorial → opções de comparação. */
+  if (!APP_SETTINGS.onboarding_done) {
+    maybeOnboard();
+    return;
+  }
+  if (!APP_SETTINGS.compare_setup_done) {
+    openCompareSetup(true);
+  }
 }
 
 function applyDefaultFeatures(features) {
@@ -5143,17 +5535,23 @@ function initI18n() {
   /* Fonte de verdade: o servidor. Decide idioma efetivo e primeira execução. */
   fetch("/api/settings").then(function (r) { return r.ok ? r.json() : null; })
     .then(function (data) {
-      if (!data) return;
+      if (!data) {
+        openLangChooser(true);
+        return;
+      }
       APP_SETTINGS = data;
       applyDefaultFeatures(data.default_features);
+      applyCompareOptions(data.compare_options);
       if (data.language === "pt" || data.language === "en") {
         setLanguage(data.language, false);
-        maybeOnboard();          /* idioma já escolhido → tutorial se 1ª vez */
+        continueFirstRun();
       } else {
-        openLangChooser(true);   /* 1ª execução: escolhe idioma e depois tutorial */
+        openLangChooser(true);
       }
     })
-    .catch(function () { /* offline/local: segue com o cache */ });
+    .catch(function () {
+      openLangChooser(true);
+    });
 }
 
 /* Dispara o tutorial guiado se ainda não foi concluído (1ª execução). */
@@ -5198,10 +5596,35 @@ function settingsToggleRow(featKey, titleKey, descKey) {
   );
 }
 
+function settingsCompareToggleRow(optKey, titleKey, descKey) {
+  var input = el("input", { type: "checkbox" });
+  var cur = Object.assign({}, COMPARE_OPTION_DEFAULTS, APP_SETTINGS.compare_options || {});
+  input.checked = !!cur[optKey];
+  input.addEventListener("change", function () {
+    var patch = {};
+    patch[optKey] = input.checked;
+    applyCompareOptions(Object.assign({}, cur, patch));
+    persistCompareOptions(patch, false);
+    cur[optKey] = input.checked;
+  });
+  var toggle = el("label", { class: "option-toggle" },
+    input,
+    el("span", { class: "track", "aria-hidden": "true" }),
+    el("span", { class: "thumb", "aria-hidden": "true" })
+  );
+  return el("div", { class: "option-row" },
+    el("div", { class: "option-copy" },
+      el("div", { class: "option-title", text: t(titleKey) }),
+      el("div", { class: "option-desc", text: t(descKey) })
+    ),
+    toggle
+  );
+}
+
 function openSettings() {
   if ($("settings-modal")) return;
   var backdrop = el("div", { class: "modal-backdrop", id: "settings-modal" });
-  var modal = el("div", { class: "modal modal-sm", role: "dialog", "aria-modal": "true" });
+  var modal = el("div", { class: "modal modal-md", role: "dialog", "aria-modal": "true" });
 
   var closeBtn = el("button", { class: "icon-btn", "aria-label": t("common.close"), onclick: function () { backdrop.remove(); } });
   closeBtn.appendChild(svgIcon("x", 13));
@@ -5223,6 +5646,18 @@ function openSettings() {
   });
   modal.appendChild(langRow);
 
+  /* O que comparar */
+  modal.appendChild(el("h3", { text: t("settings.compare") }));
+  modal.appendChild(el("p", { class: "muted", text: t("settings.compareHint") }));
+  modal.appendChild(el("div", { class: "options-list" },
+    settingsCompareToggleRow("detect_moves", "cmp.movesTitle", "cmp.movesDesc"),
+    settingsCompareToggleRow("include_formatting", "cmp.fmtTitle", "cmp.fmtDesc"),
+    settingsCompareToggleRow("compare_headers", "cmp.headersTitle", "cmp.headersDesc"),
+    settingsCompareToggleRow("compare_footers", "cmp.footersTitle", "cmp.footersDesc"),
+    settingsCompareToggleRow("compare_tables", "cmp.tablesTitle", "cmp.tablesDesc"),
+    settingsCompareToggleRow("compare_images", "cmp.imagesTitle", "cmp.imagesDesc")
+  ));
+
   /* Recursos padrão (todos off por padrão; aceite de revisões NÃO entra aqui). */
   modal.appendChild(el("h3", { text: t("settings.defaults") }));
   modal.appendChild(el("p", { class: "muted", text: t("settings.defaultsHint") }));
@@ -5231,6 +5666,56 @@ function openSettings() {
     settingsToggleRow("export_docx", "opt.docxTitle", "opt.docxDesc"),
     settingsToggleRow("exec_summary", "opt.execTitle", "opt.execDesc")
   ));
+
+  /* PDF fiel / LibreOffice */
+  modal.appendChild(el("h3", { text: t("settings.loTitle") }));
+  modal.appendChild(el("p", { class: "muted", text: t("settings.loHint") }));
+  var loStatus = el("p", { class: "lo-status-warn", text: t("settings.loChecking") });
+  var loActions = el("div", { class: "lo-actions" });
+  var installBtn = el("button", {
+    class: "btn-primary",
+    onclick: function () { openLibreOfficeDownload(); }
+  }, t("settings.loInstall"));
+  var checkBtn = el("button", {
+    class: "btn",
+    onclick: function () {
+      loStatus.textContent = t("settings.loChecking");
+      loStatus.className = "lo-status-warn";
+      refreshLibreOffice({
+        onStatus: function (data) { paintLo(data); }
+      });
+    }
+  }, t("settings.loCheck"));
+  loActions.appendChild(installBtn);
+  loActions.appendChild(checkBtn);
+  modal.appendChild(loStatus);
+  modal.appendChild(loActions);
+
+  function paintLo(data) {
+    if (!data) {
+      loStatus.className = "lo-status-warn";
+      loStatus.textContent = t("settings.loMissing");
+      return;
+    }
+    if (data.installed) {
+      loStatus.className = "lo-status-ok";
+      loStatus.textContent = t("settings.loOk") +
+        (data.version ? " — " + data.version : "");
+      if (APP_SETTINGS.libreoffice_banner_dismissed) {
+        APP_SETTINGS.libreoffice_banner_dismissed = false;
+        fetch("/api/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ libreoffice_banner_dismissed: false })
+        }).catch(function () {});
+      }
+    } else {
+      loStatus.className = "lo-status-warn";
+      loStatus.textContent = t("settings.loMissing");
+    }
+  }
+  if (LIBREOFFICE_STATUS) paintLo(LIBREOFFICE_STATUS);
+  else refreshLibreOffice({ onStatus: paintLo });
 
   /* Tutorial */
   modal.appendChild(el("h3", { text: t("settings.tutorial") }));
@@ -5291,6 +5776,10 @@ function endTutorial(markDone) {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ onboarding_done: true })
     }).catch(function () {});
+  }
+  /* Depois do tutorial (1ª vez): modal de opções de comparação. */
+  if (markDone && !APP_SETTINGS.compare_setup_done) {
+    setTimeout(function () { openCompareSetup(true); }, 200);
   }
 }
 
@@ -5430,6 +5919,16 @@ function init() {
     $("report-sub").hidden = !$("opt-report").checked;
   });
 
+  Object.keys(COMPARE_OPTION_MAP).forEach(function (key) {
+    var elx = $(COMPARE_OPTION_MAP[key]);
+    if (!elx) return;
+    elx.addEventListener("change", function () {
+      var patch = {};
+      patch[key] = elx.checked;
+      persistCompareOptions(patch, false);
+    });
+  });
+
   /* Histórico: busca + filtros */
   $("hist-search").addEventListener("input", function (ev) {
     state.history.search = ev.target.value;
@@ -5463,6 +5962,7 @@ function init() {
   updateCompareButton();
   renderSideAccount();       /* estado neutro até a resposta da API */
   refreshLicense();          /* estado global de licença no boot */
+  refreshLibreOffice();      /* aviso PDF fiel se LibreOffice ausente */
   loadHistory(true); /* pré-carrega em segundo plano */
 }
 

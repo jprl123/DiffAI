@@ -33,6 +33,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from app.licensing.device import device_fingerprint, device_name
 from app.licensing.pubkey import LICENSE_PUBLIC_KEY_B64
+from app.licensing import build_flags
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,11 @@ TRIAL_DAYS = 14
 TRIAL_COMPARISONS = 25
 TRIAL_BATCH_MAX = 5
 REVALIDATE_HOURS = 24
+
+# Build de teste: scripts/build_desktop.sh --unlimited
+_UNLIMITED = bool(getattr(build_flags, "UNLIMITED", False)) or (
+    os.environ.get("COMPAREDOCS_UNLIMITED", "").strip().lower() in ("1", "true", "yes")
+)
 
 _BASE_DIR = os.path.join(os.path.expanduser("~"), ".comparedocs")
 LICENSE_PATH = os.environ.get(
@@ -202,6 +208,20 @@ def _trial_status() -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 def status() -> Dict[str, Any]:
+    if _UNLIMITED:
+        return {
+            "state": "active",
+            "plan": "beta",
+            "email": "teste@diffai.app",
+            "key_hint": "BETA-UNLIMITED",
+            "expires_at": None,
+            "features": {"batch_max": None, "docx_export": True, "reports": True, "branding": True},
+            "device": device_fingerprint(),
+            "device_name": device_name(),
+            "last_validated_at": None,
+            "trial": None,
+            "unlimited_build": True,
+        }
     with _lock:
         stored = _load_license()
         if stored is not None:
@@ -350,6 +370,8 @@ def revalidate_if_due() -> None:
 
 def can_compare(pairs_count: int) -> Tuple[bool, Optional[str]]:
     """Gate de execução: (permitido, mensagem de erro pt-BR se bloqueado)."""
+    if _UNLIMITED:
+        return True, None
     st = status()
     if st["state"] == "active":
         batch_max = (st.get("features") or {}).get("batch_max")
@@ -383,6 +405,8 @@ def can_compare(pairs_count: int) -> Tuple[bool, Optional[str]]:
 
 def consume(pairs_count: int) -> None:
     """Debita comparações da avaliação (não faz nada com licença ativa)."""
+    if _UNLIMITED:
+        return
     with _lock:
         if _load_license() is not None:
             return

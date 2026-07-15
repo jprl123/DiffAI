@@ -674,7 +674,6 @@ def _diff_table_pair(
 
 def _build_stats(changes: List[Change], compare_blocks: List[Block]) -> Stats:
     stats = Stats()
-    stats.total_changes = len(changes)
     by_category: Dict[str, int] = {}
 
     changed_pages: set = set()
@@ -705,6 +704,8 @@ def _build_stats(changes: List[Change], compare_blocks: List[Block]) -> Stats:
         if change.page_compare is not None:
             changed_pages.add(change.page_compare)
 
+    # Total do Summary = inserções + exclusões + movimentações.
+    stats.total_changes = stats.insertions + stats.deletions + stats.moves
     stats.by_category = by_category
     stats.changed_pages = sorted(changed_pages)
     return stats

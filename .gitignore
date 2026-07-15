@@ -2,7 +2,8 @@
 __pycache__/
 *.py[cod]
 .DS_Store
-output/
+# Resultados gerados na raiz — NÃO ignora o pacote app/output/
+/output/
 tests/samples/
 tests/out/
 logs/*.log
@@ -39,3 +40,4 @@ node_modules/
 # Artefatos locais
 *.pdf
 !docs/**/*.pdf
+landing/public/images/hero-current.mp4

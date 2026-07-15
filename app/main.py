@@ -65,12 +65,16 @@ def _normalize_options(raw: Any) -> Dict[str, Any]:
     output_dir = raw.get("output_dir")
     if output_dir is not None and not str(output_dir).strip():
         output_dir = None
+    from app.compare_options import coerce_compare_options
+
+    cmp = coerce_compare_options(raw)
     return {
         "changed_pages_only": _parse_bool(raw.get("changed_pages_only")),
         "export_docx": _parse_bool(raw.get("export_docx")),
         "exec_summary": _parse_bool(raw.get("exec_summary")),
         "reports": _parse_reports(raw.get("reports")),
         "output_dir": str(output_dir) if output_dir else None,
+        **cmp,
     }
 
 
@@ -132,6 +136,21 @@ def logo_64_png() -> Any:
 @app.get("/api/health")
 def health() -> Dict[str, bool]:
     return {"ok": True}
+
+
+@app.get("/api/system/libreoffice")
+def libreoffice_status_route() -> Dict[str, Any]:
+    from app.output.docx_to_pdf import libreoffice_status
+
+    return libreoffice_status()
+
+
+@app.post("/api/system/libreoffice/open-download")
+def libreoffice_open_download() -> Dict[str, Any]:
+    from app.output.docx_to_pdf import open_libreoffice_download
+
+    url = open_libreoffice_download()
+    return {"ok": True, "url": url}
 
 
 # ---------------------------------------------------------------------------
@@ -220,15 +239,29 @@ async def compare_single(request: Request) -> Dict[str, str]:
                 status_code=400,
                 detail="Envie os dois arquivos: 'base_file' e 'compare_file'.",
             )
-        options = _normalize_options(
-            {
-                "changed_pages_only": form.get("changed_pages_only"),
-                "export_docx": form.get("export_docx"),
-                "exec_summary": form.get("exec_summary"),
-                "reports": form.get("reports"),
-                "output_dir": form.get("output_dir"),
-            }
-        )
+        options_raw = form.get("options")
+        if isinstance(options_raw, str) and options_raw.strip():
+            try:
+                import json as _json
+                options = _normalize_options(_json.loads(options_raw))
+            except (ValueError, TypeError):
+                options = _normalize_options({})
+        else:
+            options = _normalize_options(
+                {
+                    "changed_pages_only": form.get("changed_pages_only"),
+                    "export_docx": form.get("export_docx"),
+                    "exec_summary": form.get("exec_summary"),
+                    "reports": form.get("reports"),
+                    "output_dir": form.get("output_dir"),
+                    "detect_moves": form.get("detect_moves"),
+                    "include_formatting": form.get("include_formatting"),
+                    "compare_headers": form.get("compare_headers"),
+                    "compare_footers": form.get("compare_footers"),
+                    "compare_tables": form.get("compare_tables"),
+                    "compare_images": form.get("compare_images"),
+                }
+            )
         swap = _parse_bool(form.get("swap"))
         upload_root = tempfile.mkdtemp(prefix="comparedocs-upload-")
         base_path = await _save_upload(base_file, os.path.join(upload_root, "base"))
