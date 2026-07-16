@@ -174,7 +174,7 @@ export function DownloadSection() {
             </h3>
             <p className="text-sm text-black/50 mb-6 flex-1">
               {winReady
-                ? "Download the installer (.exe)."
+                ? "Download the .zip, extract it and run diffAI.exe. Windows 10/11 with WebView2 (usually preinstalled)."
                 : "The Windows build is being prepared. Same app, same license — only the installer differs."}
             </p>
             {winReady ? (
@@ -182,7 +182,7 @@ export function DownloadSection() {
                 href={DOWNLOAD_URL_WINDOWS}
                 className={`${baseBtn} bg-[#111] text-white hover:bg-black/80`}
               >
-                Download .exe
+                Download .zip
               </a>
             ) : (
               <a
