@@ -12,14 +12,14 @@ export const LICENSE_API = (
 
 /** URL do .dmg / .zip macOS. Vazio ou "#" = ainda não publicado. */
 export const DOWNLOAD_URL_MAC = (
-  process.env.NEXT_PUBLIC_DOWNLOAD_URL_MAC ??
-  process.env.NEXT_PUBLIC_DOWNLOAD_URL ??
+  process.env.NEXT_PUBLIC_DOWNLOAD_URL_MAC ||
+  process.env.NEXT_PUBLIC_DOWNLOAD_URL ||
   "https://github.com/jprl123/DiffAI/releases/download/v0.1.4/diffAI-mac.zip"
 ).trim()
 
 /** URL do ZIP Windows (pasta com .exe). Vazio = ainda não publicado. */
 export const DOWNLOAD_URL_WINDOWS = (
-  process.env.NEXT_PUBLIC_DOWNLOAD_URL_WINDOWS ??
+  process.env.NEXT_PUBLIC_DOWNLOAD_URL_WINDOWS ||
   "https://github.com/jprl123/DiffAI/releases/download/v0.1.4/diffAI-windows.zip"
 ).trim()
 
