@@ -170,6 +170,83 @@ def _flatten_pseudo_tables(docx_path: str) -> int:
     return flattened
 
 
+def _pdf_page_size_pt(pdf_path: str):
+    """Retorna (width_pt, height_pt) da página mais larga do PDF."""
+    import fitz
+
+    doc = fitz.open(pdf_path)
+    try:
+        if doc.page_count <= 0:
+            return None, None
+        best_w = best_h = 0.0
+        for pno in range(doc.page_count):
+            rect = doc.load_page(pno).rect
+            w, h = float(rect.width), float(rect.height)
+            if w > best_w:
+                best_w, best_h = w, h
+        if best_w > 0 and best_h > 0:
+            return best_w, best_h
+    finally:
+        doc.close()
+    return None, None
+
+
+def _apply_pdf_page_geometry(pdf_path: str, docx_path: str) -> None:
+    """Copia largura/altura/orientação do PDF para as seções do DOCX.
+
+    O pdf2docx costuma gravar A4 retrato mesmo quando o PDF é paisagem —
+    o redline in-place + LibreOffice então corta o conteúdo. Forçamos a
+    geometria real do PDF de origem.
+    """
+    from docx import Document
+    from docx.enum.section import WD_ORIENT
+    from docx.shared import Pt
+
+    width_pt, height_pt = _pdf_page_size_pt(pdf_path)
+    if not width_pt or not height_pt:
+        return
+
+    try:
+        doc = Document(docx_path)
+    except Exception as exc:
+        logger.warning(
+            "Não foi possível reabrir '%s' p/ aplicar geometria (%s).",
+            os.path.basename(docx_path), exc,
+        )
+        return
+
+    landscape = width_pt > height_pt
+    try:
+        for section in doc.sections:
+            section.orientation = (
+                WD_ORIENT.LANDSCAPE if landscape else WD_ORIENT.PORTRAIT
+            )
+            # python-docx troca width/height ao mudar orientation — redefine.
+            section.page_width = Pt(width_pt)
+            section.page_height = Pt(height_pt)
+            # Margens um pouco menores em paisagem para caber tabelas largas.
+            if landscape:
+                for attr in ("left_margin", "right_margin"):
+                    try:
+                        current = getattr(section, attr)
+                        if current and float(current.pt) > 54:  # > 0.75"
+                            setattr(section, attr, Pt(36))  # 0.5"
+                    except Exception:
+                        pass
+        doc.save(docx_path)
+        logger.info(
+            "Geometria PDF→DOCX: %.0f×%.0f pt (%s) em %s",
+            width_pt, height_pt,
+            "paisagem" if landscape else "retrato",
+            os.path.basename(docx_path),
+        )
+    except Exception as exc:
+        logger.warning(
+            "Falha ao aplicar geometria de página em '%s' (%s).",
+            os.path.basename(docx_path), exc,
+        )
+
+
 def convert_pdf_to_docx(pdf_path: str, docx_path: str) -> None:
     """Converte um PDF nato-digital em DOCX editável.
 
@@ -219,4 +296,6 @@ def convert_pdf_to_docx(pdf_path: str, docx_path: str) -> None:
     # Correção B3: desfaz as pseudo-tabelas (parágrafos corridos que o pdf2docx
     # envolve em tabela) antes de o par seguir para extração/comparação.
     _flatten_pseudo_tables(docx_path)
+    # Paisagem / tamanho real da página do PDF (pdf2docx tende a forçar A4).
+    _apply_pdf_page_geometry(pdf_path, docx_path)
     logger.info("PDF convertido para DOCX: %s -> %s", pdf_path, docx_path)

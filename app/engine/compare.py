@@ -69,11 +69,19 @@ def _preview_layout_from_doc(compare: Document, base: Document) -> dict:
     doc = compare if compare.default_font or compare.default_font_size_pt else base
     font = doc.default_font or "Times New Roman"
     size = doc.default_font_size_pt or 11.0
+    width = compare.page_width_pt or base.page_width_pt
+    height = compare.page_height_pt or base.page_height_pt
+    orientation = "portrait"
+    if width and height and float(width) > float(height):
+        orientation = "landscape"
     return {
         "font_family": font,
         "font_size_pt": size,
         "line_height": 1.15,
         "source_fmt": doc.fmt,
+        "page_width_pt": width,
+        "page_height_pt": height,
+        "orientation": orientation,
     }
 
 

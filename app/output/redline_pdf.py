@@ -38,7 +38,7 @@ from typing import Dict, List, Optional, Set
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import cm
 from reportlab.platypus import (
@@ -80,6 +80,29 @@ BOX_COLOR = "#9aa0a8"         # borda de placeholder de imagem
 
 _PAGE_MARGIN = 2 * cm
 _CONTENT_WIDTH = A4[0] - 2 * _PAGE_MARGIN
+# Largura efetiva durante um build (paisagem usa a largura real da página).
+_active_content_width = _CONTENT_WIDTH
+
+
+def _cw() -> float:
+    return _active_content_width
+
+
+def _pagesize_for_result(result: ComparisonResult):
+    """A4 retrato por padrão; paisagem (ou tamanho do PDF) quando o layout indica."""
+    layout = getattr(result, "preview_layout", None) or {}
+    try:
+        w = float(layout["page_width_pt"]) if layout.get("page_width_pt") else None
+        h = float(layout["page_height_pt"]) if layout.get("page_height_pt") else None
+    except (TypeError, ValueError):
+        w = h = None
+    if w and h and w > h:
+        # Limita a algo razoável (≈ A3 paisagem) para não estourar memória.
+        max_w, max_h = landscape(A4)[0] * 1.15, landscape(A4)[1] * 1.15
+        return (min(w, max_w), min(h, max_h))
+    if layout.get("orientation") == "landscape":
+        return landscape(A4)
+    return A4
 
 _MOVE_PREFIX = "⇄"       # ⇄
 _GROUP_SEPARATOR = "· · ·"   # · · ·
@@ -345,7 +368,7 @@ def _table_flowable(rb: RenderBlock, styles: Dict[str, ParagraphStyle]) -> Flowa
             line.append(_cell_paragraph(frags, rb, row_op, cell_style))
         data.append(line)
 
-    col_width = _CONTENT_WIDTH / float(n_cols)
+    col_width = _cw() / float(n_cols)
     table = Table(data, colWidths=[col_width] * n_cols, repeatRows=1)
 
     commands = [
@@ -464,7 +487,7 @@ def _header_flowables(
         img.drawHeight = max_h
         img.drawWidth = min(max_h * ratio, 4.5 * cm)
         header = RLTable(
-            [[title_par, img]], colWidths=[_CONTENT_WIDTH - 5 * cm, 5 * cm]
+            [[title_par, img]], colWidths=[_cw() - 5 * cm, 5 * cm]
         )
         header.setStyle(RLTableStyle([
             ("VALIGN", (0, 0), (-1, -1), "TOP"),
@@ -567,7 +590,7 @@ def _synthesis_flowables(
             Paragraph("<b>%s</b>" % _esc(label), styles["cell"]),
             Paragraph(_esc(value), styles["cell"]),
         ])
-    table = Table(data, colWidths=[6.5 * cm, _CONTENT_WIDTH - 6.5 * cm])
+    table = Table(data, colWidths=[6.5 * cm, _cw() - 6.5 * cm])
     table.setStyle(TableStyle([
         ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor(GRID_COLOR)),
         ("BACKGROUND", (0, 0), (0, -1), colors.HexColor(BG_TABLE_HEADER)),
@@ -633,17 +656,27 @@ def _build_story(
 
 def _build_pdf(result, target, changed_pages_only, registry):
     # type: (ComparisonResult, object, bool, Set[int]) -> None
-    doc = SimpleDocTemplate(
-        target,
-        pagesize=A4,
-        leftMargin=_PAGE_MARGIN,
-        rightMargin=_PAGE_MARGIN,
-        topMargin=1.8 * cm,
-        bottomMargin=1.8 * cm,
-        title="Comparação de Documentos",
-        author="diffAI",
-    )
-    doc.build(_build_story(result, changed_pages_only, registry))
+    global _active_content_width
+    pagesize = _pagesize_for_result(result)
+    margin = _PAGE_MARGIN
+    if pagesize[0] > pagesize[1]:
+        margin = 1.2 * cm  # paisagem: mais área útil para tabelas largas
+    prev_cw = _active_content_width
+    _active_content_width = pagesize[0] - 2 * margin
+    try:
+        doc = SimpleDocTemplate(
+            target,
+            pagesize=pagesize,
+            leftMargin=margin,
+            rightMargin=margin,
+            topMargin=1.8 * cm,
+            bottomMargin=1.8 * cm,
+            title="Comparação de Documentos",
+            author="DiffAI",
+        )
+        doc.build(_build_story(result, changed_pages_only, registry))
+    finally:
+        _active_content_width = prev_cw
 
 
 def _has_changes(result: ComparisonResult) -> bool:

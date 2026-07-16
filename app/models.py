@@ -140,6 +140,10 @@ class Document:
     title: str = ""
     default_font: Optional[str] = None
     default_font_size_pt: Optional[float] = None
+    # Dimensões da 1ª página (pontos tipográficos). Usadas na pré-visualização
+    # e no PDF padronizado para não "cortar" documentos paisagem.
+    page_width_pt: Optional[float] = None
+    page_height_pt: Optional[float] = None
 
 
 def assign_section_paths(doc: Document) -> None:

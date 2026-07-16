@@ -264,6 +264,22 @@ def extract_pdf(path: str) -> Document:
 
         page_count = doc.page_count
 
+        page_w = page_h = None
+        if page_count > 0:
+            try:
+                rect0 = doc.load_page(0).rect
+                page_w = float(rect0.width)
+                page_h = float(rect0.height)
+                # Se alguma página for mais larga (paisagem), usa a maior
+                # largura vista — evita cortar balanços mistos.
+                for pno in range(1, min(page_count, 8)):
+                    r = doc.load_page(pno).rect
+                    if float(r.width) > (page_w or 0):
+                        page_w = float(r.width)
+                        page_h = float(r.height)
+            except Exception:
+                page_w = page_h = None
+
         # Passe 1: coleta dados brutos de todas as páginas (texto + tabelas).
         raw_pages: List[Dict[str, Any]] = []
         page_tables: List[List[Any]] = []
@@ -346,6 +362,8 @@ def extract_pdf(path: str) -> Document:
             blocks=blocks,
             page_count=page_count,
             title=title,
+            page_width_pt=page_w,
+            page_height_pt=page_h,
         )
     finally:
         doc.close()

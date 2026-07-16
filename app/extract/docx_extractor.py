@@ -627,6 +627,19 @@ def _header_footer_blocks(docx_doc) -> List[Block]:
     return collected
 
 
+def _page_size_pt(docx_doc) -> tuple:
+    """Largura × altura da 1ª seção em pontos tipográficos."""
+    try:
+        section = docx_doc.sections[0]
+        width = float(section.page_width.pt)
+        height = float(section.page_height.pt)
+        if width > 0 and height > 0:
+            return width, height
+    except Exception:
+        pass
+    return None, None
+
+
 def extract_docx(path: str) -> Document:
     """Extrai um arquivo .docx para o modelo canônico ``Document``.
 
@@ -714,6 +727,8 @@ def extract_docx(path: str) -> Document:
     if not title:
         title = p.stem
 
+    page_w, page_h = _page_size_pt(docx_doc)
+
     return Document(
         source_path=str(p),
         fmt="docx",
@@ -722,4 +737,6 @@ def extract_docx(path: str) -> Document:
         title=title,
         default_font=default_font,
         default_font_size_pt=default_size_pt,
+        page_width_pt=page_w,
+        page_height_pt=page_h,
     )

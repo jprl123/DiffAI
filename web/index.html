@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>diffAI</title>
+<title>DiffAI</title>
 <link rel="icon" href="/logo.png" type="image/png">
 <style>
 /* ============================================================
@@ -699,7 +699,7 @@ h1, h2, h3 { letter-spacing: -0.01em; }
 .detail-tab:hover { color: var(--text); }
 .detail-tab.active { background: var(--surface); color: var(--accent); box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
 .detail-tab-body { min-height: 48px; }
-.doc-preview-wrap { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface-2); }
+.doc-preview-wrap { border: 1px solid var(--border); border-radius: 10px; overflow: auto; background: var(--surface-2); }
 .doc-preview-head {
   display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap;
   padding: 6px 12px; border-bottom: 1px solid var(--border); background: var(--surface);
@@ -713,7 +713,15 @@ h1, h2, h3 { letter-spacing: -0.01em; }
   border: 1px solid var(--border); border-radius: 2px; box-shadow: var(--doc-shadow);
   padding: 1in; font-family: "Times New Roman", Times, serif;
   font-size: 11pt; line-height: 1.15; text-align: left; font-weight: 400;
+  box-sizing: border-box;
 }
+.doc-page.is-landscape {
+  max-width: none;
+  padding: 0.55in 0.6in;
+}
+.doc-page table { width: 100%; border-collapse: collapse; margin: 0.75em 0; font-size: 12.5px; table-layout: auto; }
+.doc-page.is-landscape table { font-size: 11px; }
+.doc-page.is-landscape th, .doc-page.is-landscape td { padding: 4px 6px; word-break: break-word; }
 [data-theme="dark"] .doc-page { color: var(--text); }
 .doc-block { margin: 0; position: relative; font-weight: inherit; }
 .doc-block[data-style="Title"] { text-align: center; }
@@ -1146,7 +1154,7 @@ h1, h2, h3 { letter-spacing: -0.01em; }
       <span class="brand-logo" aria-hidden="true">
         <img src="/logo-64.png" alt="" width="30" height="30">
       </span>
-      <span class="brand-name">diffAI</span>
+      <span class="brand-name">DiffAI</span>
     </div>
 
     <nav class="nav" aria-label="Navegação principal">
@@ -2619,6 +2627,25 @@ function applyPageLayout(page, layout) {
   }
   if (layout.font_size_pt) page.style.fontSize = layout.font_size_pt + "pt";
   if (layout.line_height) page.style.lineHeight = String(layout.line_height);
+
+  var w = layout.page_width_pt != null ? Number(layout.page_width_pt) : null;
+  var h = layout.page_height_pt != null ? Number(layout.page_height_pt) : null;
+  var landscape = layout.orientation === "landscape" || (w && h && w > h);
+  page.classList.toggle("is-landscape", !!landscape);
+  if (landscape) {
+    /* Largura da página em polegadas (pt/72), com teto para caber na UI. */
+    var inches = w && w > 0 ? (w / 72) : 11;
+    inches = Math.min(Math.max(inches, 9), 14);
+    page.style.width = inches + "in";
+    page.style.maxWidth = inches + "in";
+  } else if (w && w > 0) {
+    var portraitIn = Math.min(Math.max(w / 72, 5.5), 8.5);
+    page.style.width = "";
+    page.style.maxWidth = portraitIn + "in";
+  } else {
+    page.style.width = "";
+    page.style.maxWidth = "";
+  }
 }
 
 function applyBlockLayout(node, rb) {

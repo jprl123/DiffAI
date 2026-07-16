@@ -300,7 +300,20 @@ def _append_summary_page(doc: DocxDocument, result: ComparisonResult) -> None:
 
     # Quebra de SEÇÃO (não de página): a síntese ganha cabeçalho e rodapé
     # próprios, vazios — sem herdar "Exhibit", numeração ou marca do documento.
+    # Herda tamanho/orientação da seção anterior (paisagem continua paisagem).
+    prev_section = doc.sections[-1] if doc.sections else None
     section = doc.add_section(WD_SECTION.NEW_PAGE)
+    if prev_section is not None:
+        try:
+            section.orientation = prev_section.orientation
+            section.page_width = prev_section.page_width
+            section.page_height = prev_section.page_height
+            section.left_margin = prev_section.left_margin
+            section.right_margin = prev_section.right_margin
+            section.top_margin = prev_section.top_margin
+            section.bottom_margin = prev_section.bottom_margin
+        except Exception:
+            pass
     for part in (
         section.header,
         section.footer,
