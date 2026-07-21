@@ -78,6 +78,20 @@ def align_blocks(base_blocks: List[Block], compare_blocks: List[Block]) -> List[
         gap_bounds.append(((prev_bi + 1, a_bi), (prev_cj + 1, a_cj)))
         prev_bi, prev_cj = a_bi, a_cj
 
+    # Órfãos com GÊMEO exato (mesmo content_hash) do outro lado são
+    # relocações intactas — como o passo 1 (LCS) já casou todos os gêmeos em
+    # ordem, um gêmeo restante está fora de ordem = candidato a movimentação.
+    # Reservamos para o passo 3: o passo 2 (similaridade) NÃO pode roubá-los
+    # parando-os num MODIFY com bloco parecido porém diferente (era o que
+    # casava o título de uma cláusula MOVIDA com o de outra EXCLUÍDA, deixando
+    # o título fora do movimento e inflando exclusão/inserção).
+    base_orphan_hashes = {
+        base_hashes[bi] for bi in range(n) if base_status[bi] is None
+    }
+    compare_orphan_hashes = {
+        compare_hashes[cj] for cj in range(m) if compare_status[cj] is None
+    }
+
     for (b_lo, b_hi), (c_lo, c_hi) in gap_bounds:
         base_orphans = [
             bi for bi in range(b_lo, b_hi) if base_status[bi] is None
@@ -89,7 +103,11 @@ def align_blocks(base_blocks: List[Block], compare_blocks: List[Block]) -> List[
             continue
         scored = []
         for bi in base_orphans:
+            if base_hashes[bi] in compare_orphan_hashes:
+                continue  # relocação intacta: reservada ao passo 3 (movimento)
             for cj in compare_orphans:
+                if compare_hashes[cj] in base_orphan_hashes:
+                    continue
                 ratio = _text_ratio(base_blocks[bi], compare_blocks[cj])
                 if ratio >= SIMILARITY_THRESHOLD:
                     scored.append((ratio, bi, cj))

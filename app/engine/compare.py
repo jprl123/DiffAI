@@ -681,33 +681,64 @@ def _diff_table_pair(
 
 
 def _count_fragment_runs(fragments: List["Fragment"]) -> Tuple[int, int]:
-    """Conta TRECHOS CONTÍNUOS de inserção e de exclusão numa lista de
-    fragmentos. Uma sequência consecutiva de fragmentos "insert" conta 1
-    inserção; idem para "delete". "equal"/"format" quebram o trecho.
+    """Conta TRECHOS de inserção e de exclusão numa lista de fragmentos, no
+    grão do gabarito (uma modificação = 1 exclusão + 1 inserção, ainda que
+    troque vários tokens).
 
-    Ex.: [equal, delete, insert, equal, insert] → (2 inserções, 1 exclusão).
+    Um "cluster" de edição só é encerrado por conteúdo ``equal`` REAL
+    (não-branco). Ponte ``equal`` de espaço não encerra — assim a troca
+    "5 (cinco) anos" → "7 (sete) anos" (número + extenso, separados por espaço)
+    conta 1 exclusão + 1 inserção, e não 2 + 2. Já "R$ 12.0[2.0→6.5]00,00 novo"
+    (número trocado + palavra ' novo' separada por dígitos inalterados) conta 2
+    inserções — o ``00,00`` inalterado encerra o primeiro cluster.
+
+    Ex.: [equal, delete, insert, ' '(equal), delete, insert] → (1 ins, 1 del).
     """
     ins = dele = 0
-    prev = ""
+    cur_ins = cur_del = False  # há inserção/exclusão no cluster aberto?
     for frag in fragments or ():
         op = getattr(frag, "op", "equal")
-        if op == "insert" and prev != "insert":
-            ins += 1
-        elif op == "delete" and prev != "delete":
-            dele += 1
-        prev = op
+        if op == "insert":
+            if not cur_ins:
+                ins += 1
+                cur_ins = True
+        elif op == "delete":
+            if not cur_del:
+                dele += 1
+                cur_del = True
+        else:  # equal / format: só conteúdo real encerra o cluster
+            text = getattr(frag, "text", "") or ""
+            if text.strip():
+                cur_ins = cur_del = False
     return ins, dele
 
 
-def _count_block_runs(block: "RenderBlock") -> Tuple[int, int]:
-    """Trechos contínuos de inserção/exclusão de UM bloco renderizado.
+def _frag_edits(fragments: List["Fragment"]) -> Tuple[int, int]:
+    """Contagem no grão do CONTAINER (parágrafo ou célula): 1 inserção se há
+    QUALQUER fragmento inserido, 1 exclusão se há qualquer fragmento excluído.
 
-    - Tabela: linha inteira nova/removida conta 1; nas demais linhas, conta
-      os trechos dentro de cada célula (valor de célula alterado = 1 del + 1
-      ins).
-    - Parágrafo/título/imagem: conta os trechos nos fragmentos; se o bloco
-      não tem fragmentos nem linhas (ex.: imagem só com marcador), usa o tipo
-      do bloco (INSERT/DELETE) como 1 trecho.
+    O gabarito conta uma modificação como 1 exclusão + 1 inserção, mesmo que
+    ela troque vários tokens (ex.: "24 (vinte e quatro)" → "36 (trinta e
+    seis)", onde o "e" inalterado no meio criaria dois clusters se contássemos
+    trechos)."""
+    has_ins = has_del = False
+    for frag in fragments or ():
+        op = getattr(frag, "op", "equal")
+        if op == "insert":
+            has_ins = True
+        elif op == "delete":
+            has_del = True
+    return (1 if has_ins else 0), (1 if has_del else 0)
+
+
+def _count_block_runs(block: "RenderBlock") -> Tuple[int, int]:
+    """Inserções/exclusões de UM bloco MODIFY/EQUAL renderizado.
+
+    - Tabela: linha inteira nova/removida conta 1; nas demais linhas, conta 1
+      del + 1 ins por CÉLULA alterada.
+    - Parágrafo/título: 1 del + 1 ins conforme o parágrafo tenha conteúdo
+      excluído/inserido. Sem fragmentos nem linhas (ex.: imagem marcador),
+      usa o tipo do bloco.
     """
     ins = dele = 0
     if block.rows:
@@ -720,13 +751,13 @@ def _count_block_runs(block: "RenderBlock") -> Tuple[int, int]:
                 dele += 1
                 continue
             for cell in row:  # cada célula é uma lista de fragmentos
-                ci, cd = _count_fragment_runs(cell)
+                ci, cd = _frag_edits(cell)
                 ins += ci
                 dele += cd
         return ins, dele
 
     if block.fragments:
-        return _count_fragment_runs(block.fragments)
+        return _frag_edits(block.fragments)
 
     # Bloco sem texto marcável (ex.: imagem): usa o tipo do bloco.
     if block.change_type == ChangeType.INSERT:
@@ -734,6 +765,30 @@ def _count_block_runs(block: "RenderBlock") -> Tuple[int, int]:
     if block.change_type == ChangeType.DELETE:
         return 0, 1
     return 0, 0
+
+
+def _count_move_groups(changes: List[Change]) -> int:
+    """Conta MOVIMENTAÇÕES por BLOCO movido, não por parágrafo (regra do
+    gabarito). Uma cláusula movida = título + itens = vários Changes MOVE com
+    índices de origem/destino CONSECUTIVOS → uma única movimentação."""
+    moves = [
+        c for c in changes
+        if c.change_type in (ChangeType.MOVE, ChangeType.MOVE_MODIFY)
+    ]
+    moves.sort(key=lambda c: (c.moved_to_index if c.moved_to_index is not None else 0))
+    groups = 0
+    prev_from = prev_to = None
+    for c in moves:
+        f, t = c.moved_from_index, c.moved_to_index
+        contiguous = (
+            prev_from is not None and prev_to is not None
+            and f is not None and t is not None
+            and (t - prev_to) == 1 and (f - prev_from) == 1
+        )
+        if not contiguous:
+            groups += 1
+        prev_from, prev_to = f, t
+    return groups
 
 
 def _build_stats(
@@ -744,15 +799,13 @@ def _build_stats(
     stats = Stats()
     by_category: Dict[str, int] = {}
 
-    # Categorias, movimentações, modificações e páginas: por Change (bloco).
+    # Categorias, modificações e páginas: por Change (bloco).
     changed_pages: set = set()
     for change in changes:
         cat_key = change.category.value
         by_category[cat_key] = by_category.get(cat_key, 0) + 1
 
-        if change.change_type in (ChangeType.MOVE, ChangeType.MOVE_MODIFY):
-            stats.moves += 1
-        elif change.change_type == ChangeType.MODIFY:
+        if change.change_type == ChangeType.MODIFY:
             stats.modifications += 1
 
         if change.category == Category.FORMATTING:
@@ -769,12 +822,34 @@ def _build_stats(
         if change.page_compare is not None:
             changed_pages.add(change.page_compare)
 
-    # Inserções/exclusões: TRECHOS CONTÍNUOS marcados no redline (inclui inline,
-    # células e linhas de tabela) — não só parágrafos inteiros. Blocos movidos
-    # contam só como movimentação, sem inflar ins/del.
+    # Movimentações: 1 por bloco movido (título + itens contam junto).
+    stats.moves = _count_move_groups(changes)
+
+    # Inserções/exclusões por TRECHO CONTÍNUO (regra do gabarito):
+    # - uma sequência de blocos inteiros inseridos consecutivos (ex.: título de
+    #   cláusula nova + seu corpo) = 1 inserção; idem exclusão;
+    # - dentro de um bloco MODIFY, contam os trechos inline / linhas de tabela /
+    #   células (ex.: troca de valor = 1 exclusão + 1 inserção; linha de tabela
+    #   nova = 1 inserção);
+    # - blocos movidos não entram (contam só como movimentação).
+    streak = None  # 'ins' | 'del' — corrente de blocos inteiros consecutivos
     for block in render_blocks or ():
-        if block.change_type in (ChangeType.MOVE, ChangeType.MOVE_MODIFY):
+        ct = block.change_type
+        if ct in (ChangeType.MOVE, ChangeType.MOVE_MODIFY):
+            streak = None
             continue
+        if ct == ChangeType.INSERT:
+            if streak != "ins":
+                stats.insertions += 1
+            streak = "ins"
+            continue
+        if ct == ChangeType.DELETE:
+            if streak != "del":
+                stats.deletions += 1
+            streak = "del"
+            continue
+        # EQUAL / MODIFY: quebra a corrente de blocos inteiros e conta inline.
+        streak = None
         bi, bd = _count_block_runs(block)
         stats.insertions += bi
         stats.deletions += bd

@@ -40,4 +40,5 @@ node_modules/
 # Artefatos locais
 *.pdf
 !docs/**/*.pdf
+!tests/fixtures/summary_pdf/**/*.pdf
 landing/public/images/hero-current.mp4

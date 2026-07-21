@@ -16,8 +16,21 @@ from __future__ import annotations
 import copy
 import logging
 import os
+import re
 
 logger = logging.getLogger(__name__)
+
+# Início de nova cláusula/item/título — nunca fundir o bloco seguinte no
+# anterior quando o próximo começa assim (senão colaríamos duas cláusulas).
+_CLAUSE_START_RE = re.compile(
+    r"^\s*(\d+([.\-–][0-9A-Za-z]+)*[.\-–)]?\s"      # 1.  1.1.  10-A.  2)
+    r"|\(?[a-z]\)"                                    # (a) a)
+    r"|\(?[ivxIVX]+\)"                               # (i) (iv)
+    r"|CLÁUSULA|PARÁGRAFO|Parágrafo|Art\.|Artigo"
+    r"|CONSIDERANDO|CONSIDERANDOS|RESOLVEM|ANEXO)"
+)
+# Fim de frase/parágrafo: pontuação terminal (com aspas/parênteses de fecho).
+_SENT_END_RE = re.compile(r"[.;:!?…][\"'”’)\]]?\s*$")
 
 # pdf2docx loga no ROOT logger (logging.info direto, com basicConfig no
 # import) — uma linha por página convertida. O filtro abaixo derruba esses
@@ -56,6 +69,82 @@ def _ensure_text_layer(pdf_path: str) -> None:
     raise PdfConversionError(
         "PDF sem camada de texto (provavelmente escaneado): '%s'." % name
     )
+
+
+def _tbl_col_count(tbl_el, qn) -> int:
+    """Nº de colunas de um ``w:tbl`` (células da primeira linha)."""
+    for tr in tbl_el.iter(qn("w:tr")):
+        return len(tr.findall(qn("w:tc")))
+    return 0
+
+
+def _tr_text(tr, qn) -> str:
+    return " | ".join(
+        "".join(t.text or "" for t in tc.iter(qn("w:t"))).strip()
+        for tc in tr.findall(qn("w:tc"))
+    )
+
+
+def _merge_adjacent_tables(docx_path: str) -> int:
+    """Reúne tabelas que o pdf2docx PARTIU em várias (correção B6).
+
+    Em PDF nativo o pdf2docx quebra uma única tabela em fragmentos: cabeçalho
+    numa tabela de 1 linha + corpo em outra, ou as linhas em dois blocos
+    (parcelas 1-2 | 3-5). Fragmentos com a MESMA quantidade de colunas,
+    separados apenas por parágrafos vazios, são a mesma tabela — fundimos as
+    linhas de volta. Roda ANTES de achatar pseudo-tabelas (senão o cabeçalho
+    de 1 linha viraria parágrafo e apareceria marcado como alteração) e é
+    determinístico, aplicado igual a base e revisado.
+
+    Retorna quantos fragmentos foram fundidos. Nunca levanta.
+    """
+    from docx import Document
+    from docx.oxml.ns import qn
+
+    try:
+        doc = Document(docx_path)
+    except Exception as exc:
+        logger.warning("Não foi possível reabrir '%s' p/ fundir tabelas (%s).",
+                       os.path.basename(docx_path), exc)
+        return 0
+
+    body = doc.element.body
+    merged = 0
+    last_tbl = None
+    for child in list(body.iterchildren()):
+        tag = child.tag
+        if tag == qn("w:tbl"):
+            if (
+                last_tbl is not None
+                and _tbl_col_count(last_tbl, qn) > 0
+                and _tbl_col_count(child, qn) == _tbl_col_count(last_tbl, qn)
+            ):
+                header = _tr_text(next(iter(last_tbl.iter(qn("w:tr")))), qn)
+                for tr in child.findall(qn("w:tr")):
+                    # Não duplica um cabeçalho repetido no fragmento seguinte.
+                    if _tr_text(tr, qn) == header:
+                        continue
+                    last_tbl.append(copy.deepcopy(tr))
+                body.remove(child)
+                merged += 1
+                continue  # last_tbl continua sendo o alvo (funde 3+ fragmentos)
+            last_tbl = child
+        elif tag == qn("w:p"):
+            if _para_text(child, qn).strip():
+                last_tbl = None  # prosa real separa tabelas distintas
+        else:
+            last_tbl = None
+
+    if merged:
+        try:
+            doc.save(docx_path)
+            logger.info("Fragmentos de tabela fundidos em %s: %d",
+                        os.path.basename(docx_path), merged)
+        except Exception as exc:
+            logger.warning("Falha ao salvar DOCX com tabelas fundidas '%s' (%s).",
+                           os.path.basename(docx_path), exc)
+            return 0
+    return merged
 
 
 def _is_pseudo_table(tbl) -> bool:
@@ -168,6 +257,174 @@ def _flatten_pseudo_tables(docx_path: str) -> int:
                            os.path.basename(docx_path), exc)
             return 0
     return flattened
+
+
+def _para_text(p, qn) -> str:
+    """Texto concatenado de um elemento ``w:p`` (todos os ``w:t``)."""
+    parts = []
+    for t in p.iter(qn("w:t")):
+        parts.append(t.text or "")
+    return "".join(parts)
+
+
+def _is_heading_like(text: str) -> bool:
+    """Título/rótulo curto: caixa-alta dominante e sem pontuação final, ou
+    começando por 'CLÁUSULA'/'PARÁGRAFO'. Nunca é fundido com prosa vizinha."""
+    stripped = text.strip()
+    if not stripped:
+        return False
+    if _CLAUSE_START_RE.match(stripped) and not stripped[0].isdigit():
+        return True  # CLÁUSULA / PARÁGRAFO / CONSIDERANDO …
+    if len(stripped) <= 90 and not _SENT_END_RE.search(stripped):
+        letters = [c for c in stripped if c.isalpha()]
+        if letters and sum(1 for c in letters if c.isupper()) / len(letters) >= 0.7:
+            return True
+    return False
+
+
+def _merge_two_paras(prev_p, cur_p, qn) -> None:
+    """Move os runs de ``cur_p`` para o fim de ``prev_p``, tratando o espaço
+    de junção (de-hifenização de quebra de linha ou espaço simples)."""
+    prev_text = _para_text(prev_p, qn)
+    cur_first = _para_text(cur_p, qn).lstrip()[:1]
+    stripped = prev_text.rstrip()
+    dehyphenate = (
+        stripped.endswith("-")
+        and len(stripped) >= 2
+        and stripped[-2].isalpha()
+        and cur_first.isalpha()
+    )
+    if dehyphenate:
+        # Remove o hífen do último ``w:t`` não vazio de prev.
+        for t in reversed(list(prev_p.iter(qn("w:t")))):
+            if t.text and t.text.rstrip().endswith("-"):
+                t.text = t.text.rstrip()[:-1]
+                break
+    elif prev_text and not prev_text.endswith((" ", "\t", "\n")):
+        sep = prev_p.makeelement(qn("w:r"), {})
+        st = sep.makeelement(qn("w:t"), {qn("xml:space"): "preserve"})
+        st.text = " "
+        sep.append(st)
+        prev_p.append(sep)
+    for r in cur_p.findall(qn("w:r")):
+        prev_p.append(copy.deepcopy(r))
+
+
+def _merge_wrapped_paragraphs(docx_path: str) -> int:
+    """Refunde parágrafos que o pdf2docx quebrou em vários ``w:p`` (correção B1).
+
+    Uma cláusula longa vira N parágrafos (um por linha visual do PDF). Como a
+    quebra difere entre base e revisado, o alinhamento vê modify/insert/delete
+    fantasmas e o Summary infla. Aqui fundimos um parágrafo no anterior quando:
+    o anterior NÃO termina em pontuação final, nenhum dos dois é título/rótulo,
+    e o próximo NÃO começa como nova cláusula/item. É determinístico (mesma
+    regra nos dois lados) e preserva o conteúdo — nenhuma alteração some.
+
+    Retorna quantos parágrafos foram fundidos. Nunca levanta.
+    """
+    from docx import Document
+    from docx.oxml.ns import qn
+
+    try:
+        doc = Document(docx_path)
+    except Exception as exc:
+        logger.warning("Não foi possível reabrir '%s' p/ fundir parágrafos (%s).",
+                       os.path.basename(docx_path), exc)
+        return 0
+
+    body = doc.element.body
+    merged = 0
+    prev_p = None
+    for child in list(body.iterchildren()):
+        if child.tag != qn("w:p"):
+            prev_p = None  # tabela/seção quebra a sequência de prosa
+            continue
+        cur_text = _para_text(child, qn)
+        if not cur_text.strip():
+            continue  # parágrafo vazio: ignora, não quebra a corrente
+        if (
+            prev_p is not None
+            and not _SENT_END_RE.search(_para_text(prev_p, qn))
+            and not _is_heading_like(_para_text(prev_p, qn))
+            and not _is_heading_like(cur_text)
+            and not _CLAUSE_START_RE.match(cur_text)
+        ):
+            _merge_two_paras(prev_p, child, qn)
+            body.remove(child)
+            merged += 1
+            continue
+        prev_p = child
+
+    if merged:
+        try:
+            doc.save(docx_path)
+            logger.info("Parágrafos refundidos em %s: %d",
+                        os.path.basename(docx_path), merged)
+        except Exception as exc:
+            logger.warning("Falha ao salvar DOCX refundido '%s' (%s).",
+                           os.path.basename(docx_path), exc)
+            return 0
+    return merged
+
+
+def _fix_run_boundary_spaces(docx_path: str) -> int:
+    """Reinsere espaços que o pdf2docx come na FRONTEIRA entre runs.
+
+    O pdf2docx às vezes quebra o parágrafo em runs (mudança de fonte/estilo) e
+    perde o espaço da junção: "…pagará à" + "CONTRATADA" vira "àCONTRATADA".
+    Correção conservadora: só insere espaço quando o run anterior termina em
+    letra MINÚSCULA e o próximo começa em letra MAIÚSCULA (início de nova
+    palavra/nome próprio) — nunca no meio de palavra em CAIXA-ALTA (ex.:
+    "CONTRA"+"TANTE" fica intacto porque "CONTRA" termina em maiúscula).
+
+    Retorna quantos espaços foram inseridos. Nunca levanta.
+    """
+    from docx import Document
+
+    try:
+        doc = Document(docx_path)
+    except Exception as exc:
+        logger.warning("Não foi possível reabrir '%s' p/ ajustar espaços (%s).",
+                       os.path.basename(docx_path), exc)
+        return 0
+
+    fixed = 0
+
+    def _fix_paragraph(p):
+        nonlocal fixed
+        runs = p.runs
+        for i in range(len(runs) - 1):
+            a = runs[i].text or ""
+            b = runs[i + 1].text or ""
+            if not a or not b:
+                continue
+            ca, cb = a[-1], b[0]
+            if (
+                ca.isalpha() and ca.islower()
+                and cb.isalpha() and cb.isupper()
+                and not a.endswith((" ", "\t"))
+            ):
+                runs[i + 1].text = " " + b
+                fixed += 1
+
+    for p in doc.paragraphs:
+        _fix_paragraph(p)
+    for tbl in doc.tables:
+        for row in tbl.rows:
+            for cell in row.cells:
+                for p in cell.paragraphs:
+                    _fix_paragraph(p)
+
+    if fixed:
+        try:
+            doc.save(docx_path)
+            logger.info("Espaços de fronteira de run corrigidos em %s: %d",
+                        os.path.basename(docx_path), fixed)
+        except Exception as exc:
+            logger.warning("Falha ao salvar DOCX com espaços corrigidos '%s' (%s).",
+                           os.path.basename(docx_path), exc)
+            return 0
+    return fixed
 
 
 def _pdf_page_size_pt(pdf_path: str):
@@ -293,9 +550,19 @@ def convert_pdf_to_docx(pdf_path: str, docx_path: str) -> None:
         raise PdfConversionError(
             "Conversão de '%s' não produziu DOCX válido." % os.path.basename(pdf_path)
         )
+    # Correção B6: reúne tabelas partidas (cabeçalho/linhas em fragmentos)
+    # ANTES de achatar pseudo-tabelas — assim um cabeçalho de 1 linha não é
+    # achatado em parágrafo e marcado como alteração fantasma.
+    _merge_adjacent_tables(docx_path)
     # Correção B3: desfaz as pseudo-tabelas (parágrafos corridos que o pdf2docx
     # envolve em tabela) antes de o par seguir para extração/comparação.
     _flatten_pseudo_tables(docx_path)
+    # Correção B1: refunde parágrafos que o pdf2docx quebrou por linha visual
+    # (fragmentação difere entre base/revisado → contagem fantasma no Summary).
+    _merge_wrapped_paragraphs(docx_path)
+    # Correção B4: reinsere espaços comidos na fronteira entre runs
+    # ("pagará à" + "CONTRATADA" → "pagará àCONTRATADA").
+    _fix_run_boundary_spaces(docx_path)
     # Paisagem / tamanho real da página do PDF (pdf2docx tende a forçar A4).
     _apply_pdf_page_geometry(pdf_path, docx_path)
     logger.info("PDF convertido para DOCX: %s -> %s", pdf_path, docx_path)
