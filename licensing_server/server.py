@@ -62,10 +62,10 @@ app.add_middleware(
 _db: Optional[LicenseDB] = None
 
 PLAN_FEATURES: Dict[str, Dict[str, Any]] = {
-    "trial": {"batch_max": 5, "reports": True, "docx_export": True, "branding": False},
-    "pro": {"batch_max": None, "reports": True, "docx_export": True, "branding": False},
-    "team": {"batch_max": None, "reports": True, "docx_export": True, "branding": True},
-    "perpetual": {"batch_max": None, "reports": True, "docx_export": True, "branding": False},
+    "trial": {"batch_max": 5, "reports": True, "docx_export": True, "branding": False, "all_formats": False},
+    "pro": {"batch_max": None, "reports": True, "docx_export": True, "branding": False, "all_formats": True},
+    "team": {"batch_max": None, "reports": True, "docx_export": True, "branding": True, "all_formats": True},
+    "perpetual": {"batch_max": None, "reports": True, "docx_export": True, "branding": False, "all_formats": True},
 }
 
 GRACE_DAYS = 7  # tolerância offline após expirar

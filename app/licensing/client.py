@@ -246,7 +246,7 @@ def status() -> Dict[str, Any]:
             "email": None,
             "key_hint": None,
             "expires_at": None,
-            "features": {"batch_max": TRIAL_BATCH_MAX},
+            "features": {"batch_max": TRIAL_BATCH_MAX, "all_formats": False},
             "device": device_fingerprint(),
             "device_name": device_name(),
             "last_validated_at": None,
@@ -400,6 +400,48 @@ def can_compare(pairs_count: int) -> Tuple[bool, Optional[str]]:
         )
     return False, (
         "Sua avaliação gratuita terminou. Ative uma licença para continuar."
+    )
+
+
+_WORD_ONLY_EXTS = (".docx",)
+
+
+def formats_allowed() -> bool:
+    """True se o plano libera comparar formatos além de Word (.docx).
+
+    Regra de produto: avaliação gratuita (trial) só compara Word; planos pagos
+    (Pro/Equipe) comparam PDF, Word e Excel. Licenças ativas SEM a flag
+    ``all_formats`` no payload (emitidas antes desta feature) continuam
+    liberadas — o default só restringe a avaliação."""
+    if _UNLIMITED:
+        return True
+    st = status()
+    feats = st.get("features") or {}
+    if st.get("state") == "active":
+        return bool(feats.get("all_formats", True))
+    return bool(feats.get("all_formats", False))
+
+
+def can_compare_formats(paths) -> Tuple[bool, Optional[str]]:
+    """Gate de FORMATO: (permitido, mensagem pt-BR se bloqueado).
+
+    No plano gratuito só se compara Word (.docx); PDF/Excel exigem plano pago.
+    """
+    if formats_allowed():
+        return True, None
+    import os as _os
+    bad = sorted({
+        _os.path.splitext(str(p))[1].lower()
+        for p in (paths or [])
+        if _os.path.splitext(str(p))[1].lower() not in _WORD_ONLY_EXTS
+    })
+    if not bad:
+        return True, None
+    nice = ", ".join(ext.lstrip(".").upper() for ext in bad)
+    return False, (
+        "A comparação de %s está disponível nos planos Pro e Equipe. "
+        "No plano gratuito você compara documentos Word (.docx). "
+        "Faça upgrade para comparar PDF e Excel." % nice
     )
 
 
