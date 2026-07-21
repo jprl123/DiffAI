@@ -1040,6 +1040,7 @@ h1, h2, h3 { letter-spacing: -0.01em; }
 .method-badge.m-nome { background: var(--surface-3); color: var(--muted); }
 .method-badge.m-similaridade { background: var(--warn-soft); color: var(--warn); }
 .method-badge.m-conteudo { background: var(--accent-soft); color: var(--accent); }
+.method-badge.m-ia { background: var(--accent); color: #fff; }
 .unmatched-box {
   margin-top: 12px; border: 1px solid var(--warn); background: var(--warn-soft);
   border-radius: 10px; padding: 10px 14px; font-size: 12.5px;
@@ -1669,7 +1670,12 @@ var state = {
     errors: { base: null, compare: null },
     preview: null,            /* resposta de POST /api/batch/preview */
     previewLoading: false,
-    previewSeq: 0             /* invalida respostas atrasadas da prévia */
+    previewSeq: 0,            /* invalida respostas atrasadas da prévia */
+    useAi: false              /* passo 4: parear órfãos por IA (OpenRouter) */
+  },
+  ai: {
+    available: false,         /* GET /api/ai/pairing-status */
+    model: null
   },
   branding: {
     data: null,               /* GET /api/branding */
@@ -1839,6 +1845,22 @@ function fileExt(name) {
 function isValidDocFile(file) {
   var ext = fileExt(file && file.name);
   return ext === "docx" || ext === "pdf" || ext === "xlsx";
+}
+
+/* Plano gratuito (avaliação) só compara Word (.docx); PDF/Excel exigem plano
+   pago. Espelha a regra do backend (licensing.formats_allowed). Se o estado
+   da licença ainda não carregou, libera — o backend é a barreira final. */
+function formatsAllowedClient() {
+  var st = state.license && state.license.status;
+  if (!st) return true;
+  var feats = st.features || {};
+  if (st.state === "active") return feats.all_formats !== false;
+  return feats.all_formats === true;
+}
+
+function isWordOnlyBlocked(file) {
+  var ext = fileExt(file && file.name);
+  return ext && ext !== "docx" && !formatsAllowedClient();
 }
 
 function formatSeconds(s) {
@@ -2029,6 +2051,9 @@ function renderDropzone(side) {
 function setFile(side, file) {
   if (file && !isValidDocFile(file)) {
     state.single.errors[side] = t("dz.badFormat");
+    if (side === "base") state.single.baseFile = null; else state.single.compareFile = null;
+  } else if (file && isWordOnlyBlocked(file)) {
+    state.single.errors[side] = t("dz.wordOnly");
     if (side === "base") state.single.baseFile = null; else state.single.compareFile = null;
   } else {
     state.single.errors[side] = null;
@@ -2389,6 +2414,7 @@ function submitBatch(options) {
   var payload = {
     base_dir: $("dir-base").value.trim(),
     compare_dir: $("dir-compare").value.trim(),
+    use_ai: state.batch.useAi,
     options: options
   };
   postJob("/api/compare/batch", {
@@ -2405,6 +2431,7 @@ function clearBatchPreview() {
   state.batch.previewSeq += 1;   /* descarta respostas em voo */
   state.batch.preview = null;
   state.batch.previewLoading = false;
+  state.batch.useAi = false;     /* IA é opt-in por tentativa de prévia */
 }
 
 function loadBatchPreview() {
@@ -2420,7 +2447,7 @@ function loadBatchPreview() {
   fetch("/api/batch/preview", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ base_dir: baseDir, compare_dir: compareDir })
+    body: JSON.stringify({ base_dir: baseDir, compare_dir: compareDir, use_ai: state.batch.useAi })
   }).then(function (res) {
     if (!res.ok) {
       return res.json().catch(function () { return {}; }).then(function (data) {
@@ -2451,6 +2478,7 @@ function buildMethodBadge(method) {
   var tip = t("pair.byName");
   if (m === "similaridade") { cls = "m-similaridade"; tip = "pareado por similaridade do nome"; }
   else if (m === "conteúdo" || m === "conteudo" || m === "content") { cls = "m-conteudo"; tip = t("pair.byContent"); }
+  else if (m === "ia" || m === "ai") { cls = "m-ia"; tip = t("pair.byAI"); }
   return el("span", { class: "method-badge " + cls, title: tip, text: m });
 }
 
@@ -2482,7 +2510,9 @@ function processBatchPreview() {
     toast("Selecione ao menos um formato de relatório (HTML, Excel ou JSON).", "error");
     return;
   }
+  var wasAi = state.batch.useAi;   /* o lote deve parear igual à prévia */
   clearBatchPreview();
+  state.batch.useAi = wasAi;
   submitBatch(options);
 }
 
@@ -2522,6 +2552,18 @@ function renderBatchPreview() {
     box.appendChild(el("h3", { text: t("preview.unmatchedTitle") }));
     if (ub.length) box.appendChild(buildUnmatchedLine(t("batch.dirBase"), ub));
     if (uc.length) box.appendChild(buildUnmatchedLine(t("batch.dirCompare"), uc));
+    // Passo 4: oferecer pareamento por IA dos restantes (se configurado).
+    if (state.ai.available && ub.length && uc.length && !state.batch.useAi) {
+      box.appendChild(el("button", {
+        class: "btn", type: "button", style: "margin-top:10px;",
+        onclick: function () { state.batch.useAi = true; loadBatchPreview(); }
+      }, t("preview.repairAI")));
+    } else if (state.batch.useAi) {
+      box.appendChild(el("div", {
+        class: "size", style: "margin-top:8px;",
+        text: t("preview.aiTried")
+      }));
+    }
     card.appendChild(box);
   }
 
@@ -4138,6 +4180,18 @@ function refreshLicense() {
   });
 }
 
+function refreshAiStatus() {
+  return fetch("/api/ai/pairing-status").then(function (res) {
+    return res.ok ? res.json() : null;
+  }).then(function (data) {
+    if (data && typeof data === "object") {
+      state.ai.available = !!data.available;
+      state.ai.model = data.model || null;
+    }
+    return data;
+  }).catch(function () { return null; });
+}
+
 function applyLicenseStatus(st) {
   if (!st || typeof st !== "object" || !st.state) return;
   state.license.status = st;
@@ -4996,6 +5050,7 @@ var STRINGS = {
     "filter.category": "Categoria:", "filter.type": "Tipo:",
     "aria.modeChanges": "Modo de exibição das mudanças",
     "dz.removeFile": "Remover arquivo", "dz.badFormat": "Formato não suportado: use .docx, .pdf ou .xlsx.",
+    "dz.wordOnly": "Plano gratuito compara apenas Word (.docx). PDF e Excel nos planos Pro e Equipe.",
     "folder.removeDir": "Remover pasta",
     "folder.pickBase": "Pasta base (originais)", "folder.pickCompare": "Pasta revisada",
     "folder.explorerError": "Erro ao abrir o explorador de arquivos.",
@@ -5005,6 +5060,9 @@ var STRINGS = {
     "folder.suggestedSuffix": ". Troque se não for essa.",
     "folder.dragDesktop": "Arraste a pasta no app desktop para usar o caminho automaticamente.",
     "pair.byContent": "pareado pelo texto do documento",
+    "pair.byAI": "pareado por IA (análise de conteúdo)",
+    "preview.repairAI": "Parear restantes por IA",
+    "preview.aiTried": "A IA já analisou os restantes — os que sobraram não têm correspondente claro.",
     "pair.byName": "pareado pelo nome do arquivo",
     "mark.formatting": "formatação",
     "load.doc": "Carregando documento…", "load.changes": "Carregando mudanças…",
@@ -5260,6 +5318,7 @@ var STRINGS = {
     "filter.category": "Category:", "filter.type": "Type:",
     "aria.modeChanges": "Change display mode",
     "dz.removeFile": "Remove file", "dz.badFormat": "Unsupported format: use .docx, .pdf or .xlsx.",
+    "dz.wordOnly": "Free plan compares Word (.docx) only. PDF and Excel on the Pro and Team plans.",
     "folder.removeDir": "Remove folder",
     "folder.pickBase": "Base folder (originals)", "folder.pickCompare": "Revised folder",
     "folder.explorerError": "Error opening the file explorer.",
@@ -5269,6 +5328,9 @@ var STRINGS = {
     "folder.suggestedSuffix": ". Change it if that's wrong.",
     "folder.dragDesktop": "Drop the folder in the desktop app to use the path automatically.",
     "pair.byContent": "matched by document text",
+    "pair.byAI": "matched by AI (content analysis)",
+    "preview.repairAI": "Match remaining with AI",
+    "preview.aiTried": "AI already analyzed the rest — those left have no clear match.",
     "pair.byName": "matched by file name",
     "mark.formatting": "formatting",
     "load.doc": "Loading document…", "load.changes": "Loading changes…",
@@ -5989,6 +6051,7 @@ function init() {
   updateCompareButton();
   renderSideAccount();       /* estado neutro até a resposta da API */
   refreshLicense();          /* estado global de licença no boot */
+  refreshAiStatus();         /* pareamento por IA disponível? (OpenRouter) */
   refreshLibreOffice();      /* aviso PDF fiel se LibreOffice ausente */
   loadHistory(true); /* pré-carrega em segundo plano */
 }

@@ -167,6 +167,13 @@ def _enforce_license(pairs_count: int) -> None:
         raise HTTPException(status_code=402, detail=message)
 
 
+def _enforce_formats(paths: List[str]) -> None:
+    """Bloqueia formatos não-Word na avaliação gratuita (só .docx)."""
+    allowed, message = licensing.can_compare_formats(paths)
+    if not allowed:
+        raise HTTPException(status_code=402, detail=message)
+
+
 @app.get("/api/license/status")
 def license_status() -> Dict[str, Any]:
     # Revalidação online oportunista, sem bloquear a resposta.
@@ -270,6 +277,7 @@ async def compare_single(request: Request) -> Dict[str, str]:
     if swap:
         base_path, compare_path = compare_path, base_path
 
+    _enforce_formats([base_path, compare_path])
     _enforce_license(pairs_count=1)
     job_id = manager.create_job([(base_path, compare_path)], options)
     licensing.consume(1)
@@ -284,6 +292,7 @@ async def batch_preview(request: Request) -> Dict[str, Any]:
     payload = await _read_json_body(request)
     base_dir = str(payload.get("base_dir") or "").strip()
     compare_dir = str(payload.get("compare_dir") or "").strip()
+    use_ai = _parse_bool(payload.get("use_ai"))
     if _parse_bool(payload.get("swap")):
         base_dir, compare_dir = compare_dir, base_dir
     if not base_dir or not compare_dir:
@@ -300,7 +309,7 @@ async def batch_preview(request: Request) -> Dict[str, Any]:
         )
     try:
         pairs, unmatched_base, unmatched_compare = pair_files_detailed(
-            base_dir, compare_dir
+            base_dir, compare_dir, use_ai=use_ai
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
@@ -309,6 +318,16 @@ async def batch_preview(request: Request) -> Dict[str, Any]:
         "unmatched_base": unmatched_base,
         "unmatched_compare": unmatched_compare,
     }
+
+
+@app.get("/api/ai/pairing-status")
+def ai_pairing_status() -> Dict[str, Any]:
+    """Diz à UI se o pareamento por IA está configurado (chave presente)."""
+    try:
+        from app.ai.pairing import ai_pairing_available, _model
+        return {"available": ai_pairing_available(), "model": _model()}
+    except Exception:
+        return {"available": False, "model": None}
 
 
 @app.get("/api/settings")
@@ -404,6 +423,7 @@ async def compare_batch(request: Request) -> Dict[str, str]:
     raw_options = payload.get("options") if isinstance(payload.get("options"), dict) else {}
     options = _normalize_options(raw_options)
     swap = _parse_bool(payload.get("swap")) or _parse_bool(raw_options.get("swap"))
+    use_ai = _parse_bool(payload.get("use_ai")) or _parse_bool(raw_options.get("use_ai"))
 
     if not base_dir or not compare_dir:
         raise HTTPException(
@@ -421,7 +441,9 @@ async def compare_batch(request: Request) -> Dict[str, str]:
         )
 
     try:
-        pairs, unmatched_base, unmatched_compare = pair_files(base_dir, compare_dir)
+        pairs, unmatched_base, unmatched_compare = pair_files(
+            base_dir, compare_dir, use_ai=use_ai
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
@@ -442,6 +464,7 @@ async def compare_batch(request: Request) -> Dict[str, str]:
         parts.append("Verifique se os nomes dos arquivos são semelhantes nos dois lados.")
         raise HTTPException(status_code=400, detail=" ".join(parts))
 
+    _enforce_formats([p for pair in pairs for p in pair])
     _enforce_license(pairs_count=len(pairs))
     job_id = manager.create_job(pairs, options)
     licensing.consume(len(pairs))

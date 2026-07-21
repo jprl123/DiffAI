@@ -270,13 +270,14 @@ def find_compare_dir(base_dir: str) -> Optional[Dict[str, str]]:
 
 
 def pair_files_detailed(
-    base_dir: str, compare_dir: str
+    base_dir: str, compare_dir: str, use_ai: bool = False
 ) -> Tuple[List[Dict[str, str]], List[str], List[str]]:
     """Como ``pair_files``, mas cada par informa o MÉTODO de pareamento —
-    "nome" (stem normalizado igual), "similaridade" (nome parecido) ou
-    "conteúdo" (texto dos documentos). Alimenta a prévia do lote na UI."""
+    "nome" (stem normalizado igual), "similaridade" (nome parecido),
+    "conteúdo" (texto dos documentos) ou "ia" (análise por LLM, quando
+    ``use_ai``). Alimenta a prévia do lote na UI."""
     pairs, unmatched_base, unmatched_compare, methods = _pair_files_impl(
-        base_dir, compare_dir
+        base_dir, compare_dir, use_ai=use_ai
     )
     detailed = [
         {
@@ -292,7 +293,7 @@ def pair_files_detailed(
 
 
 def pair_files(
-    base_dir: str, compare_dir: str
+    base_dir: str, compare_dir: str, use_ai: bool = False
 ) -> Tuple[List[Tuple[str, str]], List[str], List[str]]:
     """Encontra pares (base, comparação) entre dois diretórios.
 
@@ -303,17 +304,18 @@ def pair_files(
     - ``unmatched_base`` / ``unmatched_compare``: nomes de arquivos (basename)
       sem correspondente do outro lado.
 
-    Pareamento em 3 passos: stem normalizado igual; similaridade de nome
-    (cutoff 0.85); conteúdo dos documentos. Cada arquivo é usado uma vez.
+    Pareamento em até 4 passos: stem normalizado igual; similaridade de nome
+    (cutoff 0.85); conteúdo dos documentos; e, se ``use_ai``, análise por LLM
+    dos órfãos restantes. Cada arquivo é usado uma vez.
     """
     pairs, unmatched_base, unmatched_compare, _methods = _pair_files_impl(
-        base_dir, compare_dir
+        base_dir, compare_dir, use_ai=use_ai
     )
     return pairs, unmatched_base, unmatched_compare
 
 
 def _pair_files_impl(
-    base_dir: str, compare_dir: str
+    base_dir: str, compare_dir: str, use_ai: bool = False
 ) -> Tuple[List[Tuple[str, str]], List[str], List[str], Dict[Tuple[str, str], str]]:
     if not base_dir or not os.path.isdir(base_dir):
         raise ValueError("Diretório base inexistente ou inválido: '%s'" % base_dir)
@@ -386,6 +388,27 @@ def _pair_files_impl(
             methods[(base_name, compare_name)] = "conteúdo"
             unmatched_base.remove(base_name)
             unmatched_compare.remove(compare_name)
+
+    # Passo 4 (IA, opt-in): órfãos restantes dos dois lados são analisados por
+    # um LLM barato (OpenRouter) que casa base↔revisado pelo conteúdo. Só roda
+    # com use_ai + chave configurada; qualquer falha mantém os órfãos.
+    if use_ai and unmatched_base and unmatched_compare:
+        try:
+            from app.ai.pairing import ai_pairing_available, pair_by_ai
+            if ai_pairing_available():
+                ai_pairs = pair_by_ai(
+                    base_dir, list(unmatched_base), compare_dir, list(unmatched_compare)
+                )
+                for base_name, compare_name in ai_pairs:
+                    if base_name in unmatched_base and compare_name in unmatched_compare:
+                        pairs.append((base_name, compare_name))
+                        methods[(base_name, compare_name)] = "ia"
+                        unmatched_base.remove(base_name)
+                        unmatched_compare.remove(compare_name)
+            else:
+                logger.info("Pareamento por IA solicitado, mas não configurado (sem chave).")
+        except Exception:
+            logger.exception("Pareamento por IA falhou; mantendo órfãos.")
 
     pairs.sort(key=lambda p: (p[0].casefold(), p[1].casefold()))
     full_pairs = [
