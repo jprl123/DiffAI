@@ -1,164 +1,167 @@
 # DiffAI
 
-Ferramenta local para **comparar documentos** (DOCX, PDF e Excel) e gerar **PDFs redline**
-com marcação de inserções, exclusões, movimentações e formatação — além de relatório
-analítico com separação entre mudanças de conteúdo e mudanças rotineiras.
+App desktop local para **comparar documentos** (DOCX, PDF e Excel) e gerar
+**redlines** com inserção, exclusão, movimentação e formatação — mais síntese
+e relatório analítico (conteúdo vs. mudanças rotineiras).
 
-Baseado na visão descrita em [docs/VISAO_GERAL.md](docs/VISAO_GERAL.md).
+Visão de produto: [docs/VISAO_GERAL.md](docs/VISAO_GERAL.md) · índice de docs:
+[docs/README.md](docs/README.md).
 
-## Requisitos
+**Site / downloads:** [diffai.app](https://diffai.app) ·
+[Release v0.1.4 (Mac + Windows)](https://github.com/jprl123/DiffAI/releases/tag/v0.1.4)
+
+| Plataforma | Pacote |
+|------------|--------|
+| macOS | [diffAI-mac.zip](https://github.com/jprl123/DiffAI/releases/download/v0.1.4/diffAI-mac.zip) |
+| Windows | [diffAI-windows.zip](https://github.com/jprl123/DiffAI/releases/download/v0.1.4/diffAI-windows.zip) |
+
+## Requisitos (desenvolvimento)
 
 - **Python 3.13+** (recomendado **3.14**)
 - macOS: Homebrew (`brew install python@3.14`)
-
-Primeira configuração ou atualização do Python:
+- **LibreOffice** (recomendado) — PDF redline com o layout original do DOCX.
+  Sem ele, o PDF sai em layout padronizado; o DOCX redline continua fiel.
+  No app: Configurações → PDF fiel.
 
 ```bash
 ./scripts/setup_python.sh
 ```
 
-Isso instala o Python via Homebrew (se necessário), recria `.venv/` e instala as dependências.
+Instala o Python (se preciso), recria `.venv/` e as dependências.
 
-## Estrutura do projeto
+## Estrutura
 
 ```
-Compare-docs/
-├── app/              # Backend: extração, motor, saídas, API
-├── web/              # Interface (HTML/JS)
-├── desktop/          # App nativo (pywebview)
-├── tests/            # Testes e gerador de amostras
-│   ├── make_samples.py
-│   ├── test_e2e.py
-│   └── samples/      # gerado por scripts/generate_samples.sh
-├── docs/             # Documentação (visão, arquitetura, deploy) — ver docs/README.md
-├── assets/           # Branding (ícones)
-├── scripts/          # Build desktop, setup Python, utilitários
-├── output/           # Saídas locais das comparações (gitignored)
-└── logs/             # Logs do desktop
+DiffAI/
+├── app/                 # Extração, motor, saídas, API FastAPI, licenças
+├── web/                 # Interface (HTML/JS)
+├── desktop/             # Janela nativa (pywebview)
+├── landing/             # Site Next.js (Vercel)
+├── licensing_server/    # API de licenças / Stripe (Railway)
+├── tests/               # Testes e amostras
+├── scripts/             # Setup, build Mac/Windows, samples
+├── docs/                # Documentação — ver docs/README.md
+├── assets/branding/     # Ícones (.icns / .ico / PNG)
+├── .github/workflows/   # CI (build Windows)
+├── output/              # Saídas locais (gitignored)
+└── logs/                # Logs do desktop
 ```
 
-Documentação completa: **[docs/README.md](docs/README.md)**.
+## Como rodar (dev)
 
-## Como rodar
-
-### Versão web (navegador)
+### Web (navegador)
 
 ```bash
 ./run.sh
 ```
 
-Depois abra **http://127.0.0.1:8377** no navegador.
+Abra **http://127.0.0.1:8377**.
 
-### Versão desktop (app nativo)
+### Desktop
 
 ```bash
 .venv/bin/python run_desktop.py
 ```
 
-Abre uma **janela nativa** com a mesma interface web. Tudo continua local.
+Janela nativa com a mesma UI. Tudo processa **localmente**.
 
-**Log de diagnóstico:** `logs/desktop.log`
+Log: `logs/desktop.log`
 
-### Arquivos de teste
+### Amostras de teste
 
 ```bash
 ./scripts/generate_samples.sh
 ```
 
-Gera pares em `tests/samples/base/` e `tests/samples/revised/` — contrato DOCX,
-política PDF, proposta comercial e planilha Excel.
+Pares em `tests/samples/base/` e `tests/samples/revised/`.
 
-## Modos de uso
+## Uso
 
-A interface tem três áreas: **Comparar** (par único), **Lote** (pastas) e **Histórico** —
-todas as comparações ficam registradas em `~/.comparedocs/history.json` e sobrevivem ao
-fechamento do app; da aba Histórico dá para reabrir os arquivos gerados, filtrar por
-status e limpar o registro.
+Áreas da interface: **Comparar**, **Lote**, **Histórico**, **Planos** / Conta.
 
-- **Arquivo único** — arraste o documento base e o revisado (`.docx`, `.pdf` ou `.xlsx`)
-  e clique em Comparar.
-- **Lote (pastas)** — informe a pasta dos originais e a dos revisados; o sistema pareia
-  os arquivos por nome e, quando os nomes não têm relação nenhuma, pelo **próprio
-  conteúdo** dos documentos — não é preciso renomear nada antes de comparar.
+- **Par único** — base + revisado (`.docx`, `.pdf`, `.xlsx`) → Comparar.
+- **Lote** — duas pastas; pareamento por nome e, se preciso, por conteúdo.
+- **Histórico** — `~/.comparedocs/history.json` (sobrevive ao fechar o app).
+- **Opções de comparação** — moves, formatação, headers/footers, tabelas, imagens
+  (persistentes em Configurações).
 
-## O que é gerado
+Na **avaliação gratuita**, a comparação de **PDF e Excel** fica nos planos pagos;
+Word (DOCX) está disponível no trial.
 
-| Saída | Nome |
-|-------|------|
-| PDF redline completo | `[Redline] {base} vs {revisado}.pdf` |
-| DOCX redline fiel (entrada .docx) | `[Redline] {base} vs {revisado}.docx` — mesma formatação do revisado, só com marcas |
-| Excel redline (entrada .xlsx) | `[Redline] {base} vs {revisado}.xlsx` + aba Summary |
-| Só páginas alteradas (opcional) | `[Redline-Changed Pages] {base} vs {revisado}.pdf` |
-| Resumo executivo (opcional) | `[Resumo] {base} vs {revisado}.pdf` — 1 página com síntese, destaques e riscos |
-| DOCX editável (opcional) | `[Redline] {base} vs {revisado}.docx` |
-| Relatório analítico (opcional) | `[Report] {base} vs {revisado}.html / .xlsx / .json` |
+## Saídas
 
-Todo redline (PDF fiel, PDF padronizado e DOCX) termina com uma página de síntese
-**Summary of Changes** — data, arquivos, totais por tipo e conteúdo vs rotineiras —
-em página própria, limpa, com a marca Compare Docs.
+| Saída | Nome típico |
+|------|-------------|
+| PDF redline | `[Redline] {base} vs {revisado}.pdf` |
+| DOCX redline fiel | `[Redline] {base} vs {revisado}.docx` |
+| Excel redline | `[Redline] {base} vs {revisado}.xlsx` (+ aba Summary) |
+| Só páginas alteradas (opc.) | `[Redline-Changed Pages] … .pdf` |
+| Resumo executivo (opc.) | `[Resumo] … .pdf` |
+| Relatório analítico (opc.) | `[Report] … .html / .xlsx / .json` |
 
-> **PDF fiel requer LibreOffice.** Para pares `.docx`, o PDF redline é gerado convertendo o
-> DOCX redline fiel via LibreOffice headless (perfil de usuário dedicado — funciona mesmo com
-> o LibreOffice aberto). Sem LibreOffice instalado, o PDF sai em layout padronizado e o
-> resultado exibe um aviso ⚠ no card.
+No app empacotado, as saídas vão para `~/Documents/diffAI/`.
 
-## Licenciamento comercial
+Todo redline termina com **Summary of Changes** (marca **DiffAI**). Documentos
+**paisagem** preservam a orientação na pré-visualização e no PDF gerado.
 
-O app roda em **avaliação gratuita** (14 dias / 25 comparações / lote de até 5 pares) e é
-desbloqueado com **chave de licença** (formato `CDOC-XXXX-XXXX-XXXX-XXXX`) vinculada a
-e-mail e dispositivo. As licenças são payloads **assinados (Ed25519)** — o app verifica a
-assinatura offline com a chave pública embutida; forjar exige a chave privada do servidor.
+> **PDF fiel = LibreOffice.** Pares DOCX (e PDF convertidos via pdf2docx) passam
+> pelo redline in-place + conversão headless. Sem LibreOffice: PDF padronizado +
+> aviso no resultado; o DOCX redline mantém a formatação.
 
-- **Servidor de licenças** (`licensing_server/`): roda separado do app — hoje local, depois
-  em nuvem (o app só precisa da URL em `COMPAREDOCS_LICENSE_SERVER`).
+## Licenciamento
 
-  ```bash
-  .venv/bin/python -m licensing_server.server            # porta 8390
-  .venv/bin/python -m licensing_server.issue --email cliente@x.com --plan pro
-  ```
-
-- **No app**: aba **Planos** (assinaturas), **Conta** (estado da licença, dispositivo,
-  desativação) e modal **Ativar licença**. Sem licença e sem avaliação, os endpoints de
-  comparação retornam 402 e a UI abre a ativação.
-- **Offline**: licença ativada funciona sem internet até a validade (+7 dias de
-  tolerância); revalidação online oportunista a cada 24 h.
-- Preços/textos dos planos: [app/licensing/plans.py](app/licensing/plans.py). URLs de
-  checkout via `COMPAREDOCS_CHECKOUT_PRO` / `COMPAREDOCS_CHECKOUT_TEAM`.
-
-**Guia completo do fluxo de licenças (para o dono do produto):**
-[docs/LICENCIAMENTO.md](docs/LICENCIAMENTO.md).
-**Integração Stripe (brief para implementação no Cursor):**
-[docs/STRIPE_CURSOR.md](docs/STRIPE_CURSOR.md).
-
-## Executável (desktop empacotado)
+Avaliação: **14 dias / 25 comparações / lote até 5 pares**. Desbloqueio com chave
+`CDOC-XXXX-XXXX-XXXX-XXXX` (Ed25519, verificação offline).
 
 ```bash
-./scripts/build_desktop.sh     # gera dist/Compare Docs.app (PyInstaller)
-open "dist/Compare Docs.app"
+.venv/bin/python -m licensing_server.server            # porta 8390
+.venv/bin/python -m licensing_server.issue --email cliente@x.com --plan pro
 ```
 
-No app empacotado, saídas vão para `~/Documents/Compare Docs/` e logs para
-`~/.comparedocs/logs/`. Para distribuir fora da sua máquina é preciso assinar e
-notarizar (conta Apple Developer).
+URL do servidor no app: `COMPAREDOCS_LICENSE_SERVER`. Detalhes:
+[docs/LICENCIAMENTO.md](docs/LICENCIAMENTO.md) · Stripe: [docs/STRIPE_CURSOR.md](docs/STRIPE_CURSOR.md).
 
-> **Antes de vender de verdade** (checklist em [docs/MUDANCAS_FUTURAS.md](docs/MUDANCAS_FUTURAS.md)):
-> rotacionar as chaves de assinatura (`.venv/bin/python scripts/rotate_license_keys.py`),
-> publicar o servidor de licenças com HTTPS, concluir o Stripe (brief acima) e
-> assinar/notarizar o executável.
+## Build do desktop
+
+### macOS
+
+```bash
+./scripts/build_desktop.sh                 # dist/diffAI.app + diffAI-mac.zip
+./scripts/build_desktop.sh --unlimited     # build de teste sem limites de plano
+```
+
+Distribuição pública: codesign + notarização (Apple Developer) —
+ver [docs/LICENCIAMENTO.md](docs/LICENCIAMENTO.md).
+
+### Windows
+
+No Windows (ou CI `windows-latest`):
+
+```powershell
+.\scripts\build_desktop_windows.ps1
+```
+
+Gera `dist\diffAI-windows.zip` (`diffAI\diffAI.exe`). Workflow:
+`.github/workflows/build-windows.yml` (`gh workflow run "Build Windows"`).
+
+Windows 10/11 com [WebView2](https://developer.microsoft.com/microsoft-edge/webview2/)
+(na maioria das máquinas já vem instalado).
 
 ## Arquitetura
 
-Backend Python (FastAPI) + frontend HTML/JS. O pipeline normaliza DOCX, PDF e Excel
-para o mesmo modelo de blocos, alinha, faz diff palavra a palavra e classifica cada
-mudança. Detalhes em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+FastAPI + frontend HTML/JS. DOCX/PDF/Excel → modelo de blocos → alinhamento →
+diff → classificação → redline / relatório.
+Detalhes: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Testes
 
 ```bash
 .venv/bin/python -m tests.test_e2e
+.venv/bin/python -m unittest discover -s tests -p 'test_*.py'
 ```
 
 ## Roadmap
 
-Ver [docs/MUDANCAS_FUTURAS.md](docs/MUDANCAS_FUTURAS.md).
-# DiffAI
+[docs/MUDANCAS_FUTURAS.md](docs/MUDANCAS_FUTURAS.md) — antes de vender de verdade:
+rodar `scripts/rotate_license_keys.py`, HTTPS no servidor de licenças, Stripe e
+assinatura dos instaladores.
