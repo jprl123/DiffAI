@@ -4,7 +4,7 @@ Ferramenta local para **comparar documentos** (DOCX, PDF e Excel) e gerar **PDFs
 com marcação de inserções, exclusões, movimentações e formatação — além de relatório
 analítico com separação entre mudanças de conteúdo e mudanças rotineiras.
 
-Baseado na visão descrita em [VISAO_GERAL.md](VISAO_GERAL.md).
+Baseado na visão descrita em [docs/VISAO_GERAL.md](docs/VISAO_GERAL.md).
 
 ## Requisitos
 
@@ -30,11 +30,14 @@ Compare-docs/
 │   ├── make_samples.py
 │   ├── test_e2e.py
 │   └── samples/      # gerado por scripts/generate_samples.sh
-├── scripts/          # Utilitários
-├── docs/             # Documentação técnica e roadmap
-├── output/           # Saídas das comparações (gitignored)
+├── docs/             # Documentação (visão, arquitetura, deploy) — ver docs/README.md
+├── assets/           # Branding (ícones)
+├── scripts/          # Build desktop, setup Python, utilitários
+├── output/           # Saídas locais das comparações (gitignored)
 └── logs/             # Logs do desktop
 ```
+
+Documentação completa: **[docs/README.md](docs/README.md)**.
 
 ## Como rodar
 

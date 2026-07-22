@@ -1,6 +1,6 @@
 # Mudanças futuras — Compare Docs
 
-Roadmap alinhado à [VISAO_GERAL.md](../VISAO_GERAL.md). Priorizado por impacto para o público jurídico/corporativo.
+Roadmap alinhado à [VISAO_GERAL.md](VISAO_GERAL.md). Priorizado por impacto para o público jurídico/corporativo.
 
 ---
 
